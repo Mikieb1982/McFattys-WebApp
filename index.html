@@ -14,7 +14,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0f1115">
 
-  <!-- iOS Safari icon (from /icons) -->
+  <!-- iOS Safari icon -->
   <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
 
   <style>
@@ -52,7 +52,7 @@
     .btn-danger{background:var(--danger);color:#fff}
     .btn-danger:hover{background:#b02a35}
 
-    /* Logo (smaller) */
+    /* Logo */
     .hero-logo{background:var(--bg-1);border-radius:var(--radius-12);box-shadow:var(--shadow);padding:8px}
     .hero-logo img{width:100%;max-width:480px;display:block;margin:0 auto}
 
@@ -89,13 +89,26 @@
     .modal p{margin:0 0 16px;color:var(--text-1)}
     .modal-actions{display:flex;gap:10px;justify-content:center}
 
-    /* Install success banner */
+    /* Install success banner - centered */
     .install-banner{
-      position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-      background:var(--primary);color:#000;
-      padding:12px 20px;border-radius:var(--radius-12);
-      box-shadow:var(--shadow);font-weight:700;font-size:14px;
-      display:none;z-index:200;
+      position:fixed;
+      top:50%; left:50%;
+      transform:translate(-50%,-50%) scale(.96);
+      opacity:0;
+      background:var(--card);
+      color:var(--text-0);
+      padding:16px 22px;
+      border:1px solid var(--border);
+      border-radius:16px;
+      box-shadow:var(--shadow);
+      font-weight:700; font-size:14px;
+      display:none; z-index:200;
+      transition:opacity .2s ease, transform .2s ease;
+    }
+    .install-banner.show{
+      display:block;
+      opacity:1;
+      transform:translate(-50%,-50%) scale(1);
     }
   </style>
 </head>
@@ -178,24 +191,6 @@
     const STORAGE_KEY='mcFattys.items.v1';
     const LANG_KEY='mcFattys.lang.v1';
 
-    // Translations
-    const i18n={
-      en:{addTitle:"Add item",foodLabel:"Food item name",addBtn:"Add to log",dairyLabel:"Contains dairy",
-          logTitle:"Today’s log",exportBtn:"Export",clearAllBtn:"Clear all",thItem:"Item",thDairy:"Dairy",
-          pillYes:"Yes",pillNo:"No",modalTitle:"Clear all logs?",modalDesc:"Are you sure you want to clear today’s log? This cannot be undone.",
-          cancelBtn:"Cancel",confirmClearBtn:"Yes, clear",footerText:"Designed and created by Burrow · 2025",
-          csvItem:"Item",csvDairy:"Dairy"},
-      de:{addTitle:"Eintrag hinzufügen",foodLabel:"Name des Lebensmittels",addBtn:"Zur Liste hinzufügen",dairyLabel:"Enthält Milchprodukte",
-          logTitle:"Heutiges Protokoll",exportBtn:"Exportieren",clearAllBtn:"Alles löschen",thItem:"Artikel",thDairy:"Milchprodukte",
-          pillYes:"Ja",pillNo:"Nein",modalTitle:"Alle Einträge löschen?",modalDesc:"Möchtest du das heutige Protokoll wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
-          cancelBtn:"Abbrechen",confirmClearBtn:"Ja, löschen",footerText:"Entworfen und erstellt von Burrow · 2025",
-          csvItem:"Artikel",csvDairy:"Milchprodukte"}
-    };
-
-    // State
-    const state={items:[]};
-    let lang='en';
-
     // Elements
     const nameInput=document.getElementById('food-name');
     const dairyCheckbox=document.getElementById('contains-dairy');
@@ -209,187 +204,115 @@
     const langToggle=document.getElementById('lang-toggle');
     const switchEl=document.getElementById('switch');
 
-    // PWA elements
     const installBtn=document.getElementById('pwa-install');
     const iosHelp=document.getElementById('ios-help');
     const iosHelpClose=document.getElementById('ios-help-close');
     const banner=document.getElementById('install-banner');
     let deferredPrompt=null;
 
-    // Storage helpers
-    function loadItems(){
-      try{
-        const raw=localStorage.getItem(STORAGE_KEY);
-        if(raw){
-          const parsed=JSON.parse(raw);
-          if(Array.isArray(parsed)) state.items=parsed.filter(x=>x&&typeof x.name==='string').map(x=>({name:x.name,dairy:!!x.dairy}));
-        }
-      }catch{}
-    }
-    function saveItems(){
-      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items)); }catch{}
+    // Banner helper
+    function showBanner(message, duration=2000){
+      banner.textContent=message;
+      banner.classList.add('show');
+      banner.style.display='block';
+      clearTimeout(banner._hideT);
+      banner._hideT=setTimeout(()=>{
+        banner.classList.remove('show');
+        setTimeout(()=>{ banner.style.display='none'; },200);
+      },duration);
     }
 
+    // Simple translations
+    const i18n={
+      en:{addTitle:"Add item",foodLabel:"Food item name",addBtn:"Add to log",dairyLabel:"Contains dairy",
+          logTitle:"Today’s log",exportBtn:"Export",clearAllBtn:"Clear all",thItem:"Item",thDairy:"Dairy",
+          pillYes:"Yes",pillNo:"No",modalTitle:"Clear all logs?",modalDesc:"Are you sure you want to clear today’s log? This cannot be undone.",
+          cancelBtn:"Cancel",confirmClearBtn:"Yes, clear",footerText:"Designed and created by Burrow · 2025",
+          csvItem:"Item",csvDairy:"Dairy"},
+      de:{addTitle:"Eintrag hinzufügen",foodLabel:"Name des Lebensmittels",addBtn:"Zur Liste hinzufügen",dairyLabel:"Enthält Milchprodukte",
+          logTitle:"Heutiges Protokoll",exportBtn:"Exportieren",clearAllBtn:"Alles löschen",thItem:"Artikel",thDairy:"Milchprodukte",
+          pillYes:"Ja",pillNo:"Nein",modalTitle:"Alle Einträge löschen?",modalDesc:"Möchtest du das heutige Protokoll wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+          cancelBtn:"Abbrechen",confirmClearBtn:"Ja, löschen",footerText:"Entworfen und erstellt von Burrow · 2025",
+          csvItem:"Artikel",csvDairy:"Milchprodukte"}
+    };
+
+    const state={items:[]};
+    let lang='en';
+
+    function loadItems(){
+      try{state.items=JSON.parse(localStorage.getItem(STORAGE_KEY))||[]}catch{}
+    }
+    function saveItems(){
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state.items));
+    }
     function loadLang(){
-      const saved=localStorage.getItem(LANG_KEY);
-      lang=saved==='de'?'de':'en';
+      lang=localStorage.getItem(LANG_KEY)||'en';
       document.documentElement.lang=lang;
     }
     function saveLang(){
-      try{ localStorage.setItem(LANG_KEY,lang); }catch{}
+      localStorage.setItem(LANG_KEY,lang);
       document.documentElement.lang=lang;
     }
 
-    // UI text apply
     function applyI18n(){
       const t=i18n[lang];
       document.querySelectorAll('[data-i18n]').forEach(el=>{
         const key=el.getAttribute('data-i18n');
-        if(t[key]!==undefined) el.textContent=t[key];
+        if(t[key]) el.textContent=t[key];
       });
-      nameInput.placeholder = lang==='de'?'z. B. Cheeseburger':'e.g., Cheeseburger';
-      switchEl.classList.toggle('active', lang==='de');
+      nameInput.placeholder=lang==='de'?'z. B. Cheeseburger':'e.g., Cheeseburger';
+      switchEl.classList.toggle('active',lang==='de');
       render();
     }
 
-    // Render
     function render(){
       const t=i18n[lang];
       tbody.innerHTML='';
       state.items.forEach((item,idx)=>{
         const tr=document.createElement('tr');
-
-        const tdName=document.createElement('td');
-        tdName.textContent=item.name;
-
-        const tdDairy=document.createElement('td');
-        const chip=document.createElement('span');
-        chip.className='pill ' + (item.dairy?'pill-yes':'pill-no');
-        chip.textContent=item.dairy?t.pillYes:t.pillNo;
-        tdDairy.appendChild(chip);
-
-        const tdActions=document.createElement('td');
-        tdActions.className='row-actions';
-        const rm=document.createElement('button');
-        rm.className='btn btn-danger';
-        rm.type='button';
-        rm.textContent=lang==='de'?'Entfernen':'Remove';
-        rm.setAttribute('aria-label',(lang==='de'?'Entfernen ':'Remove ')+item.name);
-        rm.addEventListener('click',()=>{
-          state.items.splice(idx,1);
-          saveItems();
-          render();
-        });
-        tdActions.appendChild(rm);
-
-        tr.appendChild(tdName);
-        tr.appendChild(tdDairy);
-        tr.appendChild(tdActions);
+        tr.innerHTML=`<td>${item.name}</td>
+          <td><span class="pill ${item.dairy?'pill-yes':'pill-no'}">${item.dairy?t.pillYes:t.pillNo}</span></td>
+          <td class="row-actions"><button class="btn btn-danger">${lang==='de'?'Entfernen':'Remove'}</button></td>`;
+        tr.querySelector('button').onclick=()=>{
+          state.items.splice(idx,1);saveItems();render();
+        };
         tbody.appendChild(tr);
       });
     }
 
-    // Actions
     function addItem(){
-      const name=(nameInput.value||'').trim();
-      if(!name){ nameInput.focus(); return; }
-      state.items.push({name, dairy:!!dairyCheckbox.checked});
-      saveItems();
-      render();
-      nameInput.value=''; dairyCheckbox.checked=false; nameInput.focus();
+      const name=nameInput.value.trim();
+      if(!name) return;
+      state.items.push({name,dairy:dairyCheckbox.checked});
+      saveItems();render();
+      nameInput.value='';dairyCheckbox.checked=false;
     }
-
     function exportCSV(){
       if(!state.items.length) return;
       const t=i18n[lang];
-      const rows=[[t.csvItem,t.csvDairy], ...state.items.map(i=>[i.name, i.dairy? t.pillYes : t.pillNo])];
-      const csv=rows.map(r=>r.map(f=>`"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url; a.download='mcFattys-log.csv';
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-      // Clear after export by design
-      state.items.length=0; saveItems(); render();
+      const rows=[[t.csvItem,t.csvDairy],...state.items.map(i=>[i.name,i.dairy?t.pillYes:t.pillNo])];
+      const csv=rows.map(r=>r.map(f=>`"${f}"`).join(',')).join('\n');
+      const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download='mcFattys-log.csv';a.click();URL.revokeObjectURL(url);
+      state.items=[];saveItems();render();
     }
 
-    // Modal control
-    function openModal(){ modal.style.display='flex'; }
-    function closeModal(){ modal.style.display='none'; }
-    function clearAllNow(){ state.items.length=0; saveItems(); render(); }
+    addBtn.onclick=addItem;
+    nameInput.onkeydown=e=>{if(e.key==='Enter')addItem()};
+    exportBtn.onclick=exportCSV;
+    clearBtn.onclick=()=>modal.style.display='flex';
+    cancelClear.onclick=()=>modal.style.display='none';
+    confirmClear.onclick=()=>{state.items=[];saveItems();render();modal.style.display='none';};
+    langToggle.onclick=()=>{lang=lang==='en'?'de':'en';saveLang();applyI18n();};
 
-    // Language toggle events
-    langToggle.addEventListener('click', ()=>{
-      lang = (lang==='en') ? 'de' : 'en';
-      saveLang(); applyI18n();
-    });
-    langToggle.addEventListener('keydown', e=>{
-      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); langToggle.click(); }
-    });
+    // PWA install
+    if('serviceWorker'in navigator){navigator.serviceWorker.register('service-worker.js');}
+    window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.style.display='inline-flex';});
+    installBtn.onclick=async()=>{
+      if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;}
+      else iosHelp.style.display='flex';
+    };
+    iosHelpClose.onclick=()=>iosHelp.style.display='none';
 
-    // Buttons
-    addBtn.addEventListener('click', addItem);
-    nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') addItem(); });
-    exportBtn.addEventListener('click', exportCSV);
-    clearBtn.addEventListener('click', openModal);
-    cancelClear.addEventListener('click', closeModal);
-    confirmClear.addEventListener('click', ()=>{ clearAllNow(); closeModal(); });
-
-    // ==== PWA: Service worker & install flow ====
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('service-worker.js').catch(()=>{});
-    }
-
-    const isStandalone = () =>
-      window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    const isAndroid = () => /Android/i.test(navigator.userAgent);
-    const isAppleMobile = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
-
-    // Chromium install prompt
-    window.addEventListener('beforeinstallprompt',(e)=>{
-      e.preventDefault();
-      deferredPrompt=e;
-      installBtn.style.display='inline-flex';
-    });
-
-    // Install button behavior
-    installBtn.addEventListener('click', async ()=>{
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        try { await deferredPrompt.userChoice; } catch(_) {}
-        deferredPrompt = null;
-      } else if (isAppleMobile()) {
-        document.getElementById('ios-help').style.display='flex';
-      } else {
-        document.getElementById('ios-help').style.display='flex'; // fallback guidance
-      }
-    });
-    iosHelpClose.addEventListener('click', ()=> document.getElementById('ios-help').style.display='none');
-
-    // Install success banner (Chromium)
-    window.addEventListener('appinstalled', ()=>{
-      banner.textContent = isAndroid()
-        ? "✅ Installed to app tray"
-        : "✅ App installed";
-      banner.style.display='block';
-      setTimeout(()=>banner.style.display='none',3000);
-      installBtn.style.display='none';
-    });
-
-    // Initial visibility
-    window.addEventListener('DOMContentLoaded', ()=>{
-      if (isStandalone()) installBtn.style.display='none';
-      else installBtn.style.display='inline-flex';
-    });
-    window.matchMedia('(display-mode: standalone)').addEventListener?.('change', e=>{
-      installBtn.style.display = e.matches ? 'none' : 'inline-flex';
-    });
-
-    // Init
-    loadLang();
-    loadItems();
-    applyI18n(); // calls render
-  </script>
-</body>
-</html>
+    window.addEventListener('appinstalled',()=>{
+      const msg=/Android/i.test(navigator.userAgent)?"✅ Installed to app tray":"✅ App installed";
