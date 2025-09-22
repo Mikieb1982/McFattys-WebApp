@@ -1,69 +1,108 @@
-// --- Simple in-memory+localStorage model ---
-function readEntries(){ try { return JSON.parse(localStorage.getItem('mcfattys_entries')||'[]'); } catch { return []; } }
-function writeEntries(arr){ localStorage.setItem('mcfattys_entries', JSON.stringify(arr)); }
+// Storage
+const KEY = 'mcfattys_entries';
+const read = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } };
+const write = (arr) => localStorage.setItem(KEY, JSON.stringify(arr));
 
-// --- Minimal UI wiring so it works out of the box ---
-const tbody = document.querySelector('#entriesTable tbody');
+// Helpers
+const pad = (n) => String(n).padStart(2,'0');
+const nowParts = () => {
+  const d = new Date();
+  return {
+    date: `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`,      // YYYY-MM-DD
+    time: `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`  // HH:MM:SS
+  };
+};
+
+// Render
+const tbody = document.getElementById('rows');
 function render(){
-  const rows = readEntries();
-  tbody.innerHTML = rows.map(r => `
-    <tr class="border-t border-white/10">
-      <td class="py-2">${r.date||''}</td>
+  const data = read();
+  tbody.innerHTML = data.map((r, i) => `
+    <tr>
+      <td>${r.date}</td>
+      <td>${r.time}</td>
       <td>${r.meal||''}</td>
       <td>${r.item||''}</td>
       <td>${r.qty||''}</td>
-      <td>${r.calories||''}</td>
-    </tr>`).join('');
+      <td>${r.cal||''}</td>
+      <td><button data-i="${i}" class="del btn btn-ghost" style="padding:.3rem .6rem">✕</button></td>
+    </tr>
+  `).join('');
 }
-document.getElementById('entryForm')?.addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const row = {
-    date: document.getElementById('date').value,
-    meal: document.getElementById('meal').value,
-    item: document.getElementById('item').value,
-    qty: document.getElementById('qty').value,
-    calories: document.getElementById('calories').value
-  };
-  const data = readEntries(); data.unshift(row); writeEntries(data); render(); e.target.reset();
-});
 render();
 
-// --- CSV export/import ---
-function toCsv(rows){
-  if (!rows.length) return 'date,meal,item,qty,calories\n';
-  const header = Object.keys(rows[0]).join(',');
-  const body = rows.map(r => Object.values(r).map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
-  return header + '\n' + body + '\n';
-}
-document.getElementById('btnExport')?.addEventListener('click', ()=>{
-  const csv = toCsv(readEntries());
-  const url = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
-  const a = Object.assign(document.createElement('a'), { href:url, download:`McFattys_${new Date().toISOString().slice(0,10)}.csv` });
-  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-});
-document.getElementById('fileImport')?.addEventListener('change', async (e)=>{
-  const f = e.target.files?.[0]; if(!f) return;
-  const text = await f.text();
-  const [headerLine, ...lines] = text.split(/\r?\n/).filter(Boolean);
-  const headers = headerLine.split(',').map(h=>h.replace(/^"|"$/g,''));
-  const rows = lines.map(line=>{
-    const parts=[]; let cur='', q=false;
-    for(let i=0;i<line.length;i++){ const ch=line[i];
-      if(ch==='"' && line[i+1]==='"'){cur+='"'; i++; continue;}
-      if(ch==='"'){q=!q; continue;}
-      if(ch===',' && !q){parts.push(cur); cur=''; continue;}
-      cur+=ch;
-    }
-    parts.push(cur);
-    const obj={}; headers.forEach((h,i)=>obj[h]=parts[i]??''); return obj;
-  });
-  writeEntries([...readEntries(), ...rows]); render(); e.target.value='';
+// Add entry
+document.getElementById('entryForm')?.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const {date, time} = nowParts();
+  const row = {
+    date, time,
+    meal: document.getElementById('meal').value,
+    item: document.getElementById('item').value.trim(),
+    qty : document.getElementById('qty').value.trim(),
+    cal : document.getElementById('cal').value.trim()
+  };
+  if (!row.item) return;
+  const data = read();
+  data.unshift(row);
+  write(data);
+  render();
+  e.target.reset();
 });
 
-// --- PWA install prompt ---
-let deferredPrompt;
-const btnInstall = document.getElementById('btnInstall');
-window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferredPrompt=e; if(btnInstall) btnInstall.hidden=false; });
-btnInstall?.addEventListener('click', async ()=>{
-  if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; btnInstall.hidden=true;
+// Delete entry
+tbody.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.del');
+  if (!btn) return;
+  const i = Number(btn.dataset.i);
+  const data = read();
+  data.splice(i,1);
+  write(data);
+  render();
+});
+
+// CSV export
+function toCsv(rows){
+  const cols = ['date','time','meal','item','qty','cal'];
+  const header = cols.join(',');
+  const body = rows.map(r => cols.map(k => `"${String(r[k]??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  return header + '\n' + body + '\n';
+}
+document.getElementById('exportCsv')?.addEventListener('click', ()=>{
+  const csv = toCsv(read());
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), {
+    href: url,
+    download: `McFattys_${new Date().toISOString().slice(0,10)}.csv`
+  });
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+
+// Export to Google Sheet (via Apps Script webhook)
+const SCRIPT_URL = ''; // <-- paste your Web App URL here (see steps below)
+
+async function postJSON(url, payload){
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json().catch(()=> ({}));
+}
+
+document.getElementById('exportSheet')?.addEventListener('click', async ()=>{
+  if (!SCRIPT_URL) { alert('Add your Apps Script Web App URL in app.js (SCRIPT_URL).'); return; }
+  const rows = read();
+  if (!rows.length) { alert('No entries to export.'); return; }
+
+  // Send all rows at once; script will append to the sheet.
+  try {
+    await postJSON(SCRIPT_URL, { rows });
+    alert('Exported to Google Sheet.');
+  } catch (err) {
+    alert('Export failed. Check SCRIPT_URL and script permissions.');
+    console.error(err);
+  }
 });
