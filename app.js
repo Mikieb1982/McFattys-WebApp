@@ -1,4 +1,4 @@
-// --- PWA install prompt ---
+// PWA install prompt
 let deferredPrompt;
 const btnInstall = document.getElementById('btnInstall');
 
@@ -16,7 +16,7 @@ btnInstall?.addEventListener('click', async () => {
   btnInstall.hidden = true;
 });
 
-// --- Simple data gateway you likely already have ---
+// Storage helpers
 function readEntries(){
   try { return JSON.parse(localStorage.getItem('mcfattys_entries') || '[]'); }
   catch { return []; }
@@ -25,7 +25,7 @@ function writeEntries(arr){
   localStorage.setItem('mcfattys_entries', JSON.stringify(arr));
 }
 
-// --- CSV export ---
+// CSV export
 function toCsv(rows){
   if (!rows.length) return 'date,meal,item,qty,calories\n';
   const header = Object.keys(rows[0]).join(',');
@@ -47,7 +47,7 @@ document.getElementById('btnExport')?.addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
-// --- CSV import ---
+// CSV import
 document.getElementById('fileImport')?.addEventListener('change', async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
@@ -55,7 +55,6 @@ document.getElementById('fileImport')?.addEventListener('change', async (e) => {
   const [headerLine, ...lines] = text.split(/\r?\n/).filter(Boolean);
   const headers = headerLine.split(',').map(h => h.replace(/^"|"$/g,''));
   const rows = lines.map(line => {
-    // naive CSV parsing for quoted fields
     const parts = [];
     let cur = '', inQ = false;
     for (let i=0;i<line.length;i++){
