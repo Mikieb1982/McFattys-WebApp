@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>McFatty's Food Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;700&family=Oswald:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Define custom fonts and styles based on the menu template */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-anton { font-family: 'Anton', sans-serif; }
+        .font-oswald { font-family: 'Oswald', sans-serif; }
+
+        /* A dark, textured background similar to the menu */
+        .tracker-container {
+            background-color: #2d3748;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a5568' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        
+        /* Custom input field styling */
+        .form-input {
+            background-color: #4a5568;
+            border: 2px solid transparent;
+            transition: border-color 0.3s;
+        }
+        .form-input:focus {
+            border-color: #fbbf24; /* amber-400 */
+            outline: none;
+        }
+        
+        /* Custom checkbox styling */
+        .form-checkbox {
+            appearance: none;
+            background-color: #4a5568;
+            border: 2px solid #718096;
+            padding: 9px;
+            border-radius: 4px;
+            display: inline-block;
+            position: relative;
+            cursor: pointer;
+        }
+        .form-checkbox:checked {
+            background-color: #fbbf24;
+            border-color: #fbbf24;
+        }
+        .form-checkbox:checked::after {
+            content: '✔';
+            font-size: 14px;
+            color: #2d3748;
+            position: absolute;
+            top: -1px;
+            left: 2px;
+        }
+        .log-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 flex items-center justify-center min-h-screen p-4 sm:p-8">
+
+    <div class="w-full max-w-2xl mx-auto tracker-container text-white shadow-2xl rounded-lg p-6 md:p-10">
+        
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <div class="inline-block border-4 border-amber-400 px-6 py-2">
+                <h1 class="font-anton text-4xl sm:text-5xl text-white tracking-widest">McFATTY'S</h1>
+                <h2 class="font-oswald text-2xl sm:text-3xl text-amber-400 -mt-2">FOOD TRACKER</h2>
+            </div>
+        </header>
+
+        <main class="space-y-8">
+
+            <!-- Input Form -->
+            <section class="bg-gray-800/50 p-6 rounded-lg">
+                <h3 class="font-anton text-3xl text-amber-400 mb-4">ADD ITEM</h3>
+                <form id="food-form" class="space-y-4">
+                    <div>
+                        <label for="name" class="block text-sm font-bold mb-2">Food Item Name</label>
+                        <input type="text" id="name" required class="form-input w-full p-3 rounded text-white text-lg" placeholder="e.g., Cheeseburger">
+                    </div>
+                    <div class="flex items-center pt-2">
+                        <input type="checkbox" id="dairy" class="form-checkbox">
+                        <label for="dairy" class="ml-3 text-white text-lg">Contains Dairy</label>
+                    </div>
+                    <button type="submit" class="w-full bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold py-3 px-4 rounded-lg font-oswald text-xl tracking-wider transition-colors mt-2">
+                        ADD TO LOG
+                    </button>
+                </form>
+            </section>
+
+            <!-- Food Log -->
+            <section class="bg-gray-800/50 p-6 rounded-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-anton text-3xl text-amber-400">TODAY'S LOG</h3>
+                    <div class="flex items-center space-x-2">
+                        <button id="export-csv" class="log-action-btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
+                            Export
+                        </button>
+                        <button id="clear-all" class="log-action-btn bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
+                            Clear All
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b-2 border-dashed border-gray-500">
+                                <th class="p-2 w-2/3">Item</th>
+                                <th class="p-2 text-center">Dairy</th>
+                                <th class="p-2 text-center"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="food-list">
+                            <!-- Food items will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                     <p id="empty-log-message" class="text-center text-gray-400 mt-8">Your log is empty. Add an item to get started!</p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const foodForm = document.getElementById('food-form');
+            const foodListEl = document.getElementById('food-list');
+            const clearAllBtn = document.getElementById('clear-all');
+            const exportBtn = document.getElementById('export-csv');
+            const emptyLogMessage = document.getElementById('empty-log-message');
+
+            let foodItems = JSON.parse(localStorage.getItem('foodItemsSimple')) || [];
+
+            const saveToStorage = () => {
+                localStorage.setItem('foodItemsSimple', JSON.stringify(foodItems));
+            };
+
+            const updateActionButtons = () => {
+                const hasItems = foodItems.length > 0;
+                clearAllBtn.disabled = !hasItems;
+                exportBtn.disabled = !hasItems;
+            };
+
+            const renderFoodList = () => {
+                foodListEl.innerHTML = ''; 
+
+                emptyLogMessage.classList.toggle('hidden', foodItems.length > 0);
+
+                foodItems.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b border-gray-700 align-middle';
+                    
+                    const dairyIndicator = item.hasDairy 
+                        ? `<span class="bg-amber-400 text-slate-900 text-xs font-bold px-2 py-1 rounded-full">DAIRY</span>`
+                        : `<span class="text-gray-500">-</span>`;
+
+                    tr.innerHTML = `
+                        <td class="p-3 font-bold text-lg">${item.name}</td>
+                        <td class="p-3 text-center">${dairyIndicator}</td>
+                        <td class="p-3 text-center">
+                            <button data-id="${item.id}" class="delete-btn text-red-500 hover:text-red-400 font-black text-2xl leading-none">&times;</button>
+                        </td>
+                    `;
+                    foodListEl.appendChild(tr);
+                });
+                updateActionButtons();
+            };
+            
+            const addFoodItem = (e) => {
+                e.preventDefault();
+                const nameInput = document.getElementById('name');
+                const dairyInput = document.getElementById('dairy');
+                const name = nameInput.value.trim();
+
+                if (name) {
+                    const newItem = {
+                        id: Date.now(),
+                        name,
+                        hasDairy: dairyInput.checked
+                    };
+                    foodItems.push(newItem);
+                    saveToStorage();
+                    renderFoodList();
+                    foodForm.reset();
+                    nameInput.focus();
+                }
+            };
+            
+            const deleteFoodItem = (id) => {
+                foodItems = foodItems.filter(item => item.id !== id);
+                saveToStorage();
+                renderFoodList();
+            };
+
+            const handleListClick = (e) => {
+                if (e.target.classList.contains('delete-btn')) {
+                    const id = parseInt(e.target.dataset.id);
+                    deleteFoodItem(id);
+                }
+            };
+
+            const clearAllItems = () => {
+                if (foodItems.length > 0 && confirm('Are you sure you want to clear all log entries?')) {
+                    foodItems = [];
+                    saveToStorage();
+                    renderFoodList();
+                }
+            };
+
+            const exportToCSV = () => {
+                if (foodItems.length === 0) return;
+
+                const headers = ['Food Item', 'Contains Dairy', 'Logged At'];
+                const rows = foodItems.map(item => {
+                    // Escape commas in the item name by wrapping in quotes
+                    const name = `"${item.name.replace(/"/g, '""')}"`;
+                    const dairy = item.hasDairy ? 'Yes' : 'No';
+                    // The 'id' is a timestamp, convert it to a locale-specific string
+                    const loggedAt = new Date(item.id).toLocaleString();
+                    return [name, dairy, loggedAt];
+                });
+
+                let csvContent = "data:text/csv;charset=utf-8," 
+                    + headers.join(",") + "\n" 
+                    + rows.map(e => e.join(",")).join("\n");
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "mcfattys_food_log.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            foodForm.addEventListener('submit', addFoodItem);
+            foodListEl.addEventListener('click', handleListClick);
+            clearAllBtn.addEventListener('click', clearAllItems);
+            exportBtn.addEventListener('click', exportToCSV);
+
+            renderFoodList();
+        });
+    </script>
+</body>
+</html>
+
+
