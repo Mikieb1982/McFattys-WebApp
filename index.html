@@ -18,12 +18,13 @@
       --radius-12:12px;
     }
     *{box-sizing:border-box}
-    html,body{margin:0;height:100%;background:var(--bg-0);color:var(--text-0);font-family:Inter,sans-serif;line-height:1.45}
+    html,body{margin:0;height:100%;background:var(--bg-0);color:var(--text-0);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:1.45}
 
     .container{max-width:860px;margin:0 auto;padding:12px 16px 24px;position:relative}
-    .stack-16 > *+*{margin-top:16px} .stack-20 > *+*{margin-top:20px}
+    .stack-16 > *+*{margin-top:16px}
+    .stack-20 > *+*{margin-top:20px}
 
-    /* Toggle switch */
+    /* Language toggle switch (EN | DE) */
     .lang-toggle{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
     .lang-toggle span{font-size:12px;font-weight:700}
     .switch{position:relative;width:44px;height:24px;background:#232834;border-radius:12px;border:1px solid var(--border);transition:.3s;box-shadow:var(--shadow) inset 0 0 4px rgba(0,0,0,.3)}
@@ -31,22 +32,36 @@
     .switch.active{background:#3b3f4a}
     .switch.active::after{left:22px}
 
-    .hero-logo{background:var(--bg-1);border-radius:var(--radius-12);box-shadow:var(--shadow);padding:8px} /* less padding */
-    .hero-logo img{width:100%;max-width:480px;display:block;margin:0 auto} /* smaller logo */
+    /* Logo (smaller) */
+    .hero-logo{background:var(--bg-1);border-radius:var(--radius-12);box-shadow:var(--shadow);padding:8px}
+    .hero-logo img{width:100%;max-width:480px;display:block;margin:0 auto}
 
+    /* Cards */
     .section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-12);box-shadow:var(--shadow);padding:18px}
     .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:22px;margin:0 0 12px}
     .section-head{display:flex;justify-content:space-between;align-items:center}
     .actions{display:flex;gap:10px}
+
+    /* Form */
     .label{font-size:14px;color:var(--text-1);margin-bottom:8px;display:block}
-    .input{width:100%;background:#12151b;color:var(--text-0);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
-    .checkbox{width:20px;height:20px;cursor:pointer}
-    .btn{padding:10px 16px;border-radius:12px;font-weight:700;cursor:pointer;min-height:40px}
+    .input{width:100%;background:#12151b;color:var(--text-0);border:1px solid var(--border);border-radius:10px;padding:14px 16px;outline:none}
+    .input:focus{box-shadow:0 0 0 3px rgba(255,200,87,.25)}
+    .checkbox{width:20px;height:20px;cursor:pointer;margin-right:8px}
+
+    /* Buttons */
+    .btn{padding:10px 16px;border-radius:12px;font-weight:700;cursor:pointer;min-height:40px;transition:.15s}
+    .btn:active{transform:scale(.97)}
+    .btn[disabled]{opacity:.5;pointer-events:none}
     .btn-primary{background:var(--primary);color:#1b1b1b}
     .btn-secondary{background:#232834;color:var(--text-0)}
     .btn-danger{background:var(--danger);color:#fff}
     .btn-danger:hover{background:#b02a35}
-    .table{width:100%;border-spacing:0 8px}
+
+    .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+    .controls .grow{flex:1 1 260px}
+
+    /* Table */
+    .table{width:100%;border-collapse:separate;border-spacing:0 8px}
     .table thead th{color:var(--text-1);font-size:13px;font-weight:600;text-align:left;padding-bottom:4px}
     .table tbody tr{background:#141821;border:1px solid var(--border);border-radius:8px}
     .table tbody td{padding:10px}
@@ -54,43 +69,52 @@
     .pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
     .pill-yes{background:rgba(67,170,139,.18);color:#8fe0c9}
     .pill-no{background:rgba(230,57,70,.18);color:#ffb4ba}
+
     .footer{color:var(--text-1);font-size:12px;text-align:center;padding:14px 0}
+
+    /* Modal */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:100}
-    .modal{background:var(--card);padding:20px;border-radius:var(--radius-12);text-align:center;max-width:340px;width:90%}
+    .modal{background:var(--card);padding:20px;border-radius:var(--radius-12);text-align:center;max-width:360px;width:90%}
+    .modal h3{margin:0 0 10px;font-family:Oswald,sans-serif;font-size:20px}
+    .modal p{margin:0 0 16px;color:var(--text-1)}
+    .modal-actions{display:flex;gap:10px;justify-content:center}
   </style>
 </head>
 <body>
   <div class="container stack-20">
     <!-- Language toggle -->
-    <div id="lang-toggle" class="lang-toggle">
+    <div id="lang-toggle" class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language EN/DE">
       <span>EN</span>
-      <div id="switch" class="switch"></div>
+      <div id="switch" class="switch" aria-hidden="true"></div>
       <span>DE</span>
     </div>
 
     <header class="hero-logo"><img src="Logo.png" alt="McFatty's Food Tracker logo"></header>
 
-    <section class="section stack-16">
-      <h2 data-i18n="addTitle">Add item</h2>
+    <section class="section stack-16" aria-labelledby="addItem">
+      <h2 id="addItem" data-i18n="addTitle">Add item</h2>
       <div class="controls">
         <div class="grow">
           <label for="food-name" class="label" data-i18n="foodLabel">Food item name</label>
-          <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger">
+          <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" autocomplete="off">
         </div>
-        <button id="add-button" class="btn btn-primary" data-i18n="addBtn">Add to log</button>
+        <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
       </div>
-      <label><input id="contains-dairy" type="checkbox" class="checkbox"><span data-i18n="dairyLabel">Contains dairy</span></label>
+      <label style="display:flex;align-items:center;margin-top:8px;">
+        <input id="contains-dairy" type="checkbox" class="checkbox">
+        <span data-i18n="dairyLabel">Contains dairy</span>
+      </label>
     </section>
 
-    <section class="section stack-16">
+    <section class="section stack-16" aria-labelledby="todaysLog">
       <div class="section-head">
-        <h2 data-i18n="logTitle">Today’s log</h2>
+        <h2 id="todaysLog" data-i18n="logTitle">Today’s log</h2>
         <div class="actions">
-          <button id="export-button" class="btn btn-secondary" data-i18n="exportBtn">Export</button>
-          <button id="clear-all" class="btn btn-danger" data-i18n="clearAllBtn">Clear all</button>
+          <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
+          <button id="clear-all" class="btn btn-danger" type="button" data-i18n="clearAllBtn">Clear all</button>
         </div>
       </div>
-      <table class="table">
+      <table class="table" aria-describedby="todaysLog">
         <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thDairy">Dairy</th><th></th></tr></thead>
         <tbody id="log-body"></tbody>
       </table>
@@ -99,64 +123,190 @@
     <footer class="footer" data-i18n="footerText">Designed and created by Burrow · 2025</footer>
   </div>
 
-  <!-- Modal -->
-  <div class="modal-backdrop" id="confirm-modal">
+  <!-- Clear confirmation modal -->
+  <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
     <div class="modal">
-      <h3 data-i18n="modalTitle">Clear all logs?</h3>
-      <p data-i18n="modalDesc">Are you sure you want to clear today’s log?</p>
-      <button id="cancel-clear" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
-      <button id="confirm-clear" class="btn btn-danger" data-i18n="confirmClearBtn">Yes, clear</button>
+      <h3 id="confirm-title" data-i18n="modalTitle">Clear all logs?</h3>
+      <p id="confirm-desc" data-i18n="modalDesc">Are you sure you want to clear today’s log? This cannot be undone.</p>
+      <div class="modal-actions">
+        <button id="cancel-clear" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
+        <button id="confirm-clear" class="btn btn-danger" data-i18n="confirmClearBtn">Yes, clear</button>
+      </div>
     </div>
   </div>
 
   <script>
-    const STORAGE_KEY='mcFattys.items.v1', LANG_KEY='mcFattys.lang.v1';
+    // Keys
+    const STORAGE_KEY='mcFattys.items.v1';
+    const LANG_KEY='mcFattys.lang.v1';
+
+    // Translations
     const i18n={
       en:{addTitle:"Add item",foodLabel:"Food item name",addBtn:"Add to log",dairyLabel:"Contains dairy",
           logTitle:"Today’s log",exportBtn:"Export",clearAllBtn:"Clear all",thItem:"Item",thDairy:"Dairy",
-          pillYes:"Yes",pillNo:"No",modalTitle:"Clear all logs?",modalDesc:"Are you sure you want to clear today’s log?",
-          cancelBtn:"Cancel",confirmClearBtn:"Yes, clear",footerText:"Designed and created by Burrow · 2025"},
+          pillYes:"Yes",pillNo:"No",modalTitle:"Clear all logs?",modalDesc:"Are you sure you want to clear today’s log? This cannot be undone.",
+          cancelBtn:"Cancel",confirmClearBtn:"Yes, clear",footerText:"Designed and created by Burrow · 2025",
+          csvItem:"Item",csvDairy:"Dairy"},
       de:{addTitle:"Eintrag hinzufügen",foodLabel:"Name des Lebensmittels",addBtn:"Zur Liste hinzufügen",dairyLabel:"Enthält Milchprodukte",
           logTitle:"Heutiges Protokoll",exportBtn:"Exportieren",clearAllBtn:"Alles löschen",thItem:"Artikel",thDairy:"Milchprodukte",
-          pillYes:"Ja",pillNo:"Nein",modalTitle:"Alle Einträge löschen?",modalDesc:"Möchtest du das heutige Protokoll wirklich löschen?",
-          cancelBtn:"Abbrechen",confirmClearBtn:"Ja, löschen",footerText:"Entworfen und erstellt von Burrow · 2025"}
+          pillYes:"Ja",pillNo:"Nein",modalTitle:"Alle Einträge löschen?",modalDesc:"Möchtest du das heutige Protokoll wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+          cancelBtn:"Abbrechen",confirmClearBtn:"Ja, löschen",footerText:"Entworfen und erstellt von Burrow · 2025",
+          csvItem:"Artikel",csvDairy:"Milchprodukte"}
     };
-    let lang='en';const state={items:[]};
-    const nameInput=document.getElementById('food-name'), dairyCheckbox=document.getElementById('contains-dairy');
-    const addBtn=document.getElementById('add-button'), exportBtn=document.getElementById('export-button');
-    const clearBtn=document.getElementById('clear-all'), tbody=document.getElementById('log-body');
-    const modal=document.getElementById('confirm-modal'), cancelClear=document.getElementById('cancel-clear'), confirmClear=document.getElementById('confirm-clear');
+
+    // State
+    const state={items:[]};
+    let lang='en';
+
+    // Elements
+    const nameInput=document.getElementById('food-name');
+    const dairyCheckbox=document.getElementById('contains-dairy');
+    const addBtn=document.getElementById('add-button');
+    const exportBtn=document.getElementById('export-button');
+    const clearBtn=document.getElementById('clear-all');
+    const tbody=document.getElementById('log-body');
+    const modal=document.getElementById('confirm-modal');
+    const cancelClear=document.getElementById('cancel-clear');
+    const confirmClear=document.getElementById('confirm-clear');
+    const langToggle=document.getElementById('lang-toggle');
     const switchEl=document.getElementById('switch');
 
-    function loadLang(){lang=localStorage.getItem(LANG_KEY)||'en';}
-    function saveLang(){localStorage.setItem(LANG_KEY,lang);}
+    // Storage helpers
+    function loadItems(){
+      try{
+        const raw=localStorage.getItem(STORAGE_KEY);
+        if(raw){
+          const parsed=JSON.parse(raw);
+          if(Array.isArray(parsed)) state.items=parsed.filter(x=>x&&typeof x.name==='string').map(x=>({name:x.name,dairy:!!x.dairy}));
+        }
+      }catch{/* ignore */}
+    }
+    function saveItems(){
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items)); }catch{}
+    }
+
+    function loadLang(){
+      const saved=localStorage.getItem(LANG_KEY);
+      lang=saved==='de'?'de':'en';
+      document.documentElement.lang=lang;
+    }
+    function saveLang(){
+      try{ localStorage.setItem(LANG_KEY,lang); }catch{}
+      document.documentElement.lang=lang;
+    }
+
+    // UI text apply
     function applyI18n(){
       const t=i18n[lang];
-      document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t[el.getAttribute('data-i18n')];});
-      render();switchEl.classList.toggle('active',lang==='de');
+      document.querySelectorAll('[data-i18n]').forEach(el=>{
+        const key=el.getAttribute('data-i18n');
+        if(t[key]!==undefined) el.textContent=t[key];
+      });
+      // Placeholder sample
+      nameInput.placeholder = lang==='de'?'z. B. Cheeseburger':'e.g., Cheeseburger';
+      switchEl.classList.toggle('active', lang==='de');
+      render(); // updates pill text and row buttons
     }
+
+    // Render
     function render(){
-      tbody.innerHTML='';
       const t=i18n[lang];
+      tbody.innerHTML='';
       state.items.forEach((item,idx)=>{
         const tr=document.createElement('tr');
-        tr.innerHTML=`<td>${item.name}</td>
-          <td><span class="pill ${item.dairy?'pill-yes':'pill-no'}">${item.dairy?t.pillYes:t.pillNo}</span></td>
-          <td class="row-actions"><button class="btn btn-danger">${lang==='de'?'Entfernen':'Remove'}</button></td>`;
-        tr.querySelector('button').onclick=()=>{state.items.splice(idx,1);save();render();};
+
+        const tdName=document.createElement('td');
+        tdName.textContent=item.name;
+
+        const tdDairy=document.createElement('td');
+        const chip=document.createElement('span');
+        chip.className='pill ' + (item.dairy?'pill-yes':'pill-no');
+        chip.textContent=item.dairy?t.pillYes:t.pillNo;
+        tdDairy.appendChild(chip);
+
+        const tdActions=document.createElement('td');
+        tdActions.className='row-actions';
+        const rm=document.createElement('button');
+        rm.className='btn btn-danger';
+        rm.type='button';
+        rm.textContent=lang==='de'?'Entfernen':'Remove';
+        rm.setAttribute('aria-label',(lang==='de'?'Entfernen ':'Remove ')+item.name);
+        rm.addEventListener('click',()=>{ // ONLY user-initiated remove clears
+          state.items.splice(idx,1);
+          saveItems();
+          render();
+        });
+        tdActions.appendChild(rm);
+
+        tr.appendChild(tdName);
+        tr.appendChild(tdDairy);
+        tr.appendChild(tdActions);
         tbody.appendChild(tr);
       });
     }
-    function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state.items));}
-    function load(){state.items=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');}
-    function addItem(){const name=nameInput.value.trim();if(!name)return;state.items.push({name,dairy:dairyCheckbox.checked});save();render();nameInput.value='';dairyCheckbox.checked=false;}
-    function exportCSV(){if(!state.items.length)return;const t=i18n[lang];const rows=[[t.thItem,t.thDairy],...state.items.map(i=>[i.name,i.dairy?t.pillYes:t.pillNo])];const csv=rows.map(r=>r.join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='mcFattys-log.csv';a.click();state.items.length=0;save();render();}
-    addBtn.onclick=addItem;nameInput.onkeydown=e=>{if(e.key==='Enter')addItem();};
-    exportBtn.onclick=exportCSV;clearBtn.onclick=()=>{modal.style.display='flex';};
-    cancelClear.onclick=()=>modal.style.display='none';confirmClear.onclick=()=>{state.items.length=0;save();render();modal.style.display='none';};
-    document.getElementById('lang-toggle').onclick=()=>{lang=lang==='en'?'de':'en';saveLang();applyI18n();};
 
-    load();loadLang();applyI18n();render();
+    // Actions (only these mutate data)
+    function addItem(){
+      const name=(nameInput.value||'').trim();
+      if(!name){ nameInput.focus(); return; }
+      state.items.push({name, dairy:!!dairyCheckbox.checked});
+      saveItems();
+      render();
+      nameInput.value=''; dairyCheckbox.checked=false; nameInput.focus();
+    }
+
+    function exportCSV(){
+      if(!state.items.length) return;
+      const t=i18n[lang];
+      const rows=[[t.csvItem,t.csvDairy], ...state.items.map(i=>[i.name, i.dairy? t.pillYes : t.pillNo])];
+      const csv=rows.map(r=>r.map(f=>`"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
+
+      // Create and trigger download
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url; a.download='mcFattys-log.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+
+      // Clear AFTER export (by design per your requirement)
+      state.items.length=0;
+      saveItems();
+      render();
+    }
+
+    // Clear-all via modal (user-initiated)
+    function openModal(){ modal.style.display='flex'; }
+    function closeModal(){ modal.style.display='none'; }
+    function clearAllNow(){
+      state.items.length=0;
+      saveItems();
+      render();
+    }
+
+    // Events
+    addBtn.addEventListener('click', addItem);
+    nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') addItem(); });
+
+    exportBtn.addEventListener('click', exportCSV);
+
+    clearBtn.addEventListener('click', openModal);
+    cancelClear.addEventListener('click', closeModal);
+    confirmClear.addEventListener('click', ()=>{ clearAllNow(); closeModal(); });
+
+    langToggle.addEventListener('click', ()=>{
+      lang = (lang==='en') ? 'de' : 'en';
+      saveLang();
+      applyI18n();
+    });
+    langToggle.addEventListener('keydown', e=>{
+      if(e.key==='Enter' || e.key===' ') { e.preventDefault(); langToggle.click(); }
+    });
+
+    // Init
+    loadLang();
+    loadItems();
+    applyI18n(); // calls render()
   </script>
 </body>
 </html>
