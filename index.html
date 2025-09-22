@@ -4,9 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>McFatty's</title>
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- PWA manifest + meta -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0e1620">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+
   <style>
     :root{
       --bg:#0e1620;        /* dark navy */
@@ -42,7 +50,7 @@
 <body>
   <div class="wrap">
 
-    <!-- Logo wrapped in card div, no extra marker -->
+    <!-- Logo wrapped in card -->
     <div class="card" style="margin-bottom:16px; text-align:center">
       <img src="logo.png" alt="McFatty's Food Tracker" class="logo">
     </div>
@@ -80,5 +88,12 @@
   </div>
 
   <script src="app.js" defer></script>
+
+  <!-- Register service worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    }
+  </script>
 </body>
 </html>
