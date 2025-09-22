@@ -34,7 +34,7 @@
     .stack-16 > *+*{margin-top:16px}
     .stack-20 > *+*{margin-top:20px}
 
-    /* Language toggle switch */
+    /* Language toggle switch (EN | DE) */
     .lang-toggle{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
     .lang-toggle span{font-size:12px;font-weight:700}
     .switch{position:relative;width:44px;height:24px;background:#232834;border-radius:12px;border:1px solid var(--border);transition:.3s;box-shadow:var(--shadow) inset 0 0 4px rgba(0,0,0,.3)}
@@ -42,9 +42,10 @@
     .switch.active{background:#3b3f4a}
     .switch.active::after{left:22px}
 
-    /* Install button */
+    /* Install button (visible by default; JS hides if installed) */
     .install-btn{position:absolute;top:10px;right:10px;display:inline-flex;align-items:center;gap:8px}
 
+    /* Buttons */
     .btn{padding:10px 16px;border-radius:12px;font-weight:700;cursor:pointer;min-height:40px;transition:.15s;border:1px solid transparent}
     .btn:active{transform:scale(.97)}
     .btn[disabled]{opacity:.5;pointer-events:none}
@@ -53,7 +54,7 @@
     .btn-danger{background:var(--danger);color:#fff}
     .btn-danger:hover{background:#b02a35}
 
-    /* Logo */
+    /* Logo (smaller) */
     .hero-logo{background:var(--bg-1);border-radius:var(--radius-12);box-shadow:var(--shadow);padding:8px}
     .hero-logo img{width:100%;max-width:480px;display:block;margin:0 auto}
 
@@ -92,12 +93,10 @@
 
     /* Install success banner */
     .install-banner{
-      position:fixed;
-      bottom:20px;left:50%;transform:translateX(-50%);
+      position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
       background:var(--primary);color:#000;
       padding:12px 20px;border-radius:var(--radius-12);
-      box-shadow:var(--shadow);
-      font-weight:700;font-size:14px;
+      box-shadow:var(--shadow);font-weight:700;font-size:14px;
       display:none;z-index:200;
     }
   </style>
@@ -105,9 +104,9 @@
 <body>
   <div class="container stack-20">
     <!-- Language toggle -->
-    <div id="lang-toggle" class="lang-toggle" role="button" tabindex="0">
+    <div id="lang-toggle" class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language EN/DE">
       <span>EN</span>
-      <div id="switch" class="switch"></div>
+      <div id="switch" class="switch" aria-hidden="true"></div>
       <span>DE</span>
     </div>
 
@@ -116,7 +115,36 @@
 
     <header class="hero-logo"><img src="Logo.png" alt="McFatty's Food Tracker logo"></header>
 
-    <!-- … sections unchanged … -->
+    <!-- ADD ITEM -->
+    <section class="section stack-16" aria-labelledby="addItem">
+      <h2 id="addItem" data-i18n="addTitle">Add item</h2>
+      <div class="controls">
+        <div class="grow">
+          <label for="food-name" class="label" data-i18n="foodLabel">Food item name</label>
+          <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" autocomplete="off">
+        </div>
+        <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
+      </div>
+      <label style="display:flex;align-items:center;margin-top:8px;">
+        <input id="contains-dairy" type="checkbox" class="checkbox">
+        <span data-i18n="dairyLabel">Contains dairy</span>
+      </label>
+    </section>
+
+    <!-- LOG -->
+    <section class="section stack-16" aria-labelledby="todaysLog">
+      <div class="section-head">
+        <h2 id="todaysLog" data-i18n="logTitle">Today’s log</h2>
+        <div class="actions">
+          <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
+          <button id="clear-all" class="btn btn-danger" type="button" data-i18n="clearAllBtn">Clear all</button>
+        </div>
+      </div>
+      <table class="table" aria-describedby="todaysLog">
+        <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thDairy">Dairy</th><th></th></tr></thead>
+        <tbody id="log-body"></tbody>
+      </table>
+    </section>
 
     <footer class="footer" data-i18n="footerText">Designed and created by Burrow · 2025</footer>
   </div>
@@ -124,39 +152,37 @@
   <!-- Install success banner -->
   <div id="install-banner" class="install-banner">✅ Installed to home screen</div>
 
-  <!-- Clear confirmation modal + iOS help modal unchanged … -->
+  <!-- Clear confirmation modal -->
+  <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
+    <div class="modal">
+      <h3 id="confirm-title" data-i18n="modalTitle">Clear all logs?</h3>
+      <p id="confirm-desc" data-i18n="modalDesc">Are you sure you want to clear today’s log? This cannot be undone.</p>
+      <div class="modal-actions">
+        <button id="cancel-clear" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
+        <button id="confirm-clear" class="btn btn-danger" data-i18n="confirmClearBtn">Yes, clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- iOS Safari help modal for install -->
+  <div id="ios-help" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="ios-help-title" aria-describedby="ios-help-desc">
+    <div class="modal">
+      <h3 id="ios-help-title">Install on Safari</h3>
+      <p id="ios-help-desc">iPhone/iPad: Share → Add to Home Screen → Add. On Mac Safari: File → Add to Dock.</p>
+      <div class="modal-actions">
+        <button id="ios-help-close" class="btn btn-secondary">OK</button>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // … existing app code …
+    // Keys
+    const STORAGE_KEY='mcFattys.items.v1';
+    const LANG_KEY='mcFattys.lang.v1';
 
-    // ===== PWA install flow =====
-    let deferredPrompt=null;
-    const installBtn=document.getElementById('pwa-install');
-    const banner=document.getElementById('install-banner');
-
-    // Show Chromium prompt
-    window.addEventListener('beforeinstallprompt',(e)=>{
-      e.preventDefault();
-      deferredPrompt=e;
-      installBtn.style.display='inline-flex';
-    });
-
-    installBtn.addEventListener('click', async ()=>{
-      if(deferredPrompt){
-        deferredPrompt.prompt();
-        try{ await deferredPrompt.userChoice; }catch(_){}
-        deferredPrompt=null;
-      }else{
-        // Safari fallback: show your existing iOS help modal
-        document.getElementById('ios-help').style.display='flex';
-      }
-    });
-
-    // Show banner when appinstalled event fires
-    window.addEventListener('appinstalled', ()=>{
-      banner.style.display='block';
-      setTimeout(()=>banner.style.display='none',3000);
-    });
-  </script>
-</body>
-</html>
+    // Translations
+    const i18n={
+      en:{addTitle:"Add item",foodLabel:"Food item name",addBtn:"Add to log",dairyLabel:"Contains dairy",
+          logTitle:"Today’s log",exportBtn:"Export",clearAllBtn:"Clear all",thItem:"Item",thDairy:"Dairy",
+          pillYes:"Yes",pillNo:"No",modalTitle:"Clear all logs?",modalDesc:"Are you sure you want to clear today’s log? This cannot be undone.",
+          cancelBtn:"Cancel",confirmClearBtn:"Yes, clear",footerText:"Designed and created by Burrow · 2025
