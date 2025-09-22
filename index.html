@@ -5,9 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>McFatty's Food Tracker</title>
 
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0f1115">
+
+  <!-- iOS Safari -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <link rel="apple-touch-icon" href="Logo.png">
 
   <style>
     :root{
@@ -32,6 +42,16 @@
     .switch.active{background:#3b3f4a}
     .switch.active::after{left:22px}
 
+    /* Install button (top right) */
+    .install-btn{position:absolute;top:10px;right:10px;display:none;align-items:center;gap:8px}
+    .btn{padding:10px 16px;border-radius:12px;font-weight:700;cursor:pointer;min-height:40px;transition:.15s;border:1px solid transparent}
+    .btn:active{transform:scale(.97)}
+    .btn[disabled]{opacity:.5;pointer-events:none}
+    .btn-primary{background:var(--primary);color:#1b1b1b}
+    .btn-secondary{background:#232834;color:var(--text-0);border-color:#2d3441}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn-danger:hover{background:#b02a35}
+
     /* Logo (smaller) */
     .hero-logo{background:var(--bg-1);border-radius:var(--radius-12);box-shadow:var(--shadow);padding:8px}
     .hero-logo img{width:100%;max-width:480px;display:block;margin:0 auto}
@@ -47,16 +67,6 @@
     .input{width:100%;background:#12151b;color:var(--text-0);border:1px solid var(--border);border-radius:10px;padding:14px 16px;outline:none}
     .input:focus{box-shadow:0 0 0 3px rgba(255,200,87,.25)}
     .checkbox{width:20px;height:20px;cursor:pointer;margin-right:8px}
-
-    /* Buttons */
-    .btn{padding:10px 16px;border-radius:12px;font-weight:700;cursor:pointer;min-height:40px;transition:.15s}
-    .btn:active{transform:scale(.97)}
-    .btn[disabled]{opacity:.5;pointer-events:none}
-    .btn-primary{background:var(--primary);color:#1b1b1b}
-    .btn-secondary{background:#232834;color:var(--text-0)}
-    .btn-danger{background:var(--danger);color:#fff}
-    .btn-danger:hover{background:#b02a35}
-
     .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
     .controls .grow{flex:1 1 260px}
 
@@ -72,7 +82,7 @@
 
     .footer{color:var(--text-1);font-size:12px;text-align:center;padding:14px 0}
 
-    /* Modal */
+    /* Modal base */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:100}
     .modal{background:var(--card);padding:20px;border-radius:var(--radius-12);text-align:center;max-width:360px;width:90%}
     .modal h3{margin:0 0 10px;font-family:Oswald,sans-serif;font-size:20px}
@@ -88,6 +98,9 @@
       <div id="switch" class="switch" aria-hidden="true"></div>
       <span>DE</span>
     </div>
+
+    <!-- Install button -->
+    <button id="pwa-install" class="btn btn-secondary install-btn" type="button">Install</button>
 
     <header class="hero-logo"><img src="Logo.png" alt="McFatty's Food Tracker logo"></header>
 
@@ -135,6 +148,17 @@
     </div>
   </div>
 
+  <!-- iOS Safari help modal for install -->
+  <div id="ios-help" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="ios-help-title" aria-describedby="ios-help-desc">
+    <div class="modal">
+      <h3 id="ios-help-title">Install on Safari</h3>
+      <p id="ios-help-desc">iPhone or iPad: tap Share → Add to Home Screen → Add. On Mac Safari: File → Add to Dock.</p>
+      <div class="modal-actions">
+        <button id="ios-help-close" class="btn btn-secondary">OK</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Keys
     const STORAGE_KEY='mcFattys.items.v1';
@@ -171,6 +195,12 @@
     const langToggle=document.getElementById('lang-toggle');
     const switchEl=document.getElementById('switch');
 
+    // PWA elements
+    const installBtn=document.getElementById('pwa-install');
+    const iosHelp=document.getElementById('ios-help');
+    const iosHelpClose=document.getElementById('ios-help-close');
+    let deferredPrompt=null;
+
     // Storage helpers
     function loadItems(){
       try{
@@ -179,7 +209,7 @@
           const parsed=JSON.parse(raw);
           if(Array.isArray(parsed)) state.items=parsed.filter(x=>x&&typeof x.name==='string').map(x=>({name:x.name,dairy:!!x.dairy}));
         }
-      }catch{/* ignore */}
+      }catch{}
     }
     function saveItems(){
       try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items)); }catch{}
@@ -202,10 +232,9 @@
         const key=el.getAttribute('data-i18n');
         if(t[key]!==undefined) el.textContent=t[key];
       });
-      // Placeholder sample
       nameInput.placeholder = lang==='de'?'z. B. Cheeseburger':'e.g., Cheeseburger';
       switchEl.classList.toggle('active', lang==='de');
-      render(); // updates pill text and row buttons
+      render();
     }
 
     // Render
@@ -231,7 +260,7 @@
         rm.type='button';
         rm.textContent=lang==='de'?'Entfernen':'Remove';
         rm.setAttribute('aria-label',(lang==='de'?'Entfernen ':'Remove ')+item.name);
-        rm.addEventListener('click',()=>{ // ONLY user-initiated remove clears
+        rm.addEventListener('click',()=>{
           state.items.splice(idx,1);
           saveItems();
           render();
@@ -245,7 +274,7 @@
       });
     }
 
-    // Actions (only these mutate data)
+    // Actions
     function addItem(){
       const name=(nameInput.value||'').trim();
       if(!name){ nameInput.focus(); return; }
@@ -260,53 +289,87 @@
       const t=i18n[lang];
       const rows=[[t.csvItem,t.csvDairy], ...state.items.map(i=>[i.name, i.dairy? t.pillYes : t.pillNo])];
       const csv=rows.map(r=>r.map(f=>`"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
-
-      // Create and trigger download
       const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
       const url=URL.createObjectURL(blob);
       const a=document.createElement('a');
       a.href=url; a.download='mcFattys-log.csv';
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
-
-      // Clear AFTER export (by design per your requirement)
-      state.items.length=0;
-      saveItems();
-      render();
+      // Clear after export by design
+      state.items.length=0; saveItems(); render();
     }
 
-    // Clear-all via modal (user-initiated)
+    // Modal control
     function openModal(){ modal.style.display='flex'; }
     function closeModal(){ modal.style.display='none'; }
-    function clearAllNow(){
-      state.items.length=0;
-      saveItems();
-      render();
-    }
+    function clearAllNow(){ state.items.length=0; saveItems(); render(); }
 
-    // Events
+    // Language toggle events
+    langToggle.addEventListener('click', ()=>{
+      lang = (lang==='en') ? 'de' : 'en';
+      saveLang(); applyI18n();
+    });
+    langToggle.addEventListener('keydown', e=>{
+      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); langToggle.click(); }
+    });
+
+    // Buttons
     addBtn.addEventListener('click', addItem);
     nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') addItem(); });
-
     exportBtn.addEventListener('click', exportCSV);
-
     clearBtn.addEventListener('click', openModal);
     cancelClear.addEventListener('click', closeModal);
     confirmClear.addEventListener('click', ()=>{ clearAllNow(); closeModal(); });
 
-    langToggle.addEventListener('click', ()=>{
-      lang = (lang==='en') ? 'de' : 'en';
-      saveLang();
-      applyI18n();
+    // PWA: Service worker and install flow
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+    }
+
+    // beforeinstallprompt for Chromium
+    window.addEventListener('beforeinstallprompt',(e)=>{
+      e.preventDefault();
+      deferredPrompt=e;
+      installBtn.style.display='inline-flex';
     });
-    langToggle.addEventListener('keydown', e=>{
-      if(e.key==='Enter' || e.key===' ') { e.preventDefault(); langToggle.click(); }
+
+    function isStandalone(){
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+    }
+    function isSafari(){
+      return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    }
+
+    // Install button behavior
+    installBtn.addEventListener('click', async ()=>{
+      if(deferredPrompt){
+        deferredPrompt.prompt();
+        try{ await deferredPrompt.userChoice; }catch(_){}
+        deferredPrompt=null;
+      }else if(isSafari()){
+        // Show instructions modal for Safari
+        iosHelp.style.display='flex';
+      }
+    });
+    iosHelpClose.addEventListener('click', ()=>{ iosHelp.style.display='none'; });
+
+    window.addEventListener('DOMContentLoaded', ()=>{
+      if(isStandalone()){
+        installBtn.style.display='none';
+      }else{
+        // On Safari, show Install button to surface instructions
+        if(isSafari()) installBtn.style.display='inline-flex';
+      }
+    });
+    // Hide button when display mode changes
+    window.matchMedia('(display-mode: standalone)').addEventListener?.('change', e=>{
+      installBtn.style.display = e.matches ? 'none' : 'inline-flex';
     });
 
     // Init
     loadLang();
     loadItems();
-    applyI18n(); // calls render()
+    applyI18n(); /* calls render */
   </script>
 </body>
 </html>
