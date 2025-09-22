@@ -1,4 +1,3 @@
-// sw.js
 const CACHE = 'mcfattys-v3';
 const ASSETS = [
   './',
@@ -18,17 +17,19 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
 });
 
-// Network-first for HTML, cache-first for static
+// Network first for HTML, cache first for assets
 self.addEventListener('fetch', (e) => {
   const req = e.request;
-  const url = new URL(req.url);
   if (req.method !== 'GET') return;
 
-  if (req.headers.get('accept')?.includes('text/html')) {
+  const isHTML = req.headers.get('accept')?.includes('text/html');
+  if (isHTML) {
     e.respondWith(
       fetch(req).then(res => {
         const copy = res.clone();
