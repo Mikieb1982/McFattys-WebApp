@@ -11,137 +11,73 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
 
   <style>
-    /* === McFatty's UI refresh - single file === */
     :root{
-      --bg-0:#0f1115;
-      --bg-1:#171a21;
-      --card:#1c2028;
-      --text-0:#f2f3f5;
-      --text-1:#c9ced6;
-      --primary:#ffc857;        /* warm diner yellow */
-      --primary-600:#e6b84f;
-      --danger:#e63946;         /* destructive */
-      --danger-600:#c92f3a;
-      --ok:#43aa8b;
-      --border:#2a2f39;
-      --divider:rgba(255,255,255,.12);
-      --focus:#ffc857;
-      --shadow:0 8px 20px rgba(0,0,0,.35);
-      --radius-12:12px;
+      --bg-0:#0f1115; --bg-1:#171a21; --card:#1c2028;
+      --text-0:#f2f3f5; --text-1:#c9ced6;
+      --primary:#ffc857; --primary-600:#e6b84f;
+      --danger:#e63946; --danger-600:#c92f3a;
+      --border:#2a2f39; --divider:rgba(255,255,255,.12);
+      --shadow:0 8px 20px rgba(0,0,0,.35); --radius-12:12px;
     }
-
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    html,body{background:var(--bg-0);color:var(--text-0)}
-    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.45}
-
-    /* Container and spacing helpers */
+    *{box-sizing:border-box} html,body{margin:0;height:100%;background:var(--bg-0);color:var(--text-0);font-family:Inter,sans-serif;line-height:1.45}
     .container{max-width:860px;margin:0 auto;padding:16px 16px 28px}
-    .stack-16 > * + *{margin-top:16px}
-    .stack-24 > * + *{margin-top:24px}
-
-    /* Hero */
+    .stack-16 > *+*{margin-top:16px} .stack-24 > *+*{margin-top:24px}
     .hero-logo{background:var(--bg-1);border-radius:var(--radius-12);box-shadow:var(--shadow);padding:16px}
     .hero-logo img{width:100%;max-width:720px;display:block;margin:0 auto}
-
-    /* Sections */
     .section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-12);box-shadow:var(--shadow);padding:20px}
-    .section h2{font-family:Oswald, Inter, sans-serif;font-weight:700;letter-spacing:.5px;font-size:22px;color:var(--text-0);margin:0 0 14px}
+    .section h2{font-family:Oswald,Inter,sans-serif;font-weight:700;font-size:22px;margin:0 0 14px}
     .section-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
     .actions{display:flex;gap:10px}
-
-    /* Labels and inputs */
     .label{font-size:14px;color:var(--text-1);margin-bottom:8px;display:block}
-    .input{
-      width:100%;background:#12151b;color:var(--text-0);
-      border:1px solid var(--border);border-radius:10px;padding:14px 16px;
-      outline:0;transition:border-color .2s ease, box-shadow .2s ease
-    }
-    .input:focus{border-color:var(--focus);box-shadow:0 0 0 3px rgba(255,200,87,.25)}
+    .input{width:100%;background:#12151b;color:var(--text-0);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+    .input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(255,200,87,.25);outline:none}
     .dairy-row{display:flex;align-items:center;gap:10px;margin-top:10px}
-
-    /* Checkbox */
-    .checkbox{
-      appearance:none;width:22px;height:22px;border:2px solid var(--border);border-radius:6px;
-      display:inline-grid;place-content:center;background:#12151b;
-      transition:border-color .2s ease, background .2s ease, transform .1s ease;cursor:pointer
-    }
+    .checkbox{appearance:none;width:22px;height:22px;border:2px solid var(--border);border-radius:6px;display:grid;place-content:center;background:#12151b;cursor:pointer}
     .checkbox:checked{background:var(--primary);border-color:var(--primary-600)}
-    .checkbox:checked::after{content:"✓";font-weight:800;color:#1b1b1b;font-size:14px;line-height:1}
-    .checkbox:active{transform:scale(.96)}
-
-    /* Buttons */
-    .btn{
-      display:inline-flex;align-items:center;justify-content:center;gap:8px;
-      padding:12px 18px;border-radius:12px;border:1px solid transparent;
-      font-weight:700;letter-spacing:.2px;cursor:pointer;
-      transition:transform .06s ease, filter .2s ease, background .2s ease, border-color .2s ease;
-      min-height:44px;user-select:none
-    }
-    .btn:active{transform:scale(.98)}
-    .btn[disabled]{opacity:.5;pointer-events:none}
+    .checkbox:checked::after{content:"✓";color:#1b1b1b;font-weight:800;font-size:14px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 18px;border-radius:12px;font-weight:700;cursor:pointer;min-height:44px;transition:.15s}
+    .btn:active{transform:scale(.97)}
     .btn-primary{background:var(--primary);color:#1b1b1b}
     .btn-primary:hover{filter:brightness(.98)}
-    .btn-primary:focus{outline:0;box-shadow:0 0 0 3px rgba(255,200,87,.35)}
-    .btn-secondary{background:#232834;color:var(--text-0);border-color:#2d3441}
-    .btn-secondary:hover{filter:brightness(1.05)}
+    .btn-secondary{background:#232834;color:var(--text-0)}
     .btn-danger{background:var(--danger);color:#fff}
     .btn-danger:hover{background:var(--danger-600)}
-
-    /* Controls layout */
     .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
     .controls .grow{flex:1 1 260px}
-
-    /* Table */
-    table{width:100%}
     .table{width:100%;border-collapse:separate;border-spacing:0 10px}
-    .table thead th{text-align:left;color:var(--text-1);font-size:13px;font-weight:600;padding:0 12px 6px}
+    .table thead th{color:var(--text-1);font-size:13px;font-weight:600;padding:0 12px 6px;text-align:left}
     .table tbody tr{background:#141821;border:1px solid var(--border);border-radius:10px}
-    .table tbody td{padding:14px 12px;vertical-align:middle}
+    .table tbody td{padding:14px 12px}
     .row-actions{display:flex;justify-content:flex-end}
     .pill{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700}
-    .pill-yes{background:rgba(67,170,139,.18);color:#8fe0c9;border:1px solid rgba(67,170,139,.35)}
-    .pill-no{background:rgba(230,57,70,.18);color:#ffb4ba;border:1px solid rgba(230,57,70,.35)}
-
-    /* Misc */
+    .pill-yes{background:rgba(67,170,139,.18);color:#8fe0c9}
+    .pill-no{background:rgba(230,57,70,.18);color:#ffb4ba}
     .divider{height:1px;background:var(--divider);margin:12px 0}
-    .footer{color:var(--text-1);font-size:12px;text-align:center;opacity:.85;padding:18px 0}
-    :focus-visible{outline:3px solid rgba(255,200,87,.5);outline-offset:2px}
-
-    @media (min-width:680px){.section{padding:24px}.section h2{font-size:24px}}
-    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .footer{color:var(--text-1);font-size:12px;text-align:center;padding:18px 0}
+    /* Modal overlay */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:100}
+    .modal{background:var(--card);border-radius:var(--radius-12);box-shadow:var(--shadow);padding:24px;max-width:360px;width:90%;text-align:center}
+    .modal h3{margin:0 0 12px;font-family:Oswald,sans-serif;font-size:20px}
+    .modal p{margin:0 0 20px;color:var(--text-1)}
+    .modal-actions{display:flex;gap:12px;justify-content:center}
   </style>
 </head>
 <body>
   <div class="container stack-24">
+    <header class="hero-logo"><img src="logo.png" alt="McFatty's Food Tracker logo"></header>
 
-    <!-- Hero -->
-    <header class="hero-logo" role="banner" aria-label="App logo">
-      <img src="logo.png" alt="McFatty's Food Tracker logo">
-    </header>
-
-    <!-- Add item -->
     <section class="section stack-16" aria-labelledby="addItem">
       <h2 id="addItem">Add item</h2>
-
       <div class="controls">
         <div class="grow">
           <label for="food-name" class="label">Food item name</label>
           <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" autocomplete="off">
         </div>
-
-        <button id="add-button" class="btn btn-primary" type="button" aria-label="Add item to log">
-          Add to log
-        </button>
+        <button id="add-button" class="btn btn-primary" type="button">Add to log</button>
       </div>
-
-      <label class="dairy-row" for="contains-dairy">
-        <input id="contains-dairy" type="checkbox" class="checkbox">
-        <span class="label" style="margin:0">Contains dairy</span>
-      </label>
+      <label class="dairy-row"><input id="contains-dairy" type="checkbox" class="checkbox"><span class="label">Contains dairy</span></label>
     </section>
 
-    <!-- Log -->
     <section class="section stack-16" aria-labelledby="todaysLog">
       <div class="section-head">
         <h2 id="todaysLog">Today’s log</h2>
@@ -150,121 +86,69 @@
           <button id="clear-all" class="btn btn-danger" type="button">Clear all</button>
         </div>
       </div>
-
-      <div class="divider" role="separator"></div>
-
-      <table class="table" aria-describedby="todaysLog">
-        <thead>
-          <tr>
-            <th scope="col">Item</th>
-            <th scope="col">Dairy</th>
-            <th scope="col" class="sr-only">Actions</th>
-          </tr>
-        </thead>
-        <tbody id="log-body">
-          <!-- rows injected by JS -->
-        </tbody>
-      </table>
+      <div class="divider"></div>
+      <table class="table"><thead><tr><th>Item</th><th>Dairy</th><th></th></tr></thead><tbody id="log-body"></tbody></table>
     </section>
 
     <footer class="footer">Designed and created by Burrow · 2025</footer>
   </div>
 
-  <script>
-    /* Feature-parity logic only:
-       - Add item with dairy flag
-       - Remove item
-       - Export CSV
-       - Clear all
-    */
-    const state = { items: [] }; // { name: string, dairy: boolean }
+  <!-- Modal -->
+  <div class="modal-backdrop" id="confirm-modal">
+    <div class="modal">
+      <h3>Clear all logs?</h3>
+      <p>Are you sure you want to clear today’s log? This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button id="cancel-clear" class="btn btn-secondary">Cancel</button>
+        <button id="confirm-clear" class="btn btn-danger">Yes, clear</button>
+      </div>
+    </div>
+  </div>
 
-    // Elements
-    const nameInput = document.getElementById('food-name');
-    const dairyCheckbox = document.getElementById('contains-dairy');
-    const addBtn = document.getElementById('add-button');
-    const exportBtn = document.getElementById('export-button');
-    const clearBtn = document.getElementById('clear-all');
-    const tbody = document.getElementById('log-body');
+  <script>
+    const state = { items: [] };
+    const nameInput=document.getElementById('food-name');
+    const dairyCheckbox=document.getElementById('contains-dairy');
+    const addBtn=document.getElementById('add-button');
+    const exportBtn=document.getElementById('export-button');
+    const clearBtn=document.getElementById('clear-all');
+    const tbody=document.getElementById('log-body');
+    const modal=document.getElementById('confirm-modal');
+    const cancelClear=document.getElementById('cancel-clear');
+    const confirmClear=document.getElementById('confirm-clear');
 
     function render(){
-      tbody.innerHTML = '';
-      state.items.forEach((item, idx) => {
-        const tr = document.createElement('tr');
-
-        const tdName = document.createElement('td');
-        tdName.textContent = item.name;
-
-        const tdDairy = document.createElement('td');
-        const chip = document.createElement('span');
-        chip.className = 'pill ' + (item.dairy ? 'pill-yes' : 'pill-no');
-        chip.textContent = item.dairy ? 'Yes' : 'No';
-        tdDairy.appendChild(chip);
-
-        const tdActions = document.createElement('td');
-        tdActions.className = 'row-actions';
-        const rm = document.createElement('button');
-        rm.className = 'btn btn-danger';
-        rm.type = 'button';
-        rm.setAttribute('aria-label', 'Remove ' + item.name);
-        rm.textContent = 'Remove';
-        rm.addEventListener('click', () => removeItem(idx));
-        tdActions.appendChild(rm);
-
-        tr.appendChild(tdName);
-        tr.appendChild(tdDairy);
-        tr.appendChild(tdActions);
+      tbody.innerHTML='';
+      state.items.forEach((item,idx)=>{
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td>${item.name}</td>
+                      <td><span class="pill ${item.dairy?'pill-yes':'pill-no'}">${item.dairy?'Yes':'No'}</span></td>
+                      <td class="row-actions"><button class="btn btn-danger" type="button">Remove</button></td>`;
+        tr.querySelector('button').onclick=()=>{state.items.splice(idx,1);render()};
         tbody.appendChild(tr);
       });
     }
-
     function addItem(){
-      const name = (nameInput.value || '').trim();
-      if(!name){
-        nameInput.focus();
-        nameInput.style.boxShadow = '0 0 0 6px rgba(230,57,70,.22)';
-        setTimeout(() => nameInput.style.boxShadow = '', 300);
-        return;
-      }
-      const dairy = !!dairyCheckbox.checked;
-      state.items.push({ name, dairy });
-      render();
-      nameInput.value = '';
-      dairyCheckbox.checked = false;
-      nameInput.style.boxShadow = '0 0 0 6px rgba(67,170,139,.22)';
-      setTimeout(() => nameInput.style.boxShadow = '', 350);
-      nameInput.focus();
+      const name=(nameInput.value||'').trim(); if(!name) return;
+      state.items.push({name,dairy:!!dairyCheckbox.checked});
+      nameInput.value=''; dairyCheckbox.checked=false; render();
     }
-
-    function removeItem(index){
-      state.items.splice(index, 1);
-      render();
-    }
-
-    function clearAll(){
-      if(!state.items.length) return;
-      state.items.length = 0;
-      render();
-    }
-
     function exportCSV(){
       if(!state.items.length) return;
-      const rows = [['Item','Dairy']];
-      state.items.forEach(i => rows.push([i.name, i.dairy ? 'Yes' : 'No']));
-      const csv = rows.map(r => r.map(f => `"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
-      const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'mcFattys-log.csv';
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
+      const rows=[['Item','Dairy'],...state.items.map(i=>[i.name,i.dairy?'Yes':'No'])];
+      const csv=rows.map(r=>r.map(f=>`"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const url=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+      const a=document.createElement('a');a.href=url;a.download='mcFattys-log.csv';a.click();URL.revokeObjectURL(url);
     }
-
-    addBtn.addEventListener('click', addItem);
-    nameInput.addEventListener('keydown', e => { if(e.key === 'Enter') addItem(); });
-    exportBtn.addEventListener('click', exportCSV);
-    clearBtn.addEventListener('click', clearAll);
-
+    // Clear confirmation
+    clearBtn.onclick=()=>{modal.style.display='flex'};
+    cancelClear.onclick=()=>{modal.style.display='none'};
+    confirmClear.onclick=()=>{
+      state.items.length=0;render();modal.style.display='none';
+    };
+    addBtn.onclick=addItem;
+    nameInput.addEventListener('keydown',e=>{if(e.key==='Enter') addItem()});
+    exportBtn.onclick=exportCSV;
     render();
   </script>
 </body>
