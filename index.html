@@ -66,19 +66,16 @@
 
     <div class="w-full max-w-2xl mx-auto tracker-container text-white shadow-2xl rounded-lg p-6 md:p-10">
         
+        <!-- Header -->
         <header class="text-center mb-8">
-    <img src="./logo.png" alt="McFatty's Logo" class="h-48 w-48 sm:h-60 sm:w-60 object-contain mx-auto mb-4">
-    <div class="inline-block border-4 border-amber-400 px-6 py-2">
-        <h1 class="font-anton text-4xl sm:text-5xl text-white tracking-widest">McFATTY'S</h1>
-        <h2 class="font-oswald text-2xl sm:text-3xl text-amber-400 -mt-2">FOOD TRACKER</h2>
-    </div>
-</header>
+            <img src="./logo.png" alt="McFatty's Food Tracker Logo" class="h-48 w-48 sm:h-60 sm:w-60 object-contain mx-auto">
+        </header>
 
         <main class="space-y-8">
 
             <!-- Input Form -->
             <section class="bg-gray-800/50 p-6 rounded-lg">
-                <h3 class="font-anton text-3xl text-amber-400 mb-4">ADD ITEM</h3>
+                <h3 class="font-anton text-3xl text-amber-400 mb-4 tracking-wider">ADD ITEM</h3>
                 <form id="food-form" class="space-y-4">
                     <div>
                         <label for="name" class="block text-sm font-bold mb-2">Food Item Name</label>
@@ -97,7 +94,7 @@
             <!-- Food Log -->
             <section class="bg-gray-800/50 p-6 rounded-lg">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-anton text-3xl text-amber-400">TODAY'S LOG</h3>
+                    <h3 class="font-anton text-3xl text-amber-400 tracking-wider">TODAY'S LOG</h3>
                     <div class="flex items-center space-x-2">
                         <button id="export-csv" class="log-action-btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
                             Export
@@ -197,6 +194,8 @@
                 saveToStorage();
                 renderFoodList();
             };
+
+
 
             const handleListClick = (e) => {
                 if (e.target.classList.contains('delete-btn')) {
