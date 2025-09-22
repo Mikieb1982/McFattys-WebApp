@@ -348,4 +348,71 @@
         }
       }
       
-      cancelEditing(); // R
+      cancelEditing(); // Resets form
+    }
+
+    function startEditing(index) {
+        editingIndex = index;
+        const item = state.items[index];
+        nameInput.value = item.name;
+        dairyCheckbox.checked = item.dairy;
+        updateFormUI();
+        nameInput.focus();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelEditing() {
+        editingIndex = null;
+        nameInput.value = '';
+        dairyCheckbox.checked = false;
+        updateFormUI();
+    }
+
+    function updateFormUI() {
+        const t = i18n[lang];
+        const isEditing = editingIndex !== null;
+        formTitle.textContent = isEditing ? t.editTitle : t.addTitle;
+        addUpdateBtn.textContent = isEditing ? t.saveBtn : t.addBtn;
+        addUpdateBtn.classList.toggle('btn-info', isEditing);
+        addUpdateBtn.classList.toggle('btn-primary', !isEditing);
+        cancelEditBtn.classList.toggle('hidden', !isEditing);
+    }
+
+    function exportCSV(){
+      const t=i18n[lang];
+      if(!state.items.length) return;
+      try{
+        const rows=[[t.thTime, t.thItem,t.thDairy], ...state.items.map(i=>[i.timestamp, i.name, i.dairy? t.pillYes : t.pillNo])];
+        const csv=rows.map(r=>r.map(f=>`"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a'); a.href=url; a.download='mcFattys-log.csv';
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        showToast(t.toastExported, 1400);
+      }catch{ showToast('⚠️ Export failed', 1600); }
+    }
+
+    function openClearModal(){ modal.style.display='flex'; }
+    function closeClearModal(){ modal.style.display='none'; }
+    
+    addUpdateBtn.addEventListener('click', addOrUpdateItem);
+    cancelEditBtn.addEventListener('click', cancelEditing);
+    nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') addOrUpdateItem(); });
+    exportBtn.addEventListener('click', exportCSV);
+    clearBtn.addEventListener('click', openClearModal);
+    document.getElementById('cancel-clear').addEventListener('click', closeClearModal);
+    document.getElementById('confirm-clear').addEventListener('click', ()=>{ state.items.length=0; saveItems(); render(); closeClearModal(); });
+    langToggle.addEventListener('click', ()=>{ lang = (lang==='en') ? 'de' : 'en'; saveLang(); applyI18n(); });
+    langToggle.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); langToggle.click(); }});
+
+    if('serviceWorker' in navigator){ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); }
+    window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferredPrompt=e; if (!isStandalone()) installBtn.style.display='inline-flex'; });
+    installBtn.addEventListener('click', async ()=>{ if(deferredPrompt){ try{ deferredPrompt.prompt(); await deferredPrompt.userChoice; }catch{} deferredPrompt=null; installBtn.style.display='none'; }});
+    window.addEventListener('appinstalled', ()=>{ const t=i18n[lang]; showToast(t.toastInstalled, 2200); installBtn.style.display='none'; });
+    function isStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }
+    document.addEventListener('DOMContentLoaded', ()=>{ loadLang(); loadItems(); applyI18n(); });
+  </script>
+</body>
+</html>
+
+
