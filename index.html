@@ -17,11 +17,11 @@
 
   <style>
     :root{
-      --bg:#0e1620;        /* dark navy */
-      --card:#121b26;      /* panel */
+      --bg:#0e1620;
+      --card:#121b26;
       --text:#e9eef5;
       --muted:#9aa6b2;
-      --accent:#f7b500;    /* warm yellow for headings/buttons */
+      --accent:#f7b500;
       --danger:#e23a3a;
       --line:#2b3a4a;
     }
@@ -45,6 +45,21 @@
     tbody tr{border-top:1px solid var(--line)}
     .empty{color:var(--muted);padding:10px 2px}
     .actions{display:flex;gap:10px;flex-wrap:wrap}
+    /* Modal overlay */
+    .overlay {
+      position:fixed;
+      top:0; left:0; right:0; bottom:0;
+      background:rgba(0,0,0,0.6);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+    }
+    .modal {
+      max-width:400px;
+      width:90%;
+      padding:24px;
+    }
   </style>
 </head>
 <body>
@@ -87,8 +102,19 @@
     </div>
   </div>
 
-  <script src="app.js" defer></script>
+  <!-- Custom confirmation modal -->
+  <div id="confirmModal" class="overlay">
+    <div class="modal card">
+      <h2 style="margin-top:0">Confirm</h2>
+      <p>Do you really want to clear the entire log?</p>
+      <div class="actions" style="margin-top:16px; display:flex; gap:10px; justify-content:flex-end">
+        <button id="cancelClear" class="ghost">Cancel</button>
+        <button id="confirmClear" class="danger">Clear</button>
+      </div>
+    </div>
+  </div>
 
+  <script src="app.js" defer></script>
   <!-- Register service worker -->
   <script>
     if ('serviceWorker' in navigator) {
