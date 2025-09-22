@@ -1,65 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
--    <title>McFatty's Food Tracker</title>
-+    <title>McFatty's</title>
-     <script src="https://cdn.tailwindcss.com"></script>
-     <link rel="manifest" href="manifest.webmanifest">
-     <meta name="theme-color" content="#0A84FF">
-+    <meta name="apple-mobile-web-app-capable" content="yes">
-+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-+    <meta name="apple-mobile-web-app-title" content="McFatty's">
-+    <link rel="apple-touch-icon" href="icons/icon-192.png">
-     <style>
--      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif; }
-+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif; }
-+      /* Red-green colour-blind friendly palette with strong contrast */
-+      :root{
-+        --bg:#0b0b0d;
-+        --card:#141418;
-+        --text:#f2f3f5;
-+        --muted:#b8bec6;
-+        --accent:#0A84FF;     /* Blue - safe */
-+        --accent-2:#FF7A00;   /* Orange - safe */
-+      }
-+      @media (prefers-color-scheme: light){
-+        :root{ --bg:#f6f7f9; --card:#ffffff; --text:#111319; --muted:#4a5160; }
-+      }
-+      .btn{ padding:0.75rem 1rem; border-radius:12px; font-weight:600; display:inline-flex; gap:.5rem; align-items:center; }
-+      .btn-primary{ background:var(--accent); color:#fff; }
-+      .btn-ghost{ background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.12); }
-+      .card{ background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:16px; }
-+      .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-     </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>McFatty's</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0A84FF">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="McFatty's">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif; }
+    :root{
+      --bg:#0b0b0d;
+      --card:#141418;
+      --text:#f2f3f5;
+      --muted:#b8bec6;
+      --accent:#0A84FF;
+      --accent2:#FF7A00;
+    }
+    @media (prefers-color-scheme: light){
+      :root{ --bg:#f6f7f9; --card:#ffffff; --text:#111319; --muted:#4a5160; }
+    }
+    .btn{ padding:0.75rem 1rem; border-radius:12px; font-weight:600; display:inline-flex; gap:.5rem; align-items:center; }
+    .btn-primary{ background:var(--accent); color:#fff; }
+    .btn-ghost{ background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.12); }
+    .card{ background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:16px; }
+    .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+  </style>
 </head>
--<body class="min-h-screen bg-gray-100 text-gray-900">
-+<body class="min-h-screen" style="background:var(--bg); color:var(--text);">
-   <main class="max-w-2xl mx-auto px-4 py-6 space-y-6">
--    <h1 class="text-3xl font-bold text-center">McFatty's Food Tracker</h1>
-+    <!-- Title removed as requested. Keep for screen readers only -->
-+    <h1 class="sr-only">McFatty's Food Tracker</h1>
+<body class="min-h-screen" style="background:var(--bg); color:var(--text);">
+  <main class="max-w-2xl mx-auto px-4 py-6 space-y-6">
+    <!-- Keep for screen readers only -->
+    <h1 class="sr-only">McFatty's Food Tracker</h1>
 
--    <div class="flex justify-center">
--      <img src="logo.png" alt="McFatty's logo" class="h-32 w-auto">
--    </div>
-+    <div class="flex justify-center">
-+      <!-- Full-width responsive logo, max-width for nice scaling -->
-+      <img src="logo.png" alt="McFatty's logo" style="width:100%; max-width:560px; height:auto; display:block; border-radius:16px;">
-+    </div>
+    <div class="flex justify-center">
+      <!-- Full width logo, scales nicely -->
+      <img src="logo.png" alt="McFatty's logo" style="width:100%; max-width:560px; height:auto; display:block; border-radius:16px;">
+    </div>
 
-+    <!-- Install and data controls -->
-+    <section class="flex flex-wrap gap-3 justify-center">
-+      <button id="btnInstall" class="btn btn-primary" hidden>Install app</button>
-+      <button id="btnExport" class="btn btn-ghost">Export CSV</button>
-+      <label for="fileImport" class="btn btn-ghost" role="button">Import CSV</label>
-+      <input id="fileImport" type="file" accept=".csv,text/csv" class="sr-only" />
-+    </section>
+    <!-- Controls -->
+    <section class="flex flex-wrap gap-3 justify-center">
+      <button id="btnInstall" class="btn btn-primary" hidden>Install app</button>
+      <button id="btnExport" class="btn btn-ghost">Export CSV</button>
+      <label for="fileImport" class="btn btn-ghost" role="button">Import CSV</label>
+      <input id="fileImport" type="file" accept=".csv,text/csv" class="sr-only" />
+    </section>
 
-    <!-- Your existing app UI below -->
+    <!-- Your app UI goes here -->
     <section class="card p-4">
-      <!-- inputs, table, etc. -->
+      <!-- Inputs, table, etc. Keep your existing content -->
+      <p class="text-sm" style="color:var(--muted);">Tip: blue and orange highlight states for better visibility with red green colour blindness.</p>
     </section>
   </main>
 
@@ -70,129 +65,4 @@
     }
   </script>
 </body>
-</html>            const emptyLogMessage = document.getElementById('empty-log-message');
-
-            let foodItems = JSON.parse(localStorage.getItem('foodItemsSimple')) || [];
-
-            const saveToStorage = () => {
-                localStorage.setItem('foodItemsSimple', JSON.stringify(foodItems));
-            };
-
-            const updateActionButtons = () => {
-                const hasItems = foodItems.length > 0;
-                clearAllBtn.disabled = !hasItems;
-                exportBtn.disabled = !hasItems;
-            };
-
-            const renderFoodList = () => {
-                foodListEl.innerHTML = ''; 
-
-                emptyLogMessage.classList.toggle('hidden', foodItems.length > 0);
-
-                foodItems.forEach(item => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'border-b border-gray-700 align-middle';
-                    
-                    const dairyIndicator = item.hasDairy 
-                        ? `<span class="bg-amber-400 text-slate-900 text-xs font-bold px-2 py-1 rounded-full">DAIRY</span>`
-                        : `<span class="text-gray-500">-</span>`;
-
-                    tr.innerHTML = `
-                        <td class="p-3 font-bold text-lg">${item.name}</td>
-                        <td class="p-3 text-center">${dairyIndicator}</td>
-                        <td class="p-3 text-center">
-                            <button data-id="${item.id}" class="delete-btn text-red-500 hover:text-red-400 font-black text-2xl leading-none">&times;</button>
-                        </td>
-                    `;
-                    foodListEl.appendChild(tr);
-                });
-                updateActionButtons();
-            };
-            
-            const addFoodItem = (e) => {
-                e.preventDefault();
-                const nameInput = document.getElementById('name');
-                const dairyInput = document.getElementById('dairy');
-                const name = nameInput.value.trim();
-
-                if (name) {
-                    const newItem = {
-                        id: Date.now(),
-                        name,
-                        hasDairy: dairyInput.checked
-                    };
-                    foodItems.push(newItem);
-                    saveToStorage();
-                    renderFoodList();
-                    foodForm.reset();
-                    nameInput.focus();
-                }
-            };
-            
-            const deleteFoodItem = (id) => {
-                foodItems = foodItems.filter(item => item.id !== id);
-                saveToStorage();
-                renderFoodList();
-            };
-
-
-
-            const handleListClick = (e) => {
-                if (e.target.classList.contains('delete-btn')) {
-                    const id = parseInt(e.target.dataset.id);
-                    deleteFoodItem(id);
-                }
-            };
-
-            const clearAllItems = () => {
-                if (foodItems.length > 0 && confirm('Are you sure you want to clear all log entries?')) {
-                    foodItems = [];
-                    saveToStorage();
-                    renderFoodList();
-                }
-            };
-
-            const exportToCSV = () => {
-                if (foodItems.length === 0) return;
-
-                const headers = ['Food Item', 'Contains Dairy', 'Logged At'];
-                const rows = foodItems.map(item => {
-                    // Escape commas in the item name by wrapping in quotes
-                    const name = `"${item.name.replace(/"/g, '""')}"`;
-                    const dairy = item.hasDairy ? 'Yes' : 'No';
-                    // The 'id' is a timestamp, convert it to a locale-specific string
-                    const loggedAt = new Date(item.id).toLocaleString();
-                    return [name, dairy, loggedAt];
-                });
-
-                let csvContent = "data:text/csv;charset=utf-8," 
-                    + headers.join(",") + "\n" 
-                    + rows.map(e => e.join(",")).join("\n");
-                
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", "mcfattys_food_log.csv");
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            };
-
-            foodForm.addEventListener('submit', addFoodItem);
-            foodListEl.addEventListener('click', handleListClick);
-            clearAllBtn.addEventListener('click', clearAllItems);
-            exportBtn.addEventListener('click', exportToCSV);
-
-            renderFoodList();
-        });
-    <script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/McFattys/service-worker.js", { scope: "/McFattys/" });
-  });
-}
-</script>
-</body>
 </html>
-
-
