@@ -1,7 +1,8 @@
 {
   "name": "McFatty's",
   "short_name": "McFatty's",
-  "start_url": "./",
+  "start_url": "/McFattys/",
+  "scope": "/McFattys/",
   "display": "standalone",
   "background_color": "#0A84FF",
   "theme_color": "#0A84FF",
