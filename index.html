@@ -1,32 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>McFatty's</title>
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0A84FF">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="McFatty's">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0A84FF" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="McFatty's" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
 
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif; }
-    :root{
-      --bg:#0b0b0d;
-      --card:#141418;
-      --text:#f2f3f5;
-      --muted:#b8bec6;
-      --accent:#0A84FF;
-      --accent2:#FF7A00;
-    }
-    @media (prefers-color-scheme: light){
-      :root{ --bg:#f6f7f9; --card:#ffffff; --text:#111319; --muted:#4a5160; }
-    }
-    .btn{ padding:0.75rem 1rem; border-radius:12px; font-weight:600; display:inline-flex; gap:.5rem; align-items:center; }
+    :root{ --bg:#0b0b0d; --card:#141418; --text:#f2f3f5; --muted:#b8bec6; --accent:#0A84FF; --accent2:#FF7A00; }
+    @media (prefers-color-scheme: light){ :root{ --bg:#f6f7f9; --card:#ffffff; --text:#111319; --muted:#4a5160; } }
+    .btn{ padding:.75rem 1rem; border-radius:12px; font-weight:600; display:inline-flex; gap:.5rem; align-items:center; }
     .btn-primary{ background:var(--accent); color:#fff; }
     .btn-ghost{ background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.12); }
     .card{ background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:16px; }
@@ -35,15 +26,12 @@
 </head>
 <body class="min-h-screen" style="background:var(--bg); color:var(--text);">
   <main class="max-w-2xl mx-auto px-4 py-6 space-y-6">
-    <!-- Keep for screen readers only -->
     <h1 class="sr-only">McFatty's Food Tracker</h1>
 
     <div class="flex justify-center">
-      <!-- Full width logo, scales nicely -->
-      <img src="logo.png" alt="McFatty's logo" style="width:100%; max-width:560px; height:auto; display:block; border-radius:16px;">
+      <img src="logo.png" alt="McFatty's logo" style="width:100%; max-width:560px; height:auto; display:block; border-radius:16px;" />
     </div>
 
-    <!-- Controls -->
     <section class="flex flex-wrap gap-3 justify-center">
       <button id="btnInstall" class="btn btn-primary" hidden>Install app</button>
       <button id="btnExport" class="btn btn-ghost">Export CSV</button>
@@ -51,17 +39,34 @@
       <input id="fileImport" type="file" accept=".csv,text/csv" class="sr-only" />
     </section>
 
-    <!-- Your app UI goes here -->
-    <section class="card p-4">
-      <!-- Inputs, table, etc. Keep your existing content -->
-      <p class="text-sm" style="color:var(--muted);">Tip: blue and orange highlight states for better visibility with red green colour blindness.</p>
+    <!-- Example UI so the page "does something" even without your old markup -->
+    <section class="card p-4 space-y-3">
+      <form id="entryForm" class="grid gap-2 sm:grid-cols-2">
+        <input id="date" type="date" class="p-2 rounded bg-transparent border border-white/10" required />
+        <input id="meal" placeholder="Meal" class="p-2 rounded bg-transparent border border-white/10" required />
+        <input id="item" placeholder="Item" class="p-2 rounded bg-transparent border border-white/10" required />
+        <input id="qty" type="number" step="0.1" placeholder="Qty" class="p-2 rounded bg-transparent border border-white/10" />
+        <input id="calories" type="number" step="1" placeholder="Calories" class="p-2 rounded bg-transparent border border-white/10" />
+        <button class="btn btn-primary">Add</button>
+      </form>
+
+      <table id="entriesTable" class="w-full text-sm">
+        <thead><tr class="text-left">
+          <th class="py-2">Date</th><th>Meal</th><th>Item</th><th>Qty</th><th>Calories</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+
+      <p class="text-sm" style="color:var(--muted);">Tip: blue/orange highlights are easier to see with red-green colour blindness.</p>
     </section>
   </main>
 
   <script src="app.js" defer></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js');
+      // Robust for GitHub Pages project path
+      const base = location.pathname.endsWith('/') ? location.pathname : location.pathname.replace(/\/[^/]*$/, '/');
+      navigator.serviceWorker.register(base + 'sw.js');
     }
   </script>
 </body>
