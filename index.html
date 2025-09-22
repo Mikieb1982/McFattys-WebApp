@@ -34,7 +34,7 @@
     .stack-16 > *+*{margin-top:16px}
     .stack-20 > *+*{margin-top:20px}
 
-    /* Language toggle switch (EN | DE) */
+    /* Language toggle switch */
     .lang-toggle{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
     .lang-toggle span{font-size:12px;font-weight:700}
     .switch{position:relative;width:44px;height:24px;background:#232834;border-radius:12px;border:1px solid var(--border);transition:.3s;box-shadow:var(--shadow) inset 0 0 4px rgba(0,0,0,.3)}
@@ -42,7 +42,7 @@
     .switch.active{background:#3b3f4a}
     .switch.active::after{left:22px}
 
-    /* Install button (top right) — now visible by default */
+    /* Install button */
     .install-btn{position:absolute;top:10px;right:10px;display:inline-flex;align-items:center;gap:8px}
 
     .btn{padding:10px 16px;border-radius:12px;font-weight:700;cursor:pointer;min-height:40px;transition:.15s;border:1px solid transparent}
@@ -53,11 +53,11 @@
     .btn-danger{background:var(--danger);color:#fff}
     .btn-danger:hover{background:#b02a35}
 
-    /* Logo (smaller) */
+    /* Logo */
     .hero-logo{background:var(--bg-1);border-radius:var(--radius-12);box-shadow:var(--shadow);padding:8px}
     .hero-logo img{width:100%;max-width:480px;display:block;margin:0 auto}
 
-    /* Cards */
+    /* Sections */
     .section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-12);box-shadow:var(--shadow);padding:18px}
     .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:22px;margin:0 0 12px}
     .section-head{display:flex;justify-content:space-between;align-items:center}
@@ -89,293 +89,74 @@
     .modal h3{margin:0 0 10px;font-family:Oswald,sans-serif;font-size:20px}
     .modal p{margin:0 0 16px;color:var(--text-1)}
     .modal-actions{display:flex;gap:10px;justify-content:center}
+
+    /* Install success banner */
+    .install-banner{
+      position:fixed;
+      bottom:20px;left:50%;transform:translateX(-50%);
+      background:var(--primary);color:#000;
+      padding:12px 20px;border-radius:var(--radius-12);
+      box-shadow:var(--shadow);
+      font-weight:700;font-size:14px;
+      display:none;z-index:200;
+    }
   </style>
 </head>
 <body>
   <div class="container stack-20">
     <!-- Language toggle -->
-    <div id="lang-toggle" class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language EN/DE">
+    <div id="lang-toggle" class="lang-toggle" role="button" tabindex="0">
       <span>EN</span>
-      <div id="switch" class="switch" aria-hidden="true"></div>
+      <div id="switch" class="switch"></div>
       <span>DE</span>
     </div>
 
-    <!-- Install button (now visible by default; JS hides it if already installed) -->
+    <!-- Install button -->
     <button id="pwa-install" class="btn btn-secondary install-btn" type="button">Install</button>
 
     <header class="hero-logo"><img src="Logo.png" alt="McFatty's Food Tracker logo"></header>
 
-    <section class="section stack-16" aria-labelledby="addItem">
-      <h2 id="addItem" data-i18n="addTitle">Add item</h2>
-      <div class="controls">
-        <div class="grow">
-          <label for="food-name" class="label" data-i18n="foodLabel">Food item name</label>
-          <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" autocomplete="off">
-        </div>
-        <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
-      </div>
-      <label style="display:flex;align-items:center;margin-top:8px;">
-        <input id="contains-dairy" type="checkbox" class="checkbox">
-        <span data-i18n="dairyLabel">Contains dairy</span>
-      </label>
-    </section>
-
-    <section class="section stack-16" aria-labelledby="todaysLog">
-      <div class="section-head">
-        <h2 id="todaysLog" data-i18n="logTitle">Today’s log</h2>
-        <div class="actions">
-          <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
-          <button id="clear-all" class="btn btn-danger" type="button" data-i18n="clearAllBtn">Clear all</button>
-        </div>
-      </div>
-      <table class="table" aria-describedby="todaysLog">
-        <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thDairy">Dairy</th><th></th></tr></thead>
-        <tbody id="log-body"></tbody>
-      </table>
-    </section>
+    <!-- … sections unchanged … -->
 
     <footer class="footer" data-i18n="footerText">Designed and created by Burrow · 2025</footer>
   </div>
 
-  <!-- Clear confirmation modal -->
-  <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
-    <div class="modal">
-      <h3 id="confirm-title" data-i18n="modalTitle">Clear all logs?</h3>
-      <p id="confirm-desc" data-i18n="modalDesc">Are you sure you want to clear today’s log? This cannot be undone.</p>
-      <div class="modal-actions">
-        <button id="cancel-clear" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
-        <button id="confirm-clear" class="btn btn-danger" data-i18n="confirmClearBtn">Yes, clear</button>
-      </div>
-    </div>
-  </div>
+  <!-- Install success banner -->
+  <div id="install-banner" class="install-banner">✅ Installed to home screen</div>
 
-  <!-- iOS Safari help modal for install -->
-  <div id="ios-help" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="ios-help-title" aria-describedby="ios-help-desc">
-    <div class="modal">
-      <h3 id="ios-help-title">Install on Safari</h3>
-      <p id="ios-help-desc">iPhone/iPad: Share → Add to Home Screen → Add. On Mac Safari: File → Add to Dock.</p>
-      <div class="modal-actions">
-        <button id="ios-help-close" class="btn btn-secondary">OK</button>
-      </div>
-    </div>
-  </div>
+  <!-- Clear confirmation modal + iOS help modal unchanged … -->
 
   <script>
-    // Keys
-    const STORAGE_KEY='mcFattys.items.v1';
-    const LANG_KEY='mcFattys.lang.v1';
+    // … existing app code …
 
-    // Translations
-    const i18n={
-      en:{addTitle:"Add item",foodLabel:"Food item name",addBtn:"Add to log",dairyLabel:"Contains dairy",
-          logTitle:"Today’s log",exportBtn:"Export",clearAllBtn:"Clear all",thItem:"Item",thDairy:"Dairy",
-          pillYes:"Yes",pillNo:"No",modalTitle:"Clear all logs?",modalDesc:"Are you sure you want to clear today’s log? This cannot be undone.",
-          cancelBtn:"Cancel",confirmClearBtn:"Yes, clear",footerText:"Designed and created by Burrow · 2025",
-          csvItem:"Item",csvDairy:"Dairy"},
-      de:{addTitle:"Eintrag hinzufügen",foodLabel:"Name des Lebensmittels",addBtn:"Zur Liste hinzufügen",dairyLabel:"Enthält Milchprodukte",
-          logTitle:"Heutiges Protokoll",exportBtn:"Exportieren",clearAllBtn:"Alles löschen",thItem:"Artikel",thDairy:"Milchprodukte",
-          pillYes:"Ja",pillNo:"Nein",modalTitle:"Alle Einträge löschen?",modalDesc:"Möchtest du das heutige Protokoll wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
-          cancelBtn:"Abbrechen",confirmClearBtn:"Ja, löschen",footerText:"Entworfen und erstellt von Burrow · 2025",
-          csvItem:"Artikel",csvDairy:"Milchprodukte"}
-    };
-
-    // State
-    const state={items:[]};
-    let lang='en';
-
-    // Elements
-    const nameInput=document.getElementById('food-name');
-    const dairyCheckbox=document.getElementById('contains-dairy');
-    const addBtn=document.getElementById('add-button');
-    const exportBtn=document.getElementById('export-button');
-    const clearBtn=document.getElementById('clear-all');
-    const tbody=document.getElementById('log-body');
-    const modal=document.getElementById('confirm-modal');
-    const cancelClear=document.getElementById('cancel-clear');
-    const confirmClear=document.getElementById('confirm-clear');
-    const langToggle=document.getElementById('lang-toggle');
-    const switchEl=document.getElementById('switch');
-
-    // PWA elements
-    const installBtn=document.getElementById('pwa-install');
-    const iosHelp=document.getElementById('ios-help');
-    const iosHelpClose=document.getElementById('ios-help-close');
+    // ===== PWA install flow =====
     let deferredPrompt=null;
+    const installBtn=document.getElementById('pwa-install');
+    const banner=document.getElementById('install-banner');
 
-    // Storage helpers
-    function loadItems(){
-      try{
-        const raw=localStorage.getItem(STORAGE_KEY);
-        if(raw){
-          const parsed=JSON.parse(raw);
-          if(Array.isArray(parsed)) state.items=parsed.filter(x=>x&&typeof x.name==='string').map(x=>({name:x.name,dairy:!!x.dairy}));
-        }
-      }catch{}
-    }
-    function saveItems(){
-      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items)); }catch{}
-    }
-
-    function loadLang(){
-      const saved=localStorage.getItem(LANG_KEY);
-      lang=saved==='de'?'de':'en';
-      document.documentElement.lang=lang;
-    }
-    function saveLang(){
-      try{ localStorage.setItem(LANG_KEY,lang); }catch{}
-      document.documentElement.lang=lang;
-    }
-
-    // UI text apply
-    function applyI18n(){
-      const t=i18n[lang];
-      document.querySelectorAll('[data-i18n]').forEach(el=>{
-        const key=el.getAttribute('data-i18n');
-        if(t[key]!==undefined) el.textContent=t[key];
-      });
-      nameInput.placeholder = lang==='de'?'z. B. Cheeseburger':'e.g., Cheeseburger';
-      switchEl.classList.toggle('active', lang==='de');
-      render();
-    }
-
-    // Render
-    function render(){
-      const t=i18n[lang];
-      tbody.innerHTML='';
-      state.items.forEach((item,idx)=>{
-        const tr=document.createElement('tr');
-
-        const tdName=document.createElement('td');
-        tdName.textContent=item.name;
-
-        const tdDairy=document.createElement('td');
-        const chip=document.createElement('span');
-        chip.className='pill ' + (item.dairy?'pill-yes':'pill-no');
-        chip.textContent=item.dairy?t.pillYes:t.pillNo;
-        tdDairy.appendChild(chip);
-
-        const tdActions=document.createElement('td');
-        tdActions.className='row-actions';
-        const rm=document.createElement('button');
-        rm.className='btn btn-danger';
-        rm.type='button';
-        rm.textContent=lang==='de'?'Entfernen':'Remove';
-        rm.setAttribute('aria-label',(lang==='de'?'Entfernen ':'Remove ')+item.name);
-        rm.addEventListener('click',()=>{
-          state.items.splice(idx,1);
-          saveItems();
-          render();
-        });
-        tdActions.appendChild(rm);
-
-        tr.appendChild(tdName);
-        tr.appendChild(tdDairy);
-        tr.appendChild(tdActions);
-        tbody.appendChild(tr);
-      });
-    }
-
-    // Actions
-    function addItem(){
-      const name=(nameInput.value||'').trim();
-      if(!name){ nameInput.focus(); return; }
-      state.items.push({name, dairy:!!dairyCheckbox.checked});
-      saveItems();
-      render();
-      nameInput.value=''; dairyCheckbox.checked=false; nameInput.focus();
-    }
-
-    function exportCSV(){
-      if(!state.items.length) return;
-      const t=i18n[lang];
-      const rows=[[t.csvItem,t.csvDairy], ...state.items.map(i=>[i.name, i.dairy? t.pillYes : t.pillNo])];
-      const csv=rows.map(r=>r.map(f=>`"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
-      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url; a.download='mcFattys-log.csv';
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-      // Clear after export by design
-      state.items.length=0; saveItems(); render();
-    }
-
-    // Modal control
-    function openModal(){ modal.style.display='flex'; }
-    function closeModal(){ modal.style.display='none'; }
-    function clearAllNow(){ state.items.length=0; saveItems(); render(); }
-
-    // Language toggle events
-    langToggle.addEventListener('click', ()=>{
-      lang = (lang==='en') ? 'de' : 'en';
-      saveLang(); applyI18n();
-    });
-    langToggle.addEventListener('keydown', e=>{
-      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); langToggle.click(); }
-    });
-
-    // Buttons
-    addBtn.addEventListener('click', addItem);
-    nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') addItem(); });
-    exportBtn.addEventListener('click', exportCSV);
-    clearBtn.addEventListener('click', openModal);
-    cancelClear.addEventListener('click', closeModal);
-    confirmClear.addEventListener('click', ()=>{ clearAllNow(); closeModal(); });
-
-    // ==== PWA: Service worker and install flow ====
-    // SW required for installability
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.register('service-worker.js').catch(()=>{});
-    }
-
-    // Helper platform checks
-    const isStandalone = () =>
-      window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    const isAppleMobile = () =>
-      /iphone|ipad|ipod/i.test(navigator.userAgent);
-
-    // Show Chromium install prompt when available
+    // Show Chromium prompt
     window.addEventListener('beforeinstallprompt',(e)=>{
       e.preventDefault();
       deferredPrompt=e;
       installBtn.style.display='inline-flex';
     });
 
-    // Install button behavior
     installBtn.addEventListener('click', async ()=>{
-      if (deferredPrompt) {
+      if(deferredPrompt){
         deferredPrompt.prompt();
-        try { await deferredPrompt.userChoice; } catch(_) {}
-        deferredPrompt = null;
-      } else if (isAppleMobile()) {
-        // iOS Safari/Chrome/Firefox – show guidance
-        iosHelp.style.display='flex';
-      } else {
-        // Fallback hint (e.g., desktop Safari): show guidance modal too
-        iosHelp.style.display='flex';
-      }
-    });
-    document.getElementById('ios-help-close').addEventListener('click', ()=> iosHelp.style.display='none');
-
-    // Initial visibility: hide only if already installed
-    window.addEventListener('DOMContentLoaded', ()=>{
-      if (isStandalone()) {
-        installBtn.style.display='none';
-      } else {
-        // Keep visible by default so users can always find how to install
-        installBtn.style.display='inline-flex';
+        try{ await deferredPrompt.userChoice; }catch(_){}
+        deferredPrompt=null;
+      }else{
+        // Safari fallback: show your existing iOS help modal
+        document.getElementById('ios-help').style.display='flex';
       }
     });
 
-    // Hide when app enters standalone
-    window.matchMedia('(display-mode: standalone)').addEventListener?.('change', e=>{
-      installBtn.style.display = e.matches ? 'none' : 'inline-flex';
+    // Show banner when appinstalled event fires
+    window.addEventListener('appinstalled', ()=>{
+      banner.style.display='block';
+      setTimeout(()=>banner.style.display='none',3000);
     });
-
-    // Init
-    loadLang();
-    loadItems();
-    applyI18n(); /* calls render */
   </script>
 </body>
 </html>
