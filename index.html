@@ -1,142 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="manifest" href="/McFattys/manifest.json">
-<meta name="theme-color" content="#111827">
-<link rel="icon" href="/McFattys/icons/icon-192.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>McFatty's Food Tracker</title>
-    <!-- Browser Icon -->
-    <link rel="icon" type="image/png" href="./favicon.png">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;700&family=Oswald:wght@700&family=Luckiest+Guy&display=swap" rel="stylesheet">
-    <style>
-        /* Define custom fonts and styles based on the menu template */
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .font-anton { font-family: 'Anton', sans-serif; }
-        .font-oswald { font-family: 'Oswald', sans-serif; }
-        .font-diner { font-family: 'Luckiest Guy', cursive; }
-
-        /* A dark, textured background similar to the menu */
-        .tracker-container {
-            background-color: #2d3748;
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234a5568' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-        }
-        
-        /* Custom input field styling */
-        .form-input {
-            background-color: #4a5568;
-            border: 2px solid transparent;
-            transition: border-color 0.3s;
-        }
-        .form-input:focus {
-            border-color: #fbbf24; /* amber-400 */
-            outline: none;
-        }
-        
-        /* Custom checkbox styling */
-        .form-checkbox {
-            appearance: none;
-            background-color: #4a5568;
-            border: 2px solid #718096;
-            padding: 9px;
-            border-radius: 4px;
-            display: inline-block;
-            position: relative;
-            cursor: pointer;
-        }
-        .form-checkbox:checked {
-            background-color: #fbbf24;
-            border-color: #fbbf24;
-        }
-        .form-checkbox:checked::after {
-            content: '✔';
-            font-size: 14px;
-            color: #2d3748;
-            position: absolute;
-            top: -1px;
-            left: 2px;
-        }
-        .log-action-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-    </style>
+-    <title>McFatty's Food Tracker</title>
++    <title>McFatty's</title>
+     <script src="https://cdn.tailwindcss.com"></script>
+     <link rel="manifest" href="manifest.webmanifest">
+     <meta name="theme-color" content="#0A84FF">
++    <meta name="apple-mobile-web-app-capable" content="yes">
++    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
++    <meta name="apple-mobile-web-app-title" content="McFatty's">
++    <link rel="apple-touch-icon" href="icons/icon-192.png">
+     <style>
+-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif; }
++      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif; }
++      /* Red-green colour-blind friendly palette with strong contrast */
++      :root{
++        --bg:#0b0b0d;
++        --card:#141418;
++        --text:#f2f3f5;
++        --muted:#b8bec6;
++        --accent:#0A84FF;     /* Blue - safe */
++        --accent-2:#FF7A00;   /* Orange - safe */
++      }
++      @media (prefers-color-scheme: light){
++        :root{ --bg:#f6f7f9; --card:#ffffff; --text:#111319; --muted:#4a5160; }
++      }
++      .btn{ padding:0.75rem 1rem; border-radius:12px; font-weight:600; display:inline-flex; gap:.5rem; align-items:center; }
++      .btn-primary{ background:var(--accent); color:#fff; }
++      .btn-ghost{ background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.12); }
++      .card{ background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:16px; }
++      .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+     </style>
 </head>
-<body class="bg-gray-900 flex items-center justify-center min-h-screen p-4 sm:p-8">
+-<body class="min-h-screen bg-gray-100 text-gray-900">
++<body class="min-h-screen" style="background:var(--bg); color:var(--text);">
+   <main class="max-w-2xl mx-auto px-4 py-6 space-y-6">
+-    <h1 class="text-3xl font-bold text-center">McFatty's Food Tracker</h1>
++    <!-- Title removed as requested. Keep for screen readers only -->
++    <h1 class="sr-only">McFatty's Food Tracker</h1>
 
-    <div class="w-full max-w-2xl mx-auto tracker-container text-white shadow-2xl rounded-lg p-6 md:p-10">
-        
-        <!-- Header -->
-        <header class="text-center mb-8">
-            <img src="./logo.png" alt="McFatty's Food Tracker Logo" class="h-48 w-48 sm:h-60 sm:w-60 object-contain mx-auto">
-        </header>
+-    <div class="flex justify-center">
+-      <img src="logo.png" alt="McFatty's logo" class="h-32 w-auto">
+-    </div>
++    <div class="flex justify-center">
++      <!-- Full-width responsive logo, max-width for nice scaling -->
++      <img src="logo.png" alt="McFatty's logo" style="width:100%; max-width:560px; height:auto; display:block; border-radius:16px;">
++    </div>
 
-        <main class="space-y-8">
++    <!-- Install and data controls -->
++    <section class="flex flex-wrap gap-3 justify-center">
++      <button id="btnInstall" class="btn btn-primary" hidden>Install app</button>
++      <button id="btnExport" class="btn btn-ghost">Export CSV</button>
++      <label for="fileImport" class="btn btn-ghost" role="button">Import CSV</label>
++      <input id="fileImport" type="file" accept=".csv,text/csv" class="sr-only" />
++    </section>
 
-            <!-- Input Form -->
-            <section class="bg-gray-800/50 p-6 rounded-lg">
-                <h3 class="font-diner text-4xl text-amber-400 mb-4">ADD ITEM</h3>
-                <form id="food-form" class="space-y-4">
-                    <div>
-                        <label for="name" class="block text-sm font-bold mb-2">Food Item Name</label>
-                        <input type="text" id="name" required class="form-input w-full p-3 rounded text-white text-lg" placeholder="e.g., Cheeseburger">
-                    </div>
-                    <div class="flex items-center pt-2">
-                        <input type="checkbox" id="dairy" class="form-checkbox">
-                        <label for="dairy" class="ml-3 text-white text-lg">Contains Dairy</label>
-                    </div>
-                    <button type="submit" class="w-full bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold py-3 px-4 rounded-lg font-oswald text-xl tracking-wider transition-colors mt-2">
-                        ADD TO LOG
-                    </button>
-                </form>
-            </section>
+    <!-- Your existing app UI below -->
+    <section class="card p-4">
+      <!-- inputs, table, etc. -->
+    </section>
+  </main>
 
-            <!-- Food Log -->
-            <section class="bg-gray-800/50 p-6 rounded-lg">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-diner text-4xl text-amber-400">TODAY'S LOG</h3>
-                    <div class="flex items-center space-x-2">
-                        <button id="export-csv" class="log-action-btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
-                            Export
-                        </button>
-                        <button id="clear-all" class="log-action-btn bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
-                            Clear All
-                        </button>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="border-b-2 border-dashed border-gray-500">
-                                <th class="p-2 w-2/3">Item</th>
-                                <th class="p-2 text-center">Dairy</th>
-                                <th class="p-2 text-center"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="food-list">
-                            <!-- Food items will be dynamically inserted here -->
-                        </tbody>
-                    </table>
-                     <p id="empty-log-message" class="text-center text-gray-400 mt-8">Your log is empty. Add an item to get started!</p>
-                </div>
-            </section>
-
-        </main>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const foodForm = document.getElementById('food-form');
-            const foodListEl = document.getElementById('food-list');
-            const clearAllBtn = document.getElementById('clear-all');
-            const exportBtn = document.getElementById('export-csv');
-            const emptyLogMessage = document.getElementById('empty-log-message');
+  <script src="app.js" defer></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+  </script>
+</body>
+</html>            const emptyLogMessage = document.getElementById('empty-log-message');
 
             let foodItems = JSON.parse(localStorage.getItem('foodItemsSimple')) || [];
 
