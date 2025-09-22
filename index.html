@@ -14,8 +14,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0f1115">
 
-  <!-- iOS Safari icon (tight, 180×180) -->
-  <link rel="apple-touch-icon" href="apple-touch-icon-180.png">
+  <!-- iOS Safari icon (from /icons) -->
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
 
   <style>
     :root{
@@ -32,7 +32,7 @@
     .stack-16 > *+*{margin-top:16px}
     .stack-20 > *+*{margin-top:20px}
 
-    /* Language toggle switch (EN | DE) */
+    /* Language toggle */
     .lang-toggle{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
     .lang-toggle span{font-size:12px;font-weight:700}
     .switch{position:relative;width:44px;height:24px;background:#232834;border-radius:12px;border:1px solid var(--border);transition:.3s;box-shadow:var(--shadow) inset 0 0 4px rgba(0,0,0,.3)}
@@ -40,7 +40,7 @@
     .switch.active{background:#3b3f4a}
     .switch.active::after{left:22px}
 
-    /* Install button (visible by default; JS hides if installed) */
+    /* Install button */
     .install-btn{position:absolute;top:10px;right:10px;display:inline-flex;align-items:center;gap:8px}
 
     /* Buttons */
@@ -148,7 +148,7 @@
   </div>
 
   <!-- Install success banner -->
-  <div id="install-banner" class="install-banner">✅ Installed to home screen</div>
+  <div id="install-banner" class="install-banner">✅ Installed</div>
 
   <!-- Clear confirmation modal -->
   <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
@@ -343,10 +343,10 @@
 
     const isStandalone = () =>
       window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    const isAppleMobile = () =>
-      /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isAndroid = () => /Android/i.test(navigator.userAgent);
+    const isAppleMobile = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 
-    // Show Chromium install prompt when available
+    // Chromium install prompt
     window.addEventListener('beforeinstallprompt',(e)=>{
       e.preventDefault();
       deferredPrompt=e;
@@ -360,15 +360,18 @@
         try { await deferredPrompt.userChoice; } catch(_) {}
         deferredPrompt = null;
       } else if (isAppleMobile()) {
-        iosHelp.style.display='flex';
+        document.getElementById('ios-help').style.display='flex';
       } else {
-        iosHelp.style.display='flex'; // fallback guidance
+        document.getElementById('ios-help').style.display='flex'; // fallback guidance
       }
     });
-    iosHelpClose.addEventListener('click', ()=> iosHelp.style.display='none');
+    iosHelpClose.addEventListener('click', ()=> document.getElementById('ios-help').style.display='none');
 
     // Install success banner (Chromium)
     window.addEventListener('appinstalled', ()=>{
+      banner.textContent = isAndroid()
+        ? "✅ Installed to app tray"
+        : "✅ App installed";
       banner.style.display='block';
       setTimeout(()=>banner.style.display='none',3000);
       installBtn.style.display='none';
