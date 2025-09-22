@@ -25,8 +25,6 @@
       --border:#2a2f39; --shadow:0 8px 20px rgba(0,0,0,.35);
       --radius-12:12px;
       --safe-top: env(safe-area-inset-top, 0px);
-      --safe-left: env(safe-area-inset-left, 0px);
-      --safe-right: env(safe-area-inset-right, 0px);
     }
     *{box-sizing:border-box}
     html,body{margin:0;height:100%;background:var(--bg-0);color:var(--text-0);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:1.45}
@@ -76,10 +74,10 @@
     .btn-danger{background:var(--danger);color:#fff}
     .btn-danger:hover{background:#b02a35}
 
-    /* Install button: responsive sizing */
+    /* Install button: hidden by default (shows only when beforeinstallprompt fires) */
     #pwa-install{
-      padding:12px 16px; font-size:14px; line-height:1; white-space:nowrap;
-      max-width:100%;
+      padding:12px 16px; font-size:14px; line-height:1; white-space:nowrap; max-width:100%;
+      display:none;
     }
 
     /* Small screens: stack toggle and install button */
@@ -101,7 +99,7 @@
 
     /* Form */
     .label{font-size:14px;color:var(--text-1);margin-bottom:8px;display:block}
-    .input{width:100%;background:#12151b;color:var(--text-0);border:1px solid var(--border);border-radius:10px;padding:14px 16px;outline:none}
+    .input{width:100%;background:#12151b;color:#f2f3f5;border:1px solid var(--border);border-radius:10px;padding:14px 16px;outline:none}
     .input:focus{box-shadow:0 0 0 3px rgba(255,200,87,.25)}
     .checkbox{width:20px;height:20px;cursor:pointer;margin-right:8px}
     .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
@@ -119,7 +117,7 @@
 
     .footer{color:var(--text-1);font-size:12px;text-align:center;padding:14px 0}
 
-    /* Modal base */
+    /* Modal base (clear-all) */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:300}
     .modal{background:var(--card);padding:20px;border-radius:var(--radius-12);text-align:center;max-width:360px;width:90%}
     .modal h3{margin:0 0 10px;font-family:Oswald,sans-serif;font-size:20px}
@@ -130,7 +128,7 @@
     .install-banner{
       position:fixed; top:50%; left:50%;
       transform:translate(-50%,-50%) scale(.96);
-      opacity:0; background:var(--card); color:var(--text-0);
+      opacity:0; background:var(--card); color:#f2f3f5;
       padding:16px 22px; border:1px solid var(--border);
       border-radius:16px; box-shadow:var(--shadow);
       font-weight:700; font-size:14px; display:none; z-index:350;
@@ -151,7 +149,7 @@
           <span>DE</span>
         </div>
 
-        <!-- Install button -->
+        <!-- Install button (hidden unless supported) -->
         <button id="pwa-install" class="btn btn-secondary" type="button" aria-label="Install app">
           Install
         </button>
@@ -209,17 +207,6 @@
     </div>
   </div>
 
-  <!-- iOS Safari help modal for install -->
-  <div id="ios-help" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="ios-help-title" aria-describedby="ios-help-desc">
-    <div class="modal">
-      <h3 id="ios-help-title">Install on Safari</h3>
-      <p id="ios-help-desc">iPhone/iPad: Share → Add to Home Screen → Add. On Mac Safari: File → Add to Dock.</p>
-      <div class="modal-actions">
-        <button id="ios-help-close" class="btn btn-secondary">OK</button>
-      </div>
-    </div>
-  </div>
-
   <script>
     // Keys
     const STORAGE_KEY='mcFattys.items.v1';
@@ -239,12 +226,10 @@
     const switchEl=document.getElementById('switch');
 
     const installBtn=document.getElementById('pwa-install');
-    const iosHelp=document.getElementById('ios-help');
-    const iosHelpClose=document.getElementById('ios-help-close');
     const banner=document.getElementById('install-banner');
     let deferredPrompt=null;
 
-    // Banner helper (centered, auto-hide)
+    // Centered auto-hide banner
     function showBanner(message, duration=2200){
       banner.textContent=message;
       banner.classList.add('show');
@@ -335,11 +320,10 @@
     // PWA basics
     if('serviceWorker' in navigator){ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); }
 
-    // Install flow (Chromium)
+    // Install flow (Chromium-only). Button stays hidden unless this event arrives.
     window.addEventListener('beforeinstallprompt',(e)=>{
       e.preventDefault(); deferredPrompt=e;
-      // Ensure button is visible (responsive bar)
-      document.getElementById('pwa-install').style.display='inline-flex';
+      if (!isStandalone()) installBtn.style.display='inline-flex';
     });
 
     installBtn.onclick=async()=>{
@@ -347,12 +331,10 @@
         deferredPrompt.prompt();
         try{ await deferredPrompt.userChoice; }catch(_) {}
         deferredPrompt=null;
-      }else{
-        // iOS / unsupported → show help
-        iosHelp.style.display='flex';
+        // Optionally hide again after prompting
+        installBtn.style.display='none';
       }
     };
-    document.getElementById('ios-help-close').onclick=()=> iosHelp.style.display='none';
 
     // Installed event → centered message
     window.addEventListener('appinstalled', ()=>{
@@ -361,16 +343,17 @@
       installBtn.style.display='none';
     });
 
-    // Initial visibility for install button
+    // Helpers
     function isStandalone(){
       return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
     }
+    // If already standalone, keep hidden
     document.addEventListener('DOMContentLoaded', ()=>{
       if(isStandalone()) installBtn.style.display='none';
-      else installBtn.style.display='inline-flex';
+      // Else: still hidden until beforeinstallprompt fires (keeps it hidden on Safari/iOS)
     });
     window.matchMedia('(display-mode: standalone)').addEventListener?.('change', e=>{
-      installBtn.style.display = e.matches ? 'none' : 'inline-flex';
+      installBtn.style.display = e.matches ? 'none' : installBtn.style.display;
     });
 
     // Init
