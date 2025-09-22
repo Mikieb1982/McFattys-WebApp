@@ -16,49 +16,83 @@
 
   <!-- iOS icon -->
   <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+  <link rel="preload" href="Logo.png" as="image">
 
   <style>
+    /* ===== Design tokens ===== */
     :root{
+      /* Base colors */
       --bg-0:#0f1115; --bg-1:#171a21; --card:#1c2028;
       --text-0:#f2f3f5; --text-1:#c9ced6;
-      --primary:#ffc857; --danger:#e63946;
-      --border:#2a2f39; --shadow:0 8px 20px rgba(0,0,0,.35);
-      --radius-12:12px;
+      --border:#2a2f39;
+
+      /* Brand & semantic (color-blind safe) */
+      --primary:#ffc857;
+      --success:#57d2a9;   /* teal */
+      --danger:#ff6b6b;    /* coral */
+      --info:#7aa2ff;      /* soft blue */
+
+      /* Spacing scale */
+      --sp-4:4px; --sp-8:8px; --sp-12:12px; --sp-16:16px; --sp-20:20px; --sp-24:24px;
+
+      /* Type ramp */
+      --fs-22:22px; --fs-18:18px; --fs-16:16px; --fs-14:14px;
+      --lh:1.45;
+
+      /* Radius & shadows */
+      --r-8:8px; --r-12:12px; --r-16:16px;
+      --shadow-md:0 8px 20px rgba(0,0,0,.35);
+
+      /* Safe areas */
       --safe-top: env(safe-area-inset-top, 0px);
     }
+
     *{box-sizing:border-box}
-    html,body{margin:0;height:100%;background:var(--bg-0);color:var(--text-0);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:1.45}
+    html,body{margin:0;height:100%;background:var(--bg-0);color:var(--text-0);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:var(--lh)}
 
-    .container{max-width:860px;margin:0 auto;padding:12px 16px 24px;position:relative}
-    .stack-16 > *+*{margin-top:16px}
-    .stack-20 > *+*{margin-top:20px}
+    .container{max-width:860px;margin:0 auto;padding:var(--sp-12) var(--sp-16) var(--sp-24);position:relative}
+    .stack-16 > *+*{margin-top:var(--sp-16)}
+    .stack-20 > *+*{margin-top:var(--sp-20)}
 
-    /* Top utility bar */
+    /* === Top utility bar (responsive) === */
     .utility-bar{
       position:sticky; top:0; z-index:200;
-      padding: calc(8px + var(--safe-top)) 8px 8px;
-      margin: 0 -16px 10px;
+      padding: calc(var(--sp-8) + var(--safe-top)) var(--sp-8) var(--sp-8);
+      margin: 0 calc(-1 * var(--sp-16)) var(--sp-12);
       background: linear-gradient(180deg, rgba(23,26,33,.95), rgba(23,26,33,.75) 70%, rgba(23,26,33,0));
       backdrop-filter: blur(4px);
     }
-    .utility-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 8px;}
+    .utility-row{display:flex; align-items:center; justify-content:space-between; gap:var(--sp-10,10px); padding:0 var(--sp-8)}
 
     /* Language toggle */
-    .lang-toggle{display:inline-flex;align-items:center;gap:8px;user-select:none}
+    .lang-toggle{display:inline-flex;align-items:center;gap:var(--sp-8);user-select:none}
     .lang-toggle span{font-size:12px;font-weight:700}
-    .switch{position:relative;width:50px;height:28px;background:#232834;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow) inset 0 0 4px rgba(0,0,0,.3);transition:.25s}
+    .switch{
+      position:relative;width:50px;height:28px;background:#232834;border-radius:14px;border:1px solid var(--border);
+      box-shadow:var(--shadow-md) inset 0 0 4px rgba(0,0,0,.3); transition:.25s;
+    }
     .switch::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;background:var(--primary);border-radius:50%;transition:.25s}
     .switch.active{background:#3b3f4a}
     .switch.active::after{left:24px}
 
     /* Buttons */
-    .btn{padding:12px 18px;border-radius:12px;font-weight:700;cursor:pointer;min-height:44px;transition:.15s;border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center}
+    .btn{
+      padding:12px 18px; border-radius:var(--r-12); font-weight:700; cursor:pointer;
+      min-height:44px; transition:.15s; border:1px solid transparent;
+      display:inline-flex; align-items:center; justify-content:center;
+    }
     .btn:active{transform:scale(.98)}
     .btn[disabled]{opacity:.5;pointer-events:none}
     .btn-primary{background:var(--primary);color:#1b1b1b}
     .btn-secondary{background:#232834;color:var(--text-0);border-color:#2d3441}
     .btn-danger{background:var(--danger);color:#fff}
-    .btn-danger:hover{background:#b02a35}
+    .btn-danger:hover{background:#e25555}
+
+    /* Focus rings (keyboard & touch) */
+    .btn:focus, .input:focus, .switch:focus-visible{
+      outline:none;
+      box-shadow:0 0 0 3px rgba(255,200,87,.35);
+    }
 
     /* Install button: hidden unless Chromium prompts */
     #pwa-install{padding:12px 16px;font-size:14px;line-height:1;white-space:nowrap;max-width:100%;display:none}
@@ -69,54 +103,60 @@
       #pwa-install{order:2;width:100%}
     }
 
-    /* Logo — now 2/3 of previous 480px => 320px */
-    .hero-logo{background:var(--bg-1);border-radius:var(--radius-12);box-shadow:var(--shadow);padding:8px}
+    /* Logo — 2/3 of 480px => 320px */
+    .hero-logo{background:var(--bg-1);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:var(--sp-8)}
     .hero-logo img{width:100%;max-width:320px;display:block;margin:0 auto}
 
     /* Sections */
-    .section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-12);box-shadow:var(--shadow);padding:18px}
-    .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:22px;margin:0 0 12px}
+    .section{background:var(--card);border:1px solid var(--border);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:18px}
+    .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:var(--fs-22);margin:0 0 var(--sp-12)}
+
     .section-head{display:flex;justify-content:space-between;align-items:center}
-    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .actions{display:flex;gap:var(--sp-10,10px);flex-wrap:wrap}
 
     /* Form */
-    .label{font-size:14px;color:var(--text-1);margin-bottom:8px;display:block}
-    .input{width:100%;background:#12151b;color:#f2f3f5;border:1px solid var(--border);border-radius:10px;padding:14px 16px;outline:none}
-    .input:focus{box-shadow:0 0 0 3px rgba(255,200,87,.25)}
-    .checkbox{width:20px;height:20px;cursor:pointer;margin-right:8px}
-    .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+    .label{font-size:var(--fs-14);color:var(--text-1);margin-bottom:var(--sp-8);display:block}
+    .input{width:100%;background:#12151b;color:var(--text-0);border:1px solid var(--border);border-radius:10px;padding:14px 16px;outline:none}
+    .checkbox{width:20px;height:20px;cursor:pointer;margin-right:var(--sp-8)}
+    .controls{display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-end}
     .controls .grow{flex:1 1 260px}
 
     /* Table */
-    .table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    .table{width:100%;border-collapse:separate;border-spacing:0 var(--sp-8)}
     .table thead th{color:var(--text-1);font-size:13px;font-weight:600;text-align:left;padding-bottom:4px}
-    .table tbody tr{background:#141821;border:1px solid var(--border);border-radius:8px}
+    .table tbody tr{background:#141821;border:1px solid var(--border);border-radius:var(--r-8)}
     .table tbody td{padding:10px}
     .row-actions{text-align:right}
     .pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
-    .pill-yes{background:rgba(67,170,139,.18);color:#8fe0c9}
-    .pill-no{background:rgba(230,57,70,.18);color:#ffb4ba}
+    .pill-yes{background:rgba(87,210,169,.18);color:#a6efd9}  /* success */
+    .pill-no{background:rgba(255,107,107,.18);color:#ffc1c1}  /* danger */
 
     .footer{color:var(--text-1);font-size:12px;text-align:center;padding:14px 0}
 
     /* Modal */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:300}
-    .modal{background:var(--card);padding:20px;border-radius:var(--radius-12);text-align:center;max-width:360px;width:90%}
+    .modal{background:var(--card);padding:20px;border-radius:var(--r-12);text-align:center;max-width:360px;width:90%}
     .modal h3{margin:0 0 10px;font-family:Oswald,sans-serif;font-size:20px}
     .modal p{margin:0 0 16px;color:var(--text-1)}
     .modal-actions{display:flex;gap:10px;justify-content:center}
 
-    /* Install success banner - centered */
+    /* Centered toast (reuses previous banner) */
     .install-banner{
       position:fixed; top:50%; left:50%;
       transform:translate(-50%,-50%) scale(.96);
-      opacity:0; background:var(--card); color:#f2f3f5;
+      opacity:0; background:var(--card); color:var(--text-0);
       padding:16px 22px; border:1px solid var(--border);
-      border-radius:16px; box-shadow:var(--shadow);
+      border-radius:var(--r-16); box-shadow:var(--shadow-md);
       font-weight:700; font-size:14px; display:none; z-index:350;
       transition:opacity .2s ease, transform .2s ease;
     }
     .install-banner.show{ display:block; opacity:1; transform:translate(-50%,-50%) scale(1); }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .btn:active{transform:none}
+      .install-banner{transition:none}
+    }
   </style>
 </head>
 <body>
@@ -132,9 +172,7 @@
         </div>
 
         <!-- Install button (hidden unless Chromium prompts) -->
-        <button id="pwa-install" class="btn btn-secondary" type="button" aria-label="Install app">
-          Install
-        </button>
+        <button id="pwa-install" class="btn btn-secondary" type="button" aria-label="Install app" data-i18n="installBtn">Install</button>
       </div>
     </div>
 
@@ -146,12 +184,13 @@
       <div class="controls">
         <div class="grow">
           <label for="food-name" class="label" data-i18n="foodLabel">Food item name</label>
-          <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" autocomplete="off">
+          <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" autocomplete="off" aria-describedby="name-help">
         </div>
         <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
       </div>
-      <label style="display:flex;align-items:center;margin-top:8px;">
-        <input id="contains-dairy" type="checkbox" class="checkbox">
+      <div id="name-help" class="label" style="display:none"></div>
+      <label style="display:flex;align-items:center;margin-top:var(--sp-8);">
+        <input id="contains-dairy" type="checkbox" class="checkbox" aria-label="Contains dairy">
         <span data-i18n="dairyLabel">Contains dairy</span>
       </label>
     </section>
@@ -169,12 +208,13 @@
         <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thDairy">Dairy</th><th></th></tr></thead>
         <tbody id="log-body"></tbody>
       </table>
+      <div id="empty-state" class="label" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
     </section>
 
     <footer class="footer" data-i18n="footerText">Designed and created by Burrow · 2025</footer>
   </div>
 
-  <!-- Install success banner -->
+  <!-- Toast -->
   <div id="install-banner" class="install-banner" role="status" aria-live="polite">✅ Installed</div>
 
   <!-- Clear confirmation modal -->
@@ -190,137 +230,230 @@
   </div>
 
   <script>
-    // Keys
-    const STORAGE_KEY='mcFattys.items.v1';
+    // ===== Keys =====
+    const STORAGE_KEY='mcFattys.items.v2';  // versioned for safe future changes
     const LANG_KEY='mcFattys.lang.v1';
 
-    // Elements
+    // ===== Elements =====
     const nameInput=document.getElementById('food-name');
     const dairyCheckbox=document.getElementById('contains-dairy');
     const addBtn=document.getElementById('add-button');
     const exportBtn=document.getElementById('export-button');
     const clearBtn=document.getElementById('clear-all');
     const tbody=document.getElementById('log-body');
+    const emptyState=document.getElementById('empty-state');
     const modal=document.getElementById('confirm-modal');
     const cancelClear=document.getElementById('cancel-clear');
     const confirmClear=document.getElementById('confirm-clear');
     const langToggle=document.getElementById('lang-toggle');
     const switchEl=document.getElementById('switch');
-
     const installBtn=document.getElementById('pwa-install');
-    const banner=document.getElementById('install-banner');
+    const toastEl=document.getElementById('install-banner');
     let deferredPrompt=null;
 
-    // Centered auto-hide banner
-    function showBanner(message, duration=2200){
-      banner.textContent=message;
-      banner.classList.add('show');
-      banner.style.display='block';
-      clearTimeout(banner._hideT);
-      banner._hideT=setTimeout(()=>{
-        banner.classList.remove('show');
-        setTimeout(()=>{ banner.style.display='none'; },200);
+    // ===== Toast helper (centered, auto-hide) =====
+    function showToast(message, duration=2000){
+      toastEl.textContent=message;
+      toastEl.classList.add('show');
+      toastEl.style.display='block';
+      clearTimeout(toastEl._hideT);
+      toastEl._hideT=setTimeout(()=>{
+        toastEl.classList.remove('show');
+        setTimeout(()=>{ toastEl.style.display='none'; },200);
       },duration);
     }
 
-    // i18n
+    // ===== i18n =====
     const i18n={
-      en:{addTitle:"Add item",foodLabel:"Food item name",addBtn:"Add to log",dairyLabel:"Contains dairy",
-          logTitle:"Today’s log",exportBtn:"Export",clearAllBtn:"Clear all",thItem:"Item",thDairy:"Dairy",
-          pillYes:"Yes",pillNo:"No",modalTitle:"Clear all logs?",modalDesc:"Are you sure you want to clear today’s log? This cannot be undone.",
-          cancelBtn:"Cancel",confirmClearBtn:"Yes, clear",footerText:"Designed and created by Burrow · 2025",
-          csvItem:"Item",csvDairy:"Dairy"},
-      de:{addTitle:"Eintrag hinzufügen",foodLabel:"Name des Lebensmittels",addBtn:"Zur Liste hinzufügen",dairyLabel:"Enthält Milchprodukte",
-          logTitle:"Heutiges Protokoll",exportBtn:"Exportieren",clearAllBtn:"Alles löschen",thItem:"Artikel",thDairy:"Milchprodukte",
-          pillYes:"Ja",pillNo:"Nein",modalTitle:"Alle Einträge löschen?",modalDesc:"Möchtest du das heutige Protokoll wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
-          cancelBtn:"Abbrechen",confirmClearBtn:"Ja, löschen",footerText:"Entworfen und erstellt von Burrow · 2025",
-          csvItem:"Artikel",csvDairy:"Milchprodukte"}
+      en:{
+        installBtn:"Install",
+        addTitle:"Add item",foodLabel:"Food item name",addBtn:"Add to log",dairyLabel:"Contains dairy",
+        logTitle:"Today’s log",exportBtn:"Export",clearAllBtn:"Clear all",thItem:"Item",thDairy:"Dairy",
+        pillYes:"Yes",pillNo:"No",
+        modalTitle:"Clear all logs?",modalDesc:"Are you sure you want to clear today’s log? This cannot be undone.",
+        cancelBtn:"Cancel",confirmClearBtn:"Yes, clear",
+        emptyState:"No items yet. Add your first item above.",
+        footerText:"Designed and created by Burrow · 2025",
+        // Toasts
+        toastAdded:"✅ Added",
+        toastRemoved:"🗑️ Removed",
+        toastExported:"📄 Exported",
+        toastInstalledTray:"✅ Installed to app tray",
+        toastInstalled:"✅ App installed",
+        helperEmpty:"Enter a name"
+      },
+      de:{
+        installBtn:"Installieren",
+        addTitle:"Eintrag hinzufügen",foodLabel:"Name des Lebensmittels",addBtn:"Zur Liste hinzufügen",dairyLabel:"Enthält Milchprodukte",
+        logTitle:"Heutiges Protokoll",exportBtn:"Exportieren",clearAllBtn:"Alles löschen",thItem:"Artikel",thDairy:"Milchprodukte",
+        pillYes:"Ja",pillNo:"Nein",
+        modalTitle:"Alle Einträge löschen?",modalDesc:"Möchtest du das heutige Protokoll wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+        cancelBtn:"Abbrechen",confirmClearBtn:"Ja, löschen",
+        emptyState:"Noch keine Einträge. Füge oben deinen ersten hinzu.",
+        footerText:"Entworfen und erstellt von Burrow · 2025",
+        // Toasts
+        toastAdded:"✅ Hinzugefügt",
+        toastRemoved:"🗑️ Entfernt",
+        toastExported:"📄 Exportiert",
+        toastInstalledTray:"✅ In der App-Übersicht installiert",
+        toastInstalled:"✅ App installiert",
+        helperEmpty:"Bitte einen Namen eingeben"
+      }
     };
 
     const state={items:[]};
     let lang='en';
 
-    // Storage
-    function loadItems(){ try{ state.items=JSON.parse(localStorage.getItem(STORAGE_KEY))||[] }catch{} }
-    function saveItems(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state.items)); }
+    // ===== Storage =====
+    function loadItems(){
+      try{
+        const raw=localStorage.getItem(STORAGE_KEY);
+        state.items = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [];
+      }catch{ state.items=[]; }
+    }
+    function saveItems(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items)); }catch{} }
+
     function loadLang(){ lang=localStorage.getItem(LANG_KEY)||'en'; document.documentElement.lang=lang; }
     function saveLang(){ localStorage.setItem(LANG_KEY,lang); document.documentElement.lang=lang; }
 
-    // i18n apply
+    // ===== i18n apply =====
     function applyI18n(){
       const t=i18n[lang];
       document.querySelectorAll('[data-i18n]').forEach(el=>{
-        const key=el.getAttribute('data-i18n'); if(t[key]) el.textContent=t[key];
+        const key=el.getAttribute('data-i18n'); if(t[key]!==undefined) el.textContent=t[key];
       });
       nameInput.placeholder = lang==='de'?'z. B. Cheeseburger':'e.g., Cheeseburger';
       switchEl.classList.toggle('active', lang==='de');
+      installBtn.textContent = t.installBtn;
       render();
     }
 
-    // Render table
+    // ===== Render =====
     function render(){
       const t=i18n[lang];
       tbody.innerHTML='';
+      if(!state.items.length){
+        emptyState.style.display='block';
+      }else{
+        emptyState.style.display='none';
+      }
       state.items.forEach((item,idx)=>{
         const tr=document.createElement('tr');
-        tr.innerHTML=`<td>${item.name}</td>
-          <td><span class="pill ${item.dairy?'pill-yes':'pill-no'}">${item.dairy?t.pillYes:t.pillNo}</span></td>
-          <td class="row-actions"><button class="btn btn-danger">${lang==='de'?'Entfernen':'Remove'}</button></td>`;
-        tr.querySelector('button').onclick=()=>{ state.items.splice(idx,1); saveItems(); render(); };
+
+        const tdName=document.createElement('td');
+        tdName.textContent=item.name;
+
+        const tdDairy=document.createElement('td');
+        const pill=document.createElement('span');
+        pill.className='pill ' + (item.dairy?'pill-yes':'pill-no');
+        pill.textContent=item.dairy?t.pillYes:t.pillNo;
+        tdDairy.appendChild(pill);
+
+        const tdActions=document.createElement('td');
+        tdActions.className='row-actions';
+        const rm=document.createElement('button');
+        rm.className='btn btn-danger';
+        rm.type='button';
+        rm.textContent = lang==='de'?'Entfernen':'Remove';
+        rm.setAttribute('aria-label', (lang==='de'?'Entfernen ':'Remove ')+item.name);
+        rm.addEventListener('click',()=>{
+          state.items.splice(idx,1);
+          saveItems(); render();
+          showToast(t.toastRemoved, 1400);
+        });
+        tdActions.appendChild(rm);
+
+        tr.appendChild(tdName);
+        tr.appendChild(tdDairy);
+        tr.appendChild(tdActions);
         tbody.appendChild(tr);
       });
     }
 
-    // Actions
+    // ===== Actions =====
     function addItem(){
-      const name=nameInput.value.trim(); if(!name) return;
-      state.items.push({name,dairy:dairyCheckbox.checked});
-      saveItems(); render();
-      nameInput.value=''; dairyCheckbox.checked=false;
-    }
-    function exportCSV(){
-      if(!state.items.length) return;
       const t=i18n[lang];
-      const rows=[[t.csvItem,t.csvDairy],...state.items.map(i=>[i.name,i.dairy?t.pillYes:t.pillNo])];
-      const csv=rows.map(r=>r.map(f=>`"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
-      const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
-      const a=document.createElement('a'); a.href=url; a.download='mcFattys-log.csv'; a.click(); URL.revokeObjectURL(url);
-      state.items=[]; saveItems(); render();
+      const name=(nameInput.value||'').trim();
+      if(!name){
+        const help=document.getElementById('name-help');
+        help.style.display='block'; help.textContent=t.helperEmpty;
+        // subtle shake
+        nameInput.style.transform='translateX(0)';
+        nameInput.animate?.([{transform:'translateX(0)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:150});
+        nameInput.focus();
+        return;
+      }
+      document.getElementById('name-help').style.display='none';
+      state.items.push({name, dairy:!!dairyCheckbox.checked});
+      saveItems(); render();
+      nameInput.value=''; dairyCheckbox.checked=false; nameInput.focus();
+      showToast(t.toastAdded, 1000);
     }
 
-    // Bindings
-    addBtn.onclick=addItem;
-    nameInput.onkeydown=e=>{ if(e.key==='Enter') addItem(); };
-    exportBtn.onclick=exportCSV;
-    clearBtn.onclick=()=>modal.style.display='flex';
-    cancelClear.onclick=()=>modal.style.display='none';
-    confirmClear.onclick=()=>{ state.items=[]; saveItems(); render(); modal.style.display='none'; };
+    function exportCSV(){
+      const t=i18n[lang];
+      if(!state.items.length) return;
+      try{
+        const rows=[[t.thItem,t.thDairy], ...state.items.map(i=>[i.name, i.dairy? t.pillYes : t.pillNo])];
+        const csv=rows.map(r=>r.map(f=>`"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a'); a.href=url; a.download='mcFattys-log.csv';
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        // Clear after export (existing behavior)
+        state.items.length=0; saveItems(); render();
+        showToast(t.toastExported, 1400);
+      }catch{
+        showToast('⚠️ Export failed', 1600);
+      }
+    }
 
-    langToggle.onclick=()=>{ lang = (lang==='en')?'de':'en'; saveLang(); applyI18n(); };
-    langToggle.onkeydown=e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); langToggle.click(); } };
+    // ===== Modal control =====
+    function openModal(){ modal.style.display='flex'; }
+    function closeModal(){ modal.style.display='none'; }
+    function clearAllNow(){ state.items.length=0; saveItems(); render(); }
 
-    // PWA basics
+    // ===== Bindings =====
+    addBtn.addEventListener('click', addItem);
+    nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter') addItem(); });
+    exportBtn.addEventListener('click', exportCSV);
+    clearBtn.addEventListener('click', openModal);
+    document.getElementById('cancel-clear').addEventListener('click', closeModal);
+    document.getElementById('confirm-clear').addEventListener('click', ()=>{ clearAllNow(); closeModal(); });
+
+    langToggle.addEventListener('click', ()=>{
+      lang = (lang==='en') ? 'de' : 'en';
+      saveLang(); applyI18n();
+    });
+    langToggle.addEventListener('keydown', e=>{
+      if(e.key==='Enter' || e.key===' '){ e.preventDefault(); langToggle.click(); }
+    });
+
+    // ===== PWA basics =====
     if('serviceWorker' in navigator){ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); }
 
-    // Install flow (Chromium-only). Button stays hidden unless this event arrives.
+    // Show Install only on Chromium when prompt is available
     window.addEventListener('beforeinstallprompt',(e)=>{
       e.preventDefault(); deferredPrompt=e;
       if (!isStandalone()) installBtn.style.display='inline-flex';
     });
 
-    installBtn.onclick=async()=>{
+    installBtn.addEventListener('click', async ()=>{
       if(deferredPrompt){
-        deferredPrompt.prompt();
-        try{ await deferredPrompt.userChoice; }catch(_) {}
+        try{
+          deferredPrompt.prompt();
+          await deferredPrompt.userChoice;
+        }catch{}
         deferredPrompt=null;
         installBtn.style.display='none';
       }
-    };
+    });
 
-    // Installed event → centered message
+    // Installed event → toast
     window.addEventListener('appinstalled', ()=>{
-      const msg = /Android/i.test(navigator.userAgent) ? "✅ Installed to app tray" : "✅ App installed";
-      showBanner(msg, 2200);
+      const t=i18n[lang];
+      const msg = /Android/i.test(navigator.userAgent) ? t.toastInstalledTray : t.toastInstalled;
+      showToast(msg, 2200);
       installBtn.style.display='none';
     });
 
@@ -331,11 +464,8 @@
     document.addEventListener('DOMContentLoaded', ()=>{
       if(isStandalone()) installBtn.style.display='none';
     });
-    window.matchMedia('(display-mode: standalone)').addEventListener?.('change', e=>{
-      if(e.matches) installBtn.style.display='none';
-    });
 
-    // Init
+    // ===== Init =====
     loadLang(); loadItems(); applyI18n();
   </script>
 </body>
