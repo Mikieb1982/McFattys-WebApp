@@ -42,8 +42,9 @@
     .switch.active{background:#3b3f4a}
     .switch.active::after{left:22px}
 
-    /* Install button (top right) */
-    .install-btn{position:absolute;top:10px;right:10px;display:none;align-items:center;gap:8px}
+    /* Install button (top right) — now visible by default */
+    .install-btn{position:absolute;top:10px;right:10px;display:inline-flex;align-items:center;gap:8px}
+
     .btn{padding:10px 16px;border-radius:12px;font-weight:700;cursor:pointer;min-height:40px;transition:.15s;border:1px solid transparent}
     .btn:active{transform:scale(.97)}
     .btn[disabled]{opacity:.5;pointer-events:none}
@@ -99,7 +100,7 @@
       <span>DE</span>
     </div>
 
-    <!-- Install button -->
+    <!-- Install button (now visible by default; JS hides it if already installed) -->
     <button id="pwa-install" class="btn btn-secondary install-btn" type="button">Install</button>
 
     <header class="hero-logo"><img src="Logo.png" alt="McFatty's Food Tracker logo"></header>
@@ -152,7 +153,7 @@
   <div id="ios-help" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="ios-help-title" aria-describedby="ios-help-desc">
     <div class="modal">
       <h3 id="ios-help-title">Install on Safari</h3>
-      <p id="ios-help-desc">iPhone or iPad: tap Share → Add to Home Screen → Add. On Mac Safari: File → Add to Dock.</p>
+      <p id="ios-help-desc">iPhone/iPad: Share → Add to Home Screen → Add. On Mac Safari: File → Add to Dock.</p>
       <div class="modal-actions">
         <button id="ios-help-close" class="btn btn-secondary">OK</button>
       </div>
@@ -321,47 +322,52 @@
     cancelClear.addEventListener('click', closeModal);
     confirmClear.addEventListener('click', ()=>{ clearAllNow(); closeModal(); });
 
-    // PWA: Service worker and install flow
+    // ==== PWA: Service worker and install flow ====
+    // SW required for installability
     if('serviceWorker' in navigator){
       navigator.serviceWorker.register('service-worker.js').catch(()=>{});
     }
 
-    // beforeinstallprompt for Chromium
+    // Helper platform checks
+    const isStandalone = () =>
+      window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const isAppleMobile = () =>
+      /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+    // Show Chromium install prompt when available
     window.addEventListener('beforeinstallprompt',(e)=>{
       e.preventDefault();
       deferredPrompt=e;
       installBtn.style.display='inline-flex';
     });
 
-    function isStandalone(){
-      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
-    }
-    function isSafari(){
-      return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    }
-
     // Install button behavior
     installBtn.addEventListener('click', async ()=>{
-      if(deferredPrompt){
+      if (deferredPrompt) {
         deferredPrompt.prompt();
-        try{ await deferredPrompt.userChoice; }catch(_){}
-        deferredPrompt=null;
-      }else if(isSafari()){
-        // Show instructions modal for Safari
+        try { await deferredPrompt.userChoice; } catch(_) {}
+        deferredPrompt = null;
+      } else if (isAppleMobile()) {
+        // iOS Safari/Chrome/Firefox – show guidance
+        iosHelp.style.display='flex';
+      } else {
+        // Fallback hint (e.g., desktop Safari): show guidance modal too
         iosHelp.style.display='flex';
       }
     });
-    iosHelpClose.addEventListener('click', ()=>{ iosHelp.style.display='none'; });
+    document.getElementById('ios-help-close').addEventListener('click', ()=> iosHelp.style.display='none');
 
+    // Initial visibility: hide only if already installed
     window.addEventListener('DOMContentLoaded', ()=>{
-      if(isStandalone()){
+      if (isStandalone()) {
         installBtn.style.display='none';
-      }else{
-        // On Safari, show Install button to surface instructions
-        if(isSafari()) installBtn.style.display='inline-flex';
+      } else {
+        // Keep visible by default so users can always find how to install
+        installBtn.style.display='inline-flex';
       }
     });
-    // Hide button when display mode changes
+
+    // Hide when app enters standalone
     window.matchMedia('(display-mode: standalone)').addEventListener?.('change', e=>{
       installBtn.style.display = e.matches ? 'none' : 'inline-flex';
     });
