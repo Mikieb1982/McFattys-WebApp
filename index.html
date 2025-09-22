@@ -5,69 +5,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>McFatty's</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#0A84FF" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="McFatty's" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif; }
-    :root{ --bg:#0b0b0d; --card:#141418; --text:#f2f3f5; --muted:#b8bec6; --accent:#0A84FF; --accent2:#FF7A00; }
-    @media (prefers-color-scheme: light){ :root{ --bg:#f6f7f9; --card:#ffffff; --text:#111319; --muted:#4a5160; } }
-    .btn{ padding:.75rem 1rem; border-radius:12px; font-weight:600; display:inline-flex; gap:.5rem; align-items:center; }
+    :root{
+      --bg:#0b0b0d; --card:#141418; --text:#f2f3f5; --muted:#b8bec6;
+      --accent:#0A84FF; --accent2:#FF7A00; /* blue + orange (red/green safe) */
+    }
+    @media (prefers-color-scheme: light){
+      :root{ --bg:#f6f7f9; --card:#ffffff; --text:#111319; --muted:#4a5160; }
+    }
+    .card{ background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:16px; }
+    .btn{ padding:.75rem 1rem; border-radius:12px; font-weight:600; }
     .btn-primary{ background:var(--accent); color:#fff; }
     .btn-ghost{ background:transparent; color:var(--text); border:1px solid rgba(255,255,255,.12); }
-    .card{ background:var(--card); border:1px solid rgba(255,255,255,.06); border-radius:16px; }
     .sr-only{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    input, select { background:transparent; border:1px solid rgba(255,255,255,.12); padding:.6rem .8rem; border-radius:10px; color:var(--text); }
+    table { width:100%; border-collapse:collapse; }
+    th, td { text-align:left; padding:.5rem; }
+    tbody tr { border-top:1px solid rgba(255,255,255,.08); }
   </style>
 </head>
 <body class="min-h-screen" style="background:var(--bg); color:var(--text);">
   <main class="max-w-2xl mx-auto px-4 py-6 space-y-6">
+    <!-- Screen-reader title only -->
     <h1 class="sr-only">McFatty's Food Tracker</h1>
 
+    <!-- Logo full width -->
     <div class="flex justify-center">
       <img src="logo.png" alt="McFatty's logo" style="width:100%; max-width:560px; height:auto; display:block; border-radius:16px;" />
     </div>
 
-    <section class="flex flex-wrap gap-3 justify-center">
-      <button id="btnInstall" class="btn btn-primary" hidden>Install app</button>
-      <button id="btnExport" class="btn btn-ghost">Export CSV</button>
-      <label for="fileImport" class="btn btn-ghost" role="button">Import CSV</label>
-      <input id="fileImport" type="file" accept=".csv,text/csv" class="sr-only" />
-    </section>
-
-    <!-- Example UI so the page "does something" even without your old markup -->
+    <!-- Entry form -->
     <section class="card p-4 space-y-3">
-      <form id="entryForm" class="grid gap-2 sm:grid-cols-2">
-        <input id="date" type="date" class="p-2 rounded bg-transparent border border-white/10" required />
-        <input id="meal" placeholder="Meal" class="p-2 rounded bg-transparent border border-white/10" required />
-        <input id="item" placeholder="Item" class="p-2 rounded bg-transparent border border-white/10" required />
-        <input id="qty" type="number" step="0.1" placeholder="Qty" class="p-2 rounded bg-transparent border border-white/10" />
-        <input id="calories" type="number" step="1" placeholder="Calories" class="p-2 rounded bg-transparent border border-white/10" />
-        <button class="btn btn-primary">Add</button>
+      <form id="entryForm" class="grid gap-3 sm:grid-cols-2">
+        <input id="item" placeholder="What did you eat?" required />
+        <input id="qty" type="text" placeholder="Qty (e.g., 150 g, 2 slices)" />
+        <input id="cal" type="number" inputmode="decimal" placeholder="kcal (optional)" />
+        <select id="meal">
+          <option value="Breakfast">Breakfast</option>
+          <option value="Lunch">Lunch</option>
+          <option value="Dinner">Dinner</option>
+          <option value="Snack">Snack</option>
+        </select>
+        <button class="btn btn-primary sm:col-span-2">Add entry</button>
       </form>
 
-      <table id="entriesTable" class="w-full text-sm">
-        <thead><tr class="text-left">
-          <th class="py-2">Date</th><th>Meal</th><th>Item</th><th>Qty</th><th>Calories</th>
-        </tr></thead>
-        <tbody></tbody>
-      </table>
+      <div class="flex flex-wrap gap-2">
+        <button id="exportCsv" class="btn btn-ghost">Export CSV</button>
+        <button id="exportSheet" class="btn btn-ghost">Export to Google Sheet</button>
+      </div>
 
-      <p class="text-sm" style="color:var(--muted);">Tip: blue/orange highlights are easier to see with red-green colour blindness.</p>
+      <p class="text-sm" style="color:var(--muted);">
+        Entries save on your device. Exports include date and time automatically.
+      </p>
+    </section>
+
+    <!-- Entries table -->
+    <section class="card p-4">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th><th>Time</th><th>Meal</th><th>Item</th><th>Qty</th><th>kcal</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
     </section>
   </main>
 
   <script src="app.js" defer></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      // Robust for GitHub Pages project path
-      const base = location.pathname.endsWith('/') ? location.pathname : location.pathname.replace(/\/[^/]*$/, '/');
-      navigator.serviceWorker.register(base + 'sw.js');
-    }
-  </script>
 </body>
 </html>
