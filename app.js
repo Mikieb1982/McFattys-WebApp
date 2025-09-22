@@ -113,8 +113,9 @@ document.getElementById('btnExport')?.addEventListener('click', ()=>{
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 });
 
-/***** 9) CLEAR ALL *****/
+// clear all with confirmation
 document.getElementById('btnClear')?.addEventListener('click', ()=>{
-  if (!confirm('Delete all items in the log')) return;
-  write([]); render();
+  if (!confirm('Do you really want to clear the entire log?')) return;
+  write([]); 
+  render();
 });
