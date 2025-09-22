@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;700&family=Oswald:wght@700&family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;700&family=Oswald:wght@700&family=Luckiest+Guy&display=swap" rel="stylesheet">
     <style>
         /* Define custom fonts and styles based on the menu template */
         body {
@@ -15,7 +15,7 @@
         }
         .font-anton { font-family: 'Anton', sans-serif; }
         .font-oswald { font-family: 'Oswald', sans-serif; }
-        .font-diner { font-family: 'Pacifico', cursive; }
+        .font-diner { font-family: 'Luckiest Guy', cursive; }
 
         /* A dark, textured background similar to the menu */
         .tracker-container {
@@ -69,14 +69,14 @@
         
         <!-- Header -->
         <header class="text-center mb-8">
-            <img src="./logo.png" alt="McFatty's Food Tracker Logo" class="h-68 w-68 sm:h-60 sm:w-80 object-contain mx-auto">
+            <img src="./logo.png" alt="McFatty's Food Tracker Logo" class="h-48 w-48 sm:h-60 sm:w-60 object-contain mx-auto">
         </header>
 
         <main class="space-y-8">
 
             <!-- Input Form -->
             <section class="bg-gray-800/50 p-6 rounded-lg">
-                <h3 class="font-diner text-4xl text-amber-400 mb-4 tracking-wide">Add Item</h3>
+                <h3 class="font-diner text-4xl text-amber-400 mb-4">ADD ITEM</h3>
                 <form id="food-form" class="space-y-4">
                     <div>
                         <label for="name" class="block text-sm font-bold mb-2">Food Item Name</label>
@@ -95,7 +95,7 @@
             <!-- Food Log -->
             <section class="bg-gray-800/50 p-6 rounded-lg">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-diner text-4xl text-amber-400 tracking-wide">Today's Log</h3>
+                    <h3 class="font-diner text-4xl text-amber-400">TODAY'S LOG</h3>
                     <div class="flex items-center space-x-2">
                         <button id="export-csv" class="log-action-btn bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg text-sm transition-colors">
                             Export
