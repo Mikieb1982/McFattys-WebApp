@@ -5,12 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>McFatty's Food Tracker</title>
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
 
-  <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0f1115">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
@@ -118,10 +116,16 @@
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
     @media (prefers-reduced-motion:reduce){.install-banner,.sidebar{transition:none}.btn:active{transform:none}}
+    
+    /* Desktop-specific adjustments for logo size */
+    @media (min-width: 680px) {
+      .hero-logo img {
+        max-width: 240px;
+      }
+    }
   </style>
 </head>
 <body>
-  <!-- Scrim + Sidebar -->
   <div id="scrim" class="scrim" tabindex="-1" aria-hidden="true"></div>
   <aside id="sidebar" class="sidebar" aria-hidden="true" aria-labelledby="menu-title" role="dialog">
     <div class="sb-head">
@@ -151,18 +155,14 @@
     </div>
   </aside>
 
-  <!-- Toast -->
   <div id="install-banner" class="install-banner" role="status" aria-live="polite">✅ Installed</div>
 
   <div class="container stack-20">
-    <!-- Top bar -->
     <div class="utility-bar" role="region" aria-label="App controls">
       <div class="utility-row">
-        <!-- Left: language toggle -->
         <div id="lang-toggle" class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language EN/DE">
           <span>EN</span><div id="switch" class="switch" aria-hidden="true"></div><span>DE</span>
         </div>
-        <!-- Right: install + burger -->
         <div style="display:flex;align-items:center;gap:12px">
           <button id="pwa-install" class="btn btn-secondary" type="button" aria-label="Install app" data-i18n="installBtn">Install</button>
           <button id="menu-open" class="icon-btn" aria-label="Open menu">
@@ -174,7 +174,6 @@
 
     <header class="hero-logo"><img src="Logo.png" alt="McFatty's Food Tracker logo"></header>
 
-    <!-- ADD ITEM -->
     <section class="section stack-16" aria-labelledby="addItem">
       <h2 id="addItem" data-i18n="addTitle">Add item</h2>
       <div class="controls">
@@ -191,7 +190,6 @@
       </label>
     </section>
 
-    <!-- LOG -->
     <section class="section stack-16" aria-labelledby="todaysLog">
       <div class="section-head">
         <h2 id="todaysLog" data-i18n="logTitle">Today’s log</h2>
@@ -207,7 +205,6 @@
       <div id="empty-state" class="label" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
     </section>
 
-    <!-- HUNGER CHECK-IN -->
     <section class="section stack-16" id="hunger-section" aria-labelledby="hungerTitle">
       <h2 id="hungerTitle" data-i18n="hungerTitle">Hunger Check-in</h2>
       <p class="label" data-i18n="hungerDesc">Notice body cues like hunger, fullness, and energy. This section will add a simple, number-free check-in soon.</p>
@@ -216,7 +213,6 @@
     <footer class="footer" data-i18n="footerText">Designed and created by Burrow · 2025</footer>
   </div>
 
-  <!-- Confirm modal -->
   <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
     <div class="modal">
       <h3 id="confirm-title" data-i18n="modalTitle">Clear all logs?</h3>
