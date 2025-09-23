@@ -168,24 +168,26 @@
         <h2 id="welcome-message"></h2>
     </section>
 
-    <section id="about-section" class="section">
-        <h2>McFatty's Manifesto</h2>
-        <p>McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
-        <p>This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
-        <p>Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
-        <p>We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
-        <p>The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
-        <button id="donate-button" class="btn btn-primary" type="button">Donate</button>
-    </section>
+    <div id="landing-page">
+      <section id="about-section" class="section">
+          <h2>McFatty's Manifesto</h2>
+          <p>McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
+          <p>This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
+          <p>Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
+          <p>We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
+          <p>The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
+          <button id="donate-button" class="btn btn-primary" type="button">Donate</button>
+      </section>
 
-    <section id="auth-section" class="section stack-16">
-        <h2 id="auth-title">Login</h2>
-        <div id="auth-fields-container" class="stack-16"></div>
-        <div class="controls" style="margin-top: 16px;">
-            <button id="auth-submit" class="btn btn-primary" type="button">Login</button>
-            <button id="auth-toggle" class="btn btn-secondary" type="button">Need an account?</button>
-        </div>
-    </section>
+      <section id="auth-section" class="section stack-16">
+          <h2 id="auth-title">Join the Movement</h2>
+          <div id="auth-fields-container" class="stack-16"></div>
+          <div class="controls" style="margin-top: 16px;">
+              <button id="auth-submit" class="btn btn-primary" type="button">Login</button>
+              <button id="auth-toggle" class="btn btn-secondary" type="button">Need an account?</button>
+          </div>
+      </section>
+    </div>
 
     <section class="section stack-16" aria-labelledby="addItem" id="add-item-section" style="display: none;">
       <h2 id="addItem">Add item</h2>
@@ -276,7 +278,7 @@
     const scrim = document.getElementById('scrim');
     const welcomeSection = document.getElementById('welcome-section');
     const welcomeMessage = document.getElementById('welcome-message');
-    const aboutSection = document.getElementById('about-section');
+    const landingPage = document.getElementById('landing-page');
     const donateBtn = document.getElementById('donate-button');
 
     // Auth Elements
@@ -351,7 +353,6 @@
     }
 
     function renderAuthForm() {
-        authTitle.textContent = isLogin ? 'Login' : 'Sign Up';
         authSubmit.textContent = isLogin ? 'Login' : 'Sign Up';
         authToggle.textContent = isLogin ? 'Need an account?' : 'Have an account?';
         
@@ -394,15 +395,14 @@
         const userData = userDoc.data();
         welcomeMessage.textContent = `Welcome, ${userData.name}!`;
         welcomeSection.style.display = 'block';
-        aboutSection.style.display = 'none';
+        landingPage.style.display = 'none';
 
         logCollection = db.collection('users').doc(user.uid).collection('log');
         if (unsubscribe) unsubscribe();
         unsubscribe = logCollection.orderBy('createdAt', 'desc').onSnapshot(snapshot => {
             render(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         }, error => showToast(`⚠️ Error: ${error.message}`));
-
-        authSection.style.display = 'none';
+        
         addItemSection.style.display = 'block';
         logSection.style.display = 'block';
     }
@@ -411,9 +411,8 @@
         if (unsubscribe) unsubscribe();
         logCollection = null;
         render([]);
-        authSection.style.display = 'block';
         welcomeSection.style.display = 'none';
-        aboutSection.style.display = 'block';
+        landingPage.style.display = 'block';
         addItemSection.style.display = 'none';
         logSection.style.display = 'none';
         isLogin = true;
