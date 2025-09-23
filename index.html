@@ -311,8 +311,298 @@
     const i18n = {
       en: {
         loginTitle: "Login / Sign Up",
+        loginLabel: "Login",
+        signupLabel: "Sign Up",
+        needAccountLabel: "Need an account?",
+        haveAccountLabel: "Have an account?",
         manifestoTitle: "McFatty's Manifesto",
         manifestoP1: "McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
         manifestoP2: "This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.",
         manifestoP3: "Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.",
-        manifestoP4: "We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as s
+        manifestoP4: "We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.",
+        manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.",
+        donateBtn: "Donate",
+        addTitle: "Add item",
+        foodLabel: "Food item name",
+        addBtn: "Add to log",
+        dairyLabel: "Contains dairy",
+        logTitle: "Today’s log",
+        exportBtn: "Export",
+        thItem: "Item",
+        thDairy: "Dairy",
+        emptyState: "No items yet. Add your first item above.",
+        footerText: "Designed and created by Burrow · 2025",
+        menuTitle:"Menu",
+        corePractices:"Core Practices",
+        newJournal:"New Journal Entry",
+        settings:"Application Settings",
+        account:"Account",
+        logout:"Log Out",
+        installBtn:"Install",
+        accountModalTitle:"Edit Account",
+        nameLabel:"Name",
+        emailLabel:"Email",
+        deleteAccountBtn:"Delete Account",
+        saveBtn:"Save",
+        cancelBtn:"Cancel",
+        confirmClearBtn:"Confirm",
+        pillYes:"Yes",
+        pillNo:"No",
+        toastAdded:"✅ Added",
+        toastRemoved:"🗑️ Removed",
+        toastExported:"📄 Exported",
+      },
+      de: {
+        loginTitle: "Anmelden / Registrieren",
+        loginLabel: "Anmelden",
+        signupLabel: "Registrieren",
+        needAccountLabel: "Brauchst du ein Konto?",
+        haveAccountLabel: "Hast du ein Konto?",
+        manifestoTitle: "McFatty's Manifest",
+        manifestoP1: "Bei McFatty’s Food Tracker geht es nicht um Kalorien, Einschränkungen oder Schuld. Wenn du Chips willst, iss sie. Keine Scham, keine Bestrafung. Schreib es einfach auf. Das urteilsfreie Notieren ist der entscheidende Akt.",
+        manifestoP2: "Diese App ist kostenlos. Keine Abonnements, keine Zusatzverkäufe, keine Lifestyle-Pakete. Wir lehnen die Vorstellung ab, dass uns Essen und Gesundheit zurückverkauft werden sollten. Essen sollte kein Geschäftsmodell sein.",
+        manifestoP3: "Stattdessen hilft McFatty’s dir, innezuhalten, auf deinen Körper zu hören und deine Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht dir das einfache Protokollieren, Muster zu erkennen und deine Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt vor deinen Entscheidungen verwurzelt sein.",
+        manifestoP4: "Wir sind gegen Zyklen von Schuld, Scham und unmöglichen Versprechen. Wir werden keinen als Selbstfürsorge getarnten Konsumismus feiern. Wir glauben, die radikale Wahl ist, zu verlangsamen, auf sich selbst zu hören und zu seinen eigenen Bedingungen zu essen.",
+        manifestoP5: "Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von deiner Schuld profitieren.",
+        donateBtn: "Spenden",
+        addTitle: "Eintrag hinzufügen",
+        foodLabel: "Name des Lebensmittels",
+        addBtn: "Zum Protokoll hinzufügen",
+        dairyLabel: "Enthält Milchprodukte",
+        logTitle: "Heutiges Protokoll",
+        exportBtn: "Exportieren",
+        thItem: "Artikel",
+        thDairy: "Milchprodukte",
+        emptyState: "Noch keine Einträge. Füge oben deinen ersten hinzu.",
+        footerText: "Entworfen und erstellt von Burrow · 2025",
+        menuTitle:"Menü",
+        corePractices:"Kernpraktiken",
+        newJournal:"Neuer Journaleintrag",
+        settings:"App-Einstellungen",
+        account:"Konto",
+        logout:"Abmelden",
+        installBtn:"Installieren",
+        accountModalTitle:"Konto bearbeiten",
+        nameLabel:"Name",
+        emailLabel:"Email",
+        deleteAccountBtn:"Konto löschen",
+        saveBtn:"Speichern",
+        cancelBtn:"Abbrechen",
+        confirmClearBtn:"Bestätigen",
+        pillYes:"Ja",
+        pillNo:"Nein",
+        toastAdded:"✅ Hinzugefügt",
+        toastRemoved:"🗑️ Entfernt",
+        toastExported:"📄 Exportiert",
+      }
+    };
+
+    function setLanguage(newLang) {
+      lang = newLang;
+      localStorage.setItem('mcfattys_lang', lang);
+      const elements = document.querySelectorAll('[data-i18n]');
+      elements.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[lang][key]) {
+          el.textContent = i18n[lang][key];
+        }
+      });
+      switchEl.classList.toggle('active', lang === 'de');
+      renderAuthForm();
+    }
+
+    function showToast(message, duration = 2000) {
+      toastEl.textContent = message;
+      toastEl.classList.add('show');
+      setTimeout(() => toastEl.classList.remove('show'), duration);
+    }
+    
+    function render(items = []) {
+      const t = i18n[lang] || i18n.en;
+      tbody.innerHTML = '';
+      emptyState.style.display = items.length ? 'none' : 'block';
+      items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.name}</td>
+          <td><span class="pill ${item.dairy ? 'pill-yes' : 'pill-no'}">${item.dairy ? t.pillYes : t.pillNo}</span></td>
+          <td class="row-actions"><button class="btn btn-danger" onclick="removeItem('${item.id}')">${lang === 'de' ? 'Entfernen' : 'Remove'}</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function addItem() {
+      const name = nameInput.value.trim();
+      if (!name || !logCollection) return;
+      try {
+        await logCollection.add({
+          name: name,
+          dairy: dairyCheckbox.checked,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        nameInput.value = '';
+        dairyCheckbox.checked = false;
+        nameInput.focus();
+        showToast(i18n[lang].toastAdded);
+      } catch (error) { showToast(`⚠️ Error: ${error.message}`); }
+    }
+
+    window.removeItem = async function(docId) {
+      if (!logCollection) return;
+      try {
+        await logCollection.doc(docId).delete();
+        showToast(i18n[lang].toastRemoved);
+      } catch (error) { showToast(`⚠️ Error: ${error.message}`); }
+    }
+
+    function renderAuthForm() {
+        const t = i18n[lang] || i18n.en;
+        authSubmit.textContent = isLogin ? t.loginLabel : t.signupLabel;
+        authToggle.textContent = isLogin ? t.needAccountLabel : t.haveAccountLabel;
+        
+        let fieldsHtml = `
+            <div class="controls"><div class="grow"><label for="auth-email" class="label">${t.emailLabel || 'Email Address'}</label><input id="auth-email" class="input" type="email" autocomplete="email"></div></div>
+            <div class="controls"><div class="grow"><label for="auth-password" class="label">${lang === 'de' ? 'Passwort' : 'Password'}</label><input id="auth-password" class="input" type="password" autocomplete="${isLogin ? 'current-password' : 'new-password'}"></div></div>
+        `;
+        if (!isLogin) {
+            fieldsHtml += `
+                <div class="controls"><div class="grow"><label for="auth-username" class="label">${lang === 'de' ? 'Benutzername' : 'Username'}</label><input id="auth-username" class="input" type="text" autocomplete="username"></div></div>
+                <div class="controls"><div class="grow"><label for="auth-re-password" class="label">${lang === 'de' ? 'Passwort wiederholen' : 'Re-type Password'}</label><input id="auth-re-password" class="input" type="password" autocomplete="new-password"></div></div>
+            `;
+        }
+        authFieldsContainer.innerHTML = fieldsHtml;
+    }
+
+    async function handleAuthSubmit() {
+        const email = document.getElementById('auth-email').value;
+        const password = document.getElementById('auth-password').value;
+        try {
+            if (isLogin) {
+                await auth.signInWithEmailAndPassword(email, password);
+            } else {
+                const rePassword = document.getElementById('auth-re-password').value;
+                const username = document.getElementById('auth-username').value;
+                if (password !== rePassword) { showToast(lang === 'de' ? 'Passwörter stimmen nicht überein.' : 'Passwords do not match.'); return; }
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                await db.collection('users').doc(userCredential.user.uid).set({
+                    username: username,
+                    email: email,
+                    name: username
+                });
+                showToast(`${lang === 'de' ? 'Willkommen' : 'Welcome'}, ${username}!`);
+            }
+        } catch (error) { showToast(`⚠️ Error: ${error.message}`); }
+    }
+
+    async function showApp(user) {
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        const userData = userDoc.data();
+        welcomeMessage.textContent = `${lang === 'de' ? 'Willkommen' : 'Welcome'}, ${userData.name}!`;
+        landingPage.style.display = 'none';
+        appContent.style.display = 'block';
+
+        logCollection = db.collection('users').doc(user.uid).collection('log');
+        if (unsubscribe) unsubscribe();
+        unsubscribe = logCollection.orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+            render(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        }, error => showToast(`⚠️ Error: ${error.message}`));
+    }
+
+    function showAuth() {
+        if (unsubscribe) unsubscribe();
+        logCollection = null;
+        render([]);
+        landingPage.style.display = 'block';
+        appContent.style.display = 'none';
+        isLogin = true;
+        renderAuthForm();
+    }
+
+    async function openAccountModal() {
+        const user = auth.currentUser;
+        if (!user) return;
+        try {
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                accountNameInput.value = userData.name || '';
+                accountEmailInput.value = userData.email || '';
+            }
+            accountModal.classList.add('show');
+        } catch (error) {
+            showToast(`⚠️ Could not load user data.`);
+        }
+    }
+
+    async function saveAccountDetails() {
+        const user = auth.currentUser;
+        const newName = accountNameInput.value.trim();
+        if (!user || !newName) return;
+        try {
+            await db.collection('users').doc(user.uid).update({ name: newName });
+            accountModal.classList.remove('show');
+            showToast('✅ Account updated!');
+        } catch (error) {
+            showToast(`⚠️ Error saving details.`);
+        }
+    }
+
+    function confirmDeletion() {
+        confirmDesc.textContent = "Are you sure you want to delete your account? This will permanently delete all of your data.";
+        confirmModal.classList.add('show');
+        confirmActionBtn.onclick = async () => {
+            const user = auth.currentUser;
+            if (user) {
+                try {
+                    const logSnapshot = await db.collection('users').doc(user.uid).collection('log').get();
+                    const batch = db.batch();
+                    logSnapshot.docs.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                    await db.collection('users').doc(user.uid).delete();
+                    await user.delete();
+                    confirmModal.classList.remove('show');
+                    showToast('Account deleted successfully.');
+                } catch (error) {
+                    showToast(`⚠️ Error deleting account.`);
+                }
+            }
+        };
+    }
+
+    function handleMenuAction(action) {
+      sidebar.classList.remove('open');
+      scrim.classList.remove('show');
+      switch(action) {
+        case 'newEntry': appContent.scrollIntoView({ behavior: 'smooth' }); break;
+        case 'account': openAccountModal(); break;
+        case 'logout': auth.signOut(); break;
+        default: showToast('Coming soon'); break;
+      }
+    }
+    
+    // Initial Load
+    const savedLang = localStorage.getItem('mcfattys_lang') || 'en';
+    setLanguage(savedLang);
+
+    // Bindings
+    auth.onAuthStateChanged(user => user ? showApp(user) : showAuth());
+    addBtn?.addEventListener('click', addItem);
+    authToggle.addEventListener('click', () => { isLogin = !isLogin; renderAuthForm(); });
+    authSubmit.addEventListener('click', handleAuthSubmit);
+    langToggle.addEventListener('click', () => setLanguage(lang === 'en' ? 'de' : 'en'));
+    document.getElementById('menu-open')?.addEventListener('click', () => { sidebar.classList.add('open'); scrim.classList.add('show'); });
+    document.getElementById('menu-close')?.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
+    scrim?.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
+    sidebar?.addEventListener('click', e => {
+      const btn = e.target.closest('.sb-item-btn');
+      if (btn) handleMenuAction(btn.getAttribute('data-action'));
+    });
+    saveAccountBtn.addEventListener('click', saveAccountDetails);
+    cancelAccountBtn.addEventListener('click', () => accountModal.classList.remove('show'));
+    deleteAccountBtn.addEventListener('click', confirmDeletion);
+    cancelActionBtn.addEventListener('click', () => confirmModal.classList.remove('show'));
+    donateBtn.addEventListener('click', () => showToast('Donation feature coming soon!'));
+  </script>
+</body>
+</html>
