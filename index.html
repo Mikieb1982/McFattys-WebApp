@@ -265,6 +265,14 @@
       <div id="empty-state" class="label" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
     </section>
 
+    <!-- HUNGER CHECK-IN (new section) -->
+    <section class="section stack-16" id="hunger-section" aria-labelledby="hungerTitle">
+      <h2 id="hungerTitle" data-i18n="hungerTitle">Hunger Check-in</h2>
+      <p class="label" data-i18n="hungerDesc">
+        Notice body cues like hunger, fullness, and energy. This section will add a simple, number-free check-in soon.
+      </p>
+    </section>
+
     <footer class="footer" data-i18n="footerText">Designed and created by Burrow · 2025</footer>
   </div>
 
@@ -350,7 +358,11 @@
         toastInstalledTray:"✅ Installed to app tray",
         toastInstalled:"✅ App installed",
         helperEmpty:"Enter a name",
-        toastSoon:"Coming soon"
+        toastSoon:"Coming soon",
+
+        /* New section */
+        hungerTitle:"Hunger Check-in",
+        hungerDesc:"Notice body cues like hunger, fullness, and energy. This section will add a simple, number-free check-in soon."
       },
       de:{
         menuTitle:"Menü",
@@ -380,7 +392,11 @@
         toastInstalledTray:"✅ In der App-Übersicht installiert",
         toastInstalled:"✅ App installiert",
         helperEmpty:"Bitte einen Namen eingeben",
-        toastSoon:"Bald verfügbar"
+        toastSoon:"Bald verfügbar",
+
+        /* New section */
+        hungerTitle:"Hunger Check-in",
+        hungerDesc:"Achte auf Körpersignale wie Hunger, Sättigung und Energie. Bald kommt hier ein einfaches Check-in ganz ohne Zahlen."
       }
     };
 
@@ -483,17 +499,19 @@
       if(!sidebar.classList.contains('open')) return;
       if(!sidebar.contains(e.target)){ e.stopPropagation(); sidebar.querySelector('.sb-item-btn')?.focus(); }
     }
+    function scrollToId(id){
+      const el=document.getElementById(id);
+      if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); }
+    }
     function handleMenuAction(action){
       const t=i18n[lang];
       switch(action){
         case 'newEntry':
-          document.getElementById('addItem')?.scrollIntoView({behavior:'smooth', block:'start'});
-          closeSidebar();
-          break;
+          scrollToId('addItem'); closeSidebar(); break;
+        case 'hungerCheck':
+          scrollToId('hungerTitle'); closeSidebar(); break;
         default:
-          showToast(t.toastSoon, 1200);
-          closeSidebar();
-          break;
+          showToast(t.toastSoon, 1200); closeSidebar(); break;
       }
     }
 
@@ -518,6 +536,7 @@
 
     // PWA
     if('serviceWorker' in navigator){ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); }
+    let deferredPrompt=null;
     window.addEventListener('beforeinstallprompt',(e)=>{
       e.preventDefault(); deferredPrompt=e;
       if (!isStandalone()) document.getElementById('pwa-install').style.display='inline-flex';
