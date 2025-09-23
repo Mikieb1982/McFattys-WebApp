@@ -10,7 +10,585 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
 
   <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-colo<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>McFatty's Food Tracker</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0f1115">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+  <link rel="preload" href="Logo.png" as="image">
+
+  <style>
+    :root{
+      --bg-0:#0f1115; --bg-1:#171a21; --card:#1c2028;
+      --text-0:#f2f3f5; --text-1:#c9ced6; --border:#2a2f39;
+      --primary:#ffc857; --success:#57d2a9; --danger:#ff6b6b; --info:#7aa2ff;
+      --sp-4:4px; --sp-8:8px; --sp-12:12px; --sp-16:16px; --sp-20:20px; --sp-24:24px;
+      --fs-22:22px; --fs-18:18px; --fs-16:16px; --fs-14:14px; --lh:1.45;
+      --r-8:8px; --r-12:12px; --r-16:16px; --shadow-md:0 8px 20px rgba(0,0,0,.35);
+      --safe-top: env(safe-area-inset-top, 0px);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;background:var(--bg-0);color:var(--text-0);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:var(--lh)}
+    .container{max-width:860px;margin:0 auto;padding:var(--sp-12) var(--sp-16) var(--sp-24)}
+    .stack-16 > *+*{margin-top:var(--sp-16)}
+    .stack-20 > *+*{margin-top:var(--sp-20)}
+
+    /* Top bar */
+    .utility-bar{position:sticky;top:0;z-index:300;padding:calc(var(--sp-8)+var(--safe-top)) var(--sp-8) var(--sp-8);
+      margin:0 calc(-1*var(--sp-16)) var(--sp-12);
+      background:linear-gradient(180deg,rgba(23,26,33,.95),rgba(23,26,33,.75) 70%,rgba(23,26,33,0));
+      backdrop-filter:blur(4px)}
+    .utility-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 var(--sp-8)}
+    .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;border:1px solid #2d3441;background:#232834;color:var(--text-0);cursor:pointer;transition:.15s}
+    .icon-btn:active{transform:scale(.98)}
+    .icon{width:22px;height:22px;display:block}
+
+    /* Lang toggle */
+    .lang-toggle{display:inline-flex;align-items:center;gap:var(--sp-8);user-select:none}
+    .lang-toggle span{font-size:12px;font-weight:700}
+    .switch{position:relative;width:50px;height:28px;background:#232834;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow-md) inset 0 0 4px rgba(0,0,0,.3);transition:.25s}
+    .switch::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;background:var(--primary);border-radius:50%;transition:.25s}
+    .switch.active{background:#3b3f4a}
+    .switch.active::after{left:24px}
+
+    /* Buttons */
+    .btn{padding:12px 18px;border-radius:var(--r-12);font-weight:700;cursor:pointer;min-height:44px;transition:.15s;border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center}
+    .btn:active{transform:scale(.98)}
+    .btn[disabled]{opacity:.5;pointer-events:none}
+    .btn-primary{background:var(--primary);color:#1b1b1b}
+    .btn-secondary{background:#232834;color:var(--text-0);border-color:#2d3441}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn-danger:hover{background:#e25555}
+    .btn:focus,.input:focus,.switch:focus-visible,.icon-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(255,200,87,.35)}
+
+    /* Install button hidden unless prompted */
+    #pwa-install{padding:12px 16px;font-size:14px;line-height:1;white-space:nowrap;max-width:100%;display:none}
+    @media (max-width:620px){.utility-row{flex-wrap:wrap;gap:12px}#pwa-install{width:100%}}
+
+    /* Logo (2/3 size) */
+    .hero-logo{background:var(--bg-1);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:var(--sp-8)}
+    .hero-logo img{width:100%;max-width:320px;display:block;margin:0 auto}
+
+    /* Sections */
+    .section{background:var(--card);border:1px solid var(--border);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:18px}
+    .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:var(--fs-22);margin:0 0 var(--sp-12)}
+    .section-head{display:flex;justify-content:space-between;align-items:center}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .label{font-size:var(--fs-14);color:var(--text-1);margin-bottom:var(--sp-8);display:block}
+    .input{width:100%;background:#12151b;color:var(--text-0);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+    .checkbox{width:20px;height:20px;cursor:pointer;margin-right:var(--sp-8)}
+    .controls{display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-end}
+    .controls .grow{flex:1 1 260px}
+
+    /* Table */
+    .table{width:100%;border-collapse:separate;border-spacing:0 var(--sp-8)}
+    .table thead th{color:var(--text-1);font-size:13px;font-weight:600;text-align:left;padding-bottom:4px}
+    .table tbody tr{background:#141821;border:1px solid var(--border);border-radius:var(--r-8)}
+    .table tbody td{padding:10px}
+    .row-actions{text-align:right}
+    .pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
+    .pill-yes{background:rgba(87,210,169,.18);color:#a6efd9}
+    .pill-no{background:rgba(255,107,107,.18);color:#ffc1c1}
+
+    .footer{color:var(--text-1);font-size:12px;text-align:center;padding:14px 0}
+
+    /* Modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:500}
+    .modal{background:var(--card);padding:20px;border-radius:var(--r-12);text-align:center;max-width:360px;width:90%}
+    .modal h3{margin:0 0 10px;font-family:Oswald,sans-serif;font-size:20px}
+    .modal p{margin:0 0 16px;color:var(--text-1)}
+    .modal-actions{display:flex;gap:10px;justify-content:center}
+
+    /* Toast (centered) */
+    .install-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);opacity:0;background:var(--card);color:var(--text-0);padding:16px 22px;border:1px solid var(--border);border-radius:var(--r-16);box-shadow:var(--shadow-md);font-weight:700;font-size:14px;display:none;z-index:550;transition:opacity .2s ease,transform .2s ease}
+    .install-banner.show{display:block;opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+    /* Sidebar (right) */
+    .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:450}
+    .scrim.show{display:block}
+    .sidebar{position:fixed;top:0;right:0;height:100%;width:300px;max-width:85%;background:var(--card);border-left:1px solid var(--border);box-shadow:var(--shadow-md);transform:translateX(100%);transition:transform .22s ease-out;z-index:600;display:flex;flex-direction:column}
+    .sidebar.open{transform:translateX(0)}
+    .sb-head{display:flex;align-items:center;justify-content:space-between;padding:14px 14px;border-bottom:1px solid var(--border)}
+    .sb-title{font-family:Oswald,sans-serif;font-size:18px;margin:0}
+    .sb-section-title{padding:12px 14px;color:var(--text-1);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+    .sb-list{list-style:none;margin:0;padding:0}
+    .sb-item-btn{width:100%;text-align:left;padding:12px 14px;background:none;color:var(--text-0);border:none;border-top:1px solid rgba(255,255,255,.02);cursor:pointer;display:flex;align-items:center;gap:10px}
+    .sb-item-btn:focus{outline:none;box-shadow:inset 0 0 0 2px rgba(255,200,87,.35)}
+    .sb-item-btn:hover{background:#161a22}
+    .sb-item-icon{width:18px;height:18px;opacity:.9}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+    @media (prefers-reduced-motion:reduce){.install-banner,.sidebar{transition:none}.btn:active{transform:none}}
+    
+    /* Desktop-specific adjustments for logo size */
+    @media (min-width: 680px) {
+      .hero-logo img {
+        max-width: 240px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="scrim" class="scrim" tabindex="-1" aria-hidden="true"></div>
+  <aside id="sidebar" class="sidebar" aria-hidden="true" aria-labelledby="menu-title" role="dialog">
+    <div class="sb-head">
+      <h3 id="menu-title" class="sb-title" data-i18n="menuTitle">Menu</h3>
+      <button id="menu-close" class="icon-btn" aria-label="Close menu">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.7L12 12l6.3 6.3-1.3 1.3L10.7 13.3 4.4 19.6 3.1 18.3 9.4 12 3.1 5.7 4.4 4.4l6.3 6.3 6.3-6.3z"/></svg>
+      </button>
+    </div>
+    <div>
+      <div class="sb-section-title" data-i18n="corePractices">Core Practices</div>
+      <ul class="sb-list">
+        <li><button class="sb-item-btn" data-action="newEntry"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg><span data-i18n="newJournal">New Journal Entry</span></button></li>
+        <li><button class="sb-item-btn" data-action="photoJournal"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M21 5h-3.2l-1.2-2H7.4L6.2 5H3v14h18V5zm-9 12a5 5 0 110-10 5 5 0 010 10z"/></svg><span data-i18n="photoJournal">Photo Journal</span></button></li>
+        <li><button class="sb-item-btn" data-action="hungerCheck"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 00-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 00-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z"/></svg><span data-i18n="hunger">Hunger Check-in</span></button></li>
+      </ul>
+      <div class="sb-section-title" data-i18n="reflectGrow">Reflection & Growth</div>
+      <ul class="sb-list">
+        <li><button class="sb-item-btn" data-action="myJournal"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M6 2h11a2 2 0 012 2v16a2 2 0 01-2 2H6a3 3 0 010-6h11v-2H6a3 3 0 010-6h11V4H6a3 3 0 010-2z"/></svg><span data-i18n="myJournal">My Journal</span></button></li>
+        <li><button class="sb-item-btn" data-action="intentions"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2l3 7h7l-5.5 4.5L18 21l-6-3.5L6 21l1.5-7.5L2 9h7z"/></svg><span data-i18n="intentions">My Intentions</span></button></li>
+      </ul>
+      <div class="sb-section-title" data-i18n="settings">Application Settings</div>
+      <ul class="sb-list">
+        <li><button class="sb-item-btn" data-action="reminders"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 22a2 2 0 002-2H10a2 2 0 002 2zm6-6V11a6 6 0 10-12 0v5L4 18v1h16v-1l-2-2z"/></svg><span data-i18n="reminders">Reminders</span></button></li>
+        <li><button class="sb-item-btn" data-action="theme"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M6.76 4.84l-1.8-1.79L3.17 4.84l1.79 1.79 1.8-1.79zm10.48 0l1.79-1.79 1.79 1.79-1.79 1.79-1.79-1.79zM12 4a8 8 0 100 16 8 8 0 000-16zm0-4h-1v3h2V0h-1zm0 21h-1v3h2v-3h-1z"/></svg><span data-i18n="theme">Theme</span></button></li>
+        <li><button class="sb-item-btn" data-action="account"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/></svg><span data-i18n="account">Account</span></button></li>
+      </ul>
+    </div>
+  </aside>
+
+  <div id="install-banner" class="install-banner" role="status" aria-live="polite">✅ Installed</div>
+
+  <div class="container stack-20">
+    <div class="utility-bar" role="region" aria-label="App controls">
+      <div class="utility-row">
+        <div id="lang-toggle" class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language EN/DE">
+          <span>EN</span><div id="switch" class="switch" aria-hidden="true"></div><span>DE</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button id="pwa-install" class="btn btn-secondary" type="button" aria-label="Install app" data-i18n="installBtn">Install</button>
+          <button id="menu-open" class="icon-btn" aria-label="Open menu">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <header class="hero-logo"><img src="Logo.png" alt="McFatty's Food Tracker logo"></header>
+
+    <section id="auth-section" class="section stack-16">
+        <h2 id="auth-title">Login</h2>
+        <div id="auth-fields-container" class="stack-16">
+            </div>
+        <div class="controls" style="margin-top: 16px;">
+            <button id="auth-submit" class="btn btn-primary" type="button">Login</button>
+            <button id="auth-toggle" class="btn btn-secondary" type="button">Need an account?</button>
+        </div>
+    </section>
+
+    <section class="section stack-16" aria-labelledby="addItem" id="add-item-section" style="display: none;">
+      <h2 id="addItem" data-i18n="addTitle">Add item</h2>
+      <div class="controls">
+        <div class="grow">
+          <label for="food-name" class="label" data-i18n="foodLabel">Food item name</label>
+          <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" autocomplete="off" aria-describedby="name-help">
+        </div>
+        <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
+      </div>
+      <div id="name-help" class="label" style="display:none"></div>
+      <label style="display:flex;align-items:center;margin-top:var(--sp-8);">
+        <input id="contains-dairy" type="checkbox" class="checkbox" aria-label="Contains dairy">
+        <span data-i18n="dairyLabel">Contains dairy</span>
+      </label>
+    </section>
+
+    <section class="section stack-16" aria-labelledby="todaysLog" id="log-section" style="display: none;">
+      <div class="section-head">
+        <h2 id="todaysLog" data-i18n="logTitle">Today’s log</h2>
+        <div class="actions">
+          <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
+          <button id="clear-all" class="btn btn-danger" type="button" data-i18n="clearAllBtn">Clear all</button>
+        </div>
+      </div>
+      <table class="table" aria-describedby="todaysLog">
+        <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thDairy">Dairy</th><th></th></tr></thead>
+        <tbody id="log-body"></tbody>
+      </table>
+      <div id="empty-state" class="label" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
+    </section>
+
+    <section class="section stack-16" id="hunger-section" aria-labelledby="hungerTitle" style="display: none;">
+      <h2 id="hungerTitle" data-i18n="hungerTitle">Hunger Check-in</h2>
+      <p class="label" data-i18n="hungerDesc">Notice body cues like hunger, fullness, and energy. This section will add a simple, number-free check-in soon.</p>
+    </section>
+
+    <footer class="footer" data-i18n="footerText">Designed and created by Burrow · 2025</footer>
+  </div>
+
+  <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
+    <div class="modal">
+      <h3 id="confirm-title" data-i18n="modalTitle">Clear all logs?</h3>
+      <p id="confirm-desc" data-i18n="modalDesc">Are you sure you want to clear today’s log? This cannot be undone.</p>
+      <div class="modal-actions">
+        <button id="cancel-clear" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
+        <button id="confirm-clear" class="btn btn-danger" data-i18n="confirmClearBtn">Yes, clear</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- constants/els
+    const STORAGE_KEY='mcFattys.items.v2';
+    const LANG_KEY='mcFattys.lang.v1';
+    const AUTH_KEY = 'mcFattys.auth.v1';
+
+    const nameInput=document.getElementById('food-name');
+    const dairyCheckbox=document.getElementById('contains-dairy');
+    const addBtn=document.getElementById('add-button');
+    const exportBtn=document.getElementById('export-button');
+    const clearBtn=document.getElementById('clear-all');
+    const tbody=document.getElementById('log-body');
+    const emptyState=document.getElementById('empty-state');
+    const modal=document.getElementById('confirm-modal');
+    const cancelClear=document.getElementById('cancel-clear');
+    const confirmClear=document.getElementById('confirm-clear');
+    const langToggle=document.getElementById('lang-toggle');
+    const switchEl=document.getElementById('switch');
+    const installBtn=document.getElementById('pwa-install');
+    const toastEl=document.getElementById('install-banner');
+    const scrim=document.getElementById('scrim');
+    const sidebar=document.getElementById('sidebar');
+    const menuOpen=document.getElementById('menu-open');
+    const menuClose=document.getElementById('menu-close');
+
+    // Auth Elements
+    const authSection = document.getElementById('auth-section');
+    const authTitle = document.getElementById('auth-title');
+    const authFieldsContainer = document.getElementById('auth-fields-container');
+    const authSubmit = document.getElementById('auth-submit');
+    const authToggle = document.getElementById('auth-toggle');
+
+    // Main Content Sections
+    const addItemSection = document.getElementById('add-item-section');
+    const logSection = document.getElementById('log-section');
+    const hungerSection = document.getElementById('hunger-section');
+
+
+    let deferredPrompt=null;
+    const state={items:[]};
+    let lang='en';
+    let isLogin = true;
+
+    // --- toast
+    function showToast(message, duration=2000){
+      if(!toastEl) return;
+      toastEl.textContent=message;
+      toastEl.classList.add('show');
+      toastEl.style.display='block';
+      clearTimeout(toastEl._hideT);
+      toastEl._hideT=setTimeout(()=>{
+        toastEl.classList.remove('show');
+        setTimeout(()=>{ toastEl.style.display='none'; },200);
+      },duration);
+    }
+
+    // --- i18n
+    const i18n={
+      en:{menuTitle:"Menu",corePractices:"Core Practices",newJournal:"New Journal Entry",photoJournal:"Photo Journal",hunger:"Hunger Check-in",
+          reflectGrow:"Reflection & Growth",myJournal:"My Journal",intentions:"My Intentions",settings:"Application Settings",
+          reminders:"Reminders",theme:"Theme",account:"Account",
+          installBtn:"Install",addTitle:"Add item",foodLabel:"Food item name",addBtn:"Add to log",dairyLabel:"Contains dairy",
+          logTitle:"Today’s log",exportBtn:"Export",clearAllBtn:"Clear all",thItem:"Item",thDairy:"Dairy",pillYes:"Yes",pillNo:"No",
+          modalTitle:"Clear all logs?",modalDesc:"Are you sure you want to clear today’s log? This cannot be undone.",
+          cancelBtn:"Cancel",confirmClearBtn:"Yes, clear",emptyState:"No items yet. Add your first item above.",
+          footerText:"Designed and created by Burrow · 2025",toastAdded:"✅ Added",toastRemoved:"🗑️ Removed",toastExported:"📄 Exported",
+          toastInstalledTray:"✅ Installed to app tray",toastInstalled:"✅ App installed",helperEmpty:"Enter a name",
+          toastSoon:"Coming soon",hungerTitle:"Hunger Check-in",
+          hungerDesc:"Notice body cues like hunger, fullness, and energy. This section will add a simple, number-free check-in soon."
+      },
+      de:{menuTitle:"Menü",corePractices:"Kernpraktiken",newJournal:"Neuer Journaleintrag",photoJournal:"Foto-Journal",hunger:"Hunger Check-in",
+          reflectGrow:"Reflexion & Wachstum",myJournal:"Mein Journal",intentions:"Meine Intentionen",settings:"App-Einstellungen",
+          reminders:"Erinnerungen",theme:"Design",account:"Konto",
+          installBtn:"Installieren",addTitle:"Eintrag hinzufügen",foodLabel:"Name des Lebensmittels",addBtn:"Zur Liste hinzufügen",dairyLabel:"Enthält Milchprodukte",
+          logTitle:"Heutiges Protokoll",exportBtn:"Exportieren",clearAllBtn:"Alles löschen",thItem:"Artikel",thDairy:"Milchprodukte",pillYes:"Ja",pillNo:"Nein",
+          modalTitle:"Alle Einträge löschen?",modalDesc:"Möchtest du das heutige Protokoll wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+          cancelBtn:"Abbrechen",confirmClearBtn:"Ja, löschen",emptyState:"Noch keine Einträge. Füge oben deinen ersten hinzu.",
+          footerText:"Entworfen und erstellt von Burrow · 2025",toastAdded:"✅ Hinzugefügt",toastRemoved:"🗑️ Entfernt",toastExported:"📄 Exportiert",
+          toastInstalledTray:"✅ In der App-Übersicht installiert",toastInstalled:"✅ App installiert",helperEmpty:"Bitte einen Namen eingeben",
+          toastSoon:"Bald verfügbar",hungerTitle:"Hunger Check-in",
+          hungerDesc:"Achte auf Körpersignale wie Hunger, Sättigung und Energie. Bald kommt hier ein einfaches Check-in ganz ohne Zahlen."
+      }
+    };
+
+    // --- storage / lang
+    function loadItems(){ try{ state.items=JSON.parse(localStorage.getItem(STORAGE_KEY))||[] }catch{ state.items=[]; } }
+    function saveItems(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items)); }catch{} }
+    function loadLang(){ try{ lang=localStorage.getItem(LANG_KEY)||'en'; }catch{ lang='en'; } document.documentElement.lang=lang; }
+    function saveLang(){ try{ localStorage.setItem(LANG_KEY,lang); }catch{} document.documentElement.lang=lang; }
+
+    function applyI18n(){
+      const t=i18n[lang]||i18n.en;
+      document.querySelectorAll('[data-i18n]').forEach(el=>{
+        const key=el.getAttribute('data-i18n'); if(t[key]!=null) el.textContent=t[key];
+      });
+      if(nameInput) nameInput.placeholder = lang==='de'?'z. B. Cheeseburger':'e.g., Cheeseburger';
+      if(switchEl) switchEl.classList.toggle('active', lang==='de');
+      if(installBtn) installBtn.textContent = t.installBtn;
+      render();
+    }
+
+    // --- render
+    function render(){
+      const t=i18n[lang]||i18n.en;
+      if(!tbody) return;
+      tbody.innerHTML='';
+      if(emptyState) emptyState.style.display = state.items.length ? 'none' : 'block';
+
+      state.items.forEach((item,idx)=>{
+        const tr=document.createElement('tr');
+
+        const tdName=document.createElement('td'); tdName.textContent=item.name;
+        const tdDairy=document.createElement('td');
+        const pill=document.createElement('span');
+        pill.className='pill ' + (item.dairy?'pill-yes':'pill-no');
+        pill.textContent=item.dairy?t.pillYes:t.pillNo;
+        tdDairy.appendChild(pill);
+
+        const tdActions=document.createElement('td'); tdActions.className='row-actions';
+        const rm=document.createElement('button');
+        rm.className='btn btn-danger'; rm.type='button';
+        rm.textContent = lang==='de'?'Entfernen':'Remove';
+        rm.setAttribute('aria-label', (lang==='de'?'Entfernen ':'Remove ')+item.name);
+        rm.addEventListener('click',()=>{
+          state.items.splice(idx,1); saveItems(); render(); showToast(t.toastRemoved, 1400);
+        });
+        tdActions.appendChild(rm);
+
+        tr.appendChild(tdName); tr.appendChild(tdDairy); tr.appendChild(tdActions);
+        tbody.appendChild(tr);
+      });
+    }
+
+    // --- actions
+    function addItem(){
+      const t=i18n[lang]||i18n.en;
+      const name=(nameInput?.value||'').trim();
+      if(!name){
+        const help=document.getElementById('name-help');
+        if(help){ help.style.display='block'; help.textContent=t.helperEmpty; }
+        nameInput?.animate?.([{transform:'translateX(0)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:150});
+        nameInput?.focus?.(); return;
+      }
+      const help=document.getElementById('name-help'); if(help) help.style.display='none';
+      state.items.push({name, dairy:!!dairyCheckbox?.checked}); saveItems(); render();
+      if(nameInput){ nameInput.value=''; nameInput.focus(); }
+      if(dairyCheckbox) dairyCheckbox.checked=false;
+      showToast(t.toastAdded, 1000);
+    }
+
+    function exportCSV(){
+      const t=i18n[lang]||i18n.en;
+      if(!state.items.length) return;
+      try{
+        const rows=[[t.thItem,t.thDairy], ...state.items.map(i=>[i.name, i.dairy? t.pillYes : t.pillNo])];
+        const csv=rows.map(r=>r.map(f=>`"${String(f).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a'); a.href=url; a.download='mcFattys-log.csv';
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+        state.items.length=0; saveItems(); render(); showToast(t.toastExported, 1400);
+      }catch{ showToast('⚠️ Export failed', 1600); }
+    }
+
+    // --- modal
+    function openModal(){ if(modal) modal.style.display='flex'; }
+    function closeModal(){ if(modal) modal.style.display='none'; }
+    function clearAllNow(){ state.items.length=0; saveItems(); render(); }
+
+    // --- sidebar
+    function openSidebar(){
+      sidebar?.classList.add('open'); sidebar?.setAttribute('aria-hidden','false');
+      scrim?.classList.add('show'); scrim?.setAttribute('aria-hidden','false');
+      const firstBtn=sidebar?.querySelector('.sb-item-btn'); firstBtn?.focus();
+      document.addEventListener('keydown', escHandler);
+      document.addEventListener('focus', focusTrap, true);
+    }
+    function closeSidebar(){
+      sidebar?.classList.remove('open'); sidebar?.setAttribute('aria-hidden','true');
+      scrim?.classList.remove('show'); scrim?.setAttribute('aria-hidden','true');
+      menuOpen?.focus();
+      document.removeEventListener('keydown', escHandler);
+      document.removeEventListener('focus', focusTrap, true);
+    }
+    function escHandler(e){ if(e.key==='Escape') closeSidebar(); }
+    function focusTrap(e){
+      if(!sidebar?.classList.contains('open')) return;
+      if(!sidebar.contains(e.target)){ e.stopPropagation(); sidebar.querySelector('.sb-item-btn')?.focus(); }
+    }
+    function scrollToId(id){ const el=document.getElementById(id); if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); } }
+    function handleMenuAction(action){
+      const t=i18n[lang]||i18n.en;
+      switch(action){
+        case 'newEntry': scrollToId('addItem'); break;
+        case 'hungerCheck': scrollToId('hungerTitle'); break;
+        default: showToast(t.toastSoon, 1200); break;
+      }
+      closeSidebar();
+    }
+    
+    // --- Authentication ---
+    function renderAuthForm() {
+        authTitle.textContent = isLogin ? 'Login' : 'Sign Up';
+        authSubmit.textContent = isLogin ? 'Login' : 'Sign Up';
+        authToggle.textContent = isLogin ? 'Need an account?' : 'Have an account?';
+        
+        let fieldsHtml = `
+            <div class="controls">
+                <div class="grow">
+                    <label for="auth-email" class="label">Email Address</label>
+                    <input id="auth-email" class="input" type="email" placeholder="e.g., user@example.com" autocomplete="email">
+                </div>
+            </div>
+            <div class="controls">
+                <div class="grow">
+                    <label for="auth-password" class="label">Password</label>
+                    <input id="auth-password" class="input" type="password" placeholder="e.g., ••••••••••••" autocomplete="${isLogin ? 'current-password' : 'new-password'}">
+                </div>
+            </div>
+        `;
+
+        if (!isLogin) {
+            fieldsHtml += `
+                <div class="controls">
+                    <div class="grow">
+                        <label for="auth-re-password" class="label">Re-type Password</label>
+                        <input id="auth-re-password" class="input" type="password" placeholder="e.g., ••••••••••••" autocomplete="new-password">
+                    </div>
+                </div>
+                <div class="controls">
+                    <div class="grow">
+                        <label for="auth-username" class="label">Username</label>
+                        <input id="auth-username" class="input" type="text" placeholder="e.g., McFatty" autocomplete="username">
+                    </div>
+                </div>
+            `;
+        }
+        
+        authFieldsContainer.innerHTML = fieldsHtml;
+    }
+
+    function handleAuthSubmit() {
+        const email = document.getElementById('auth-email').value;
+        const password = document.getElementById('auth-password').value;
+
+        if (isLogin) {
+            // --- LOGIN LOGIC ---
+            if (!email || !password) {
+                showToast('Please enter email and password.', 2000);
+                return;
+            }
+            // For now, we just simulate a successful login
+            sessionStorage.setItem(AUTH_KEY, JSON.stringify({ email, loggedIn: true }));
+            showApp();
+        } else {
+            // --- SIGN UP LOGIC ---
+            const rePassword = document.getElementById('auth-re-password').value;
+            const username = document.getElementById('auth-username').value;
+
+            if (!email || !password || !rePassword || !username) {
+                showToast('Please fill out all fields.', 2000);
+                return;
+            }
+            if (password !== rePassword) {
+                showToast('Passwords do not match.', 2000);
+                return;
+            }
+            // For now, we just simulate a successful sign-up
+            sessionStorage.setItem(AUTH_KEY, JSON.stringify({ email, username, loggedIn: true }));
+            showToast(`Welcome, ${username}!`, 2000);
+            showApp();
+        }
+    }
+
+    function showApp() {
+        authSection.style.display = 'none';
+        addItemSection.style.display = 'block';
+        logSection.style.display = 'block';
+        hungerSection.style.display = 'block';
+    }
+
+    function checkAuth() {
+        const authData = sessionStorage.getItem(AUTH_KEY);
+        if (authData && JSON.parse(authData).loggedIn) {
+            showApp();
+        } else {
+            renderAuthForm();
+        }
+    }
+
+
+    // --- bindings
+    addBtn?.addEventListener('click', addItem);
+    nameInput?.addEventListener('keydown', e=>{ if(e.key==='Enter') addItem(); });
+    exportBtn?.addEventListener('click', exportCSV);
+    clearBtn?.addEventListener('click', openModal);
+    cancelClear?.addEventListener('click', closeModal);
+    confirmClear?.addEventListener('click', ()=>{ clearAllNow(); closeModal(); });
+    langToggle?.addEventListener('click', ()=>{ lang = (lang==='en') ? 'de' : 'en'; saveLang(); applyI18n(); });
+    langToggle?.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); langToggle.click(); } });
+    menuOpen?.addEventListener('click', openSidebar);
+    menuClose?.addEventListener('click', closeSidebar);
+    scrim?.addEventListener('click', closeSidebar);
+    sidebar?.addEventListener('click', e=>{
+      const btn=e.target.closest('.sb-item-btn'); if(btn){ handleMenuAction(btn.getAttribute('data-action')); }
+    });
+    authToggle.addEventListener('click', () => {
+        isLogin = !isLogin;
+        renderAuthForm();
+    });
+    authSubmit.addEventListener('click', handleAuthSubmit);
+
+    // --- PWA
+    if('serviceWorker' in navigator){ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); }
+    window.addEventListener('beforeinstallprompt',(e)=>{
+      e.preventDefault(); deferredPrompt=e;
+      if(!isStandalone() && installBtn){ installBtn.style.display='inline-flex'; }
+    });
+    installBtn?.addEventListener('click', async ()=>{
+      if(deferredPrompt){
+        try{ deferredPrompt.prompt(); await deferredPrompt.userChoice; }catch{}
+        deferredPrompt=null; if(installBtn) installBtn.style.display='none';
+      }
+    });
+    window.addEventListener('appinstalled', ()=>{
+      const t=i18n[lang]||i18n.en;
+      const msg=/Android/i.test(navigator.userAgent)?t.toastInstalledTray:t.toastInstalled;
+      showToast(msg, 2200);
+      if(installBtn) installBtn.style.display='none';
+    });
+    function isStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }
+
+    // --- init
+    (function init(){
+      loadLang(); 
+      loadItems(); 
+      applyI18n();
+      checkAuth();
+      if(isStandalone() && installBtn){ installBtn.style.display='none'; }
+    })();
+  </script>
+</body>
+</html>r" content="#0f1115">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
   <link rel="preload" href="Logo.png" as="image">
 
