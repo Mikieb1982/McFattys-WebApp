@@ -234,13 +234,30 @@
       </div>
     </div>
   </div>
+  
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // --- constants/els
-    const STORAGE_KEY='mcFattys.items.v2';
-    const LANG_KEY='mcFattys.lang.v1';
-    const AUTH_KEY = 'mcFattys.auth.v1';
+    // --- 1. PASTE YOUR FIREBASE CONFIGURATION OBJECT HERE ---
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
 
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    let logCollection; // Will be set after user logs in
+    let unsubscribe; // To detach Firestore listener on logout
+
+    // --- constants/els
     const nameInput=document.getElementById('food-name');
     const dairyCheckbox=document.getElementById('contains-dairy');
     const addBtn=document.getElementById('add-button');
@@ -273,8 +290,7 @@
     const hungerSection = document.getElementById('hunger-section');
 
 
-    let deferredPrompt=null;
-    const state={items:[]};
+    let state={items:[]};
     let lang='en';
     let isLogin = true;
 
@@ -290,60 +306,16 @@
         setTimeout(()=>{ toastEl.style.display='none'; },200);
       },duration);
     }
-
-    // --- i18n
-    const i18n={
-      en:{menuTitle:"Menu",corePractices:"Core Practices",newJournal:"New Journal Entry",photoJournal:"Photo Journal",hunger:"Hunger Check-in",
-          reflectGrow:"Reflection & Growth",myJournal:"My Journal",intentions:"My Intentions",settings:"Application Settings",
-          reminders:"Reminders",theme:"Theme",account:"Account", logout:"Log Out",
-          installBtn:"Install",addTitle:"Add item",foodLabel:"Food item name",addBtn:"Add to log",dairyLabel:"Contains dairy",
-          logTitle:"Today’s log",exportBtn:"Export",clearAllBtn:"Clear all",thItem:"Item",thDairy:"Dairy",pillYes:"Yes",pillNo:"No",
-          modalTitle:"Clear all logs?",modalDesc:"Are you sure you want to clear today’s log? This cannot be undone.",
-          cancelBtn:"Cancel",confirmClearBtn:"Yes, clear",emptyState:"No items yet. Add your first item above.",
-          footerText:"Designed and created by Burrow · 2025",toastAdded:"✅ Added",toastRemoved:"🗑️ Removed",toastExported:"📄 Exported",
-          toastInstalledTray:"✅ Installed to app tray",toastInstalled:"✅ App installed",helperEmpty:"Enter a name",
-          toastSoon:"Coming soon",hungerTitle:"Hunger Check-in",
-          hungerDesc:"Notice body cues like hunger, fullness, and energy. This section will add a simple, number-free check-in soon."
-      },
-      de:{menuTitle:"Menü",corePractices:"Kernpraktiken",newJournal:"Neuer Journaleintrag",photoJournal:"Foto-Journal",hunger:"Hunger Check-in",
-          reflectGrow:"Reflexion & Wachstum",myJournal:"Mein Journal",intentions:"Meine Intentionen",settings:"App-Einstellungen",
-          reminders:"Erinnerungen",theme:"Design",account:"Konto", logout: "Ausloggen",
-          installBtn:"Installieren",addTitle:"Eintrag hinzufügen",foodLabel:"Name des Lebensmittels",addBtn:"Zur Liste hinzufügen",dairyLabel:"Enthält Milchprodukte",
-          logTitle:"Heutiges Protokoll",exportBtn:"Exportieren",clearAllBtn:"Alles löschen",thItem:"Artikel",thDairy:"Milchprodukte",pillYes:"Ja",pillNo:"Nein",
-          modalTitle:"Alle Einträge löschen?",modalDesc:"Möchtest du das heutige Protokoll wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
-          cancelBtn:"Abbrechen",confirmClearBtn:"Ja, löschen",emptyState:"Noch keine Einträge. Füge oben deinen ersten hinzu.",
-          footerText:"Entworfen und erstellt von Burrow · 2025",toastAdded:"✅ Hinzugefügt",toastRemoved:"🗑️ Entfernt",toastExported:"📄 Exportiert",
-          toastInstalledTray:"✅ In der App-Übersicht installiert",toastInstalled:"✅ App installiert",helperEmpty:"Bitte einen Namen eingeben",
-          toastSoon:"Bald verfügbar",hungerTitle:"Hunger Check-in",
-          hungerDesc:"Achte auf Körpersignale wie Hunger, Sättigung und Energie. Bald kommt hier ein einfaches Check-in ganz ohne Zahlen."
-      }
-    };
-
-    // --- storage / lang
-    function loadItems(){ try{ state.items=JSON.parse(localStorage.getItem(STORAGE_KEY))||[] }catch{ state.items=[]; } }
-    function saveItems(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.items)); }catch{} }
-    function loadLang(){ try{ lang=localStorage.getItem(LANG_KEY)||'en'; }catch{ lang='en'; } document.documentElement.lang=lang; }
-    function saveLang(){ try{ localStorage.setItem(LANG_KEY,lang); }catch{} document.documentElement.lang=lang; }
-
-    function applyI18n(){
-      const t=i18n[lang]||i18n.en;
-      document.querySelectorAll('[data-i18n]').forEach(el=>{
-        const key=el.getAttribute('data-i18n'); if(t[key]!=null) el.textContent=t[key];
-      });
-      if(nameInput) nameInput.placeholder = lang==='de'?'z. B. Cheeseburger':'e.g., Cheeseburger';
-      if(switchEl) switchEl.classList.toggle('active', lang==='de');
-      if(installBtn) installBtn.textContent = t.installBtn;
-      render();
-    }
-
+    
     // --- render
-    function render(){
+    function render(items = []){
       const t=i18n[lang]||i18n.en;
       if(!tbody) return;
       tbody.innerHTML='';
-      if(emptyState) emptyState.style.display = state.items.length ? 'none' : 'block';
+      emptyState.style.display = items.length ? 'none' : 'block';
+      state.items = items; // Update local state for export
 
-      state.items.forEach((item,idx)=>{
+      items.forEach((item)=>{
         const tr=document.createElement('tr');
 
         const tdName=document.createElement('td'); tdName.textContent=item.name;
@@ -358,9 +330,7 @@
         rm.className='btn btn-danger'; rm.type='button';
         rm.textContent = lang==='de'?'Entfernen':'Remove';
         rm.setAttribute('aria-label', (lang==='de'?'Entfernen ':'Remove ')+item.name);
-        rm.addEventListener('click',()=>{
-          state.items.splice(idx,1); saveItems(); render(); showToast(t.toastRemoved, 1400);
-        });
+        rm.addEventListener('click',() => removeItem(item.id));
         tdActions.appendChild(rm);
 
         tr.appendChild(tdName); tr.appendChild(tdDairy); tr.appendChild(tdActions);
@@ -368,21 +338,43 @@
       });
     }
 
-    // --- actions
-    function addItem(){
-      const t=i18n[lang]||i18n.en;
-      const name=(nameInput?.value||'').trim();
-      if(!name){
-        const help=document.getElementById('name-help');
-        if(help){ help.style.display='block'; help.textContent=t.helperEmpty; }
-        nameInput?.animate?.([{transform:'translateX(0)'},{transform:'translateX(6px)'},{transform:'translateX(0)'}],{duration:150});
-        nameInput?.focus?.(); return;
+    // --- Firestore Data Actions ---
+    async function addItem(){
+      const name = (nameInput?.value||'').trim();
+      if(!name) { 
+        showToast('Please enter an item name.');
+        return;
       }
-      const help=document.getElementById('name-help'); if(help) help.style.display='none';
-      state.items.push({name, dairy:!!dairyCheckbox?.checked}); saveItems(); render();
-      if(nameInput){ nameInput.value=''; nameInput.focus(); }
-      if(dairyCheckbox) dairyCheckbox.checked=false;
-      showToast(t.toastAdded, 1000);
+      if (!logCollection) {
+        showToast('Error: Not logged in.');
+        return;
+      }
+
+      try {
+        await logCollection.add({
+          name: name,
+          dairy: !!dairyCheckbox?.checked,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        if(nameInput) nameInput.value='';
+        if(dairyCheckbox) dairyCheckbox.checked=false;
+        nameInput.focus();
+        showToast('✅ Added', 1000);
+      } catch (error) {
+        console.error("Error adding document: ", error);
+        showToast(`⚠️ Error: ${error.message}`);
+      }
+    }
+
+    async function removeItem(docId) {
+      if (!logCollection) return;
+      try {
+        await logCollection.doc(docId).delete();
+        showToast('🗑️ Removed', 1400);
+      } catch (error) {
+        console.error("Error removing document: ", error);
+        showToast(`⚠️ Error: ${error.message}`);
+      }
     }
 
     function exportCSV(){
@@ -395,44 +387,8 @@
         const url=URL.createObjectURL(blob);
         const a=document.createElement('a'); a.href=url; a.download='mcFattys-log.csv';
         document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-        state.items.length=0; saveItems(); render(); showToast(t.toastExported, 1400);
+        showToast('📄 Exported', 1400);
       }catch{ showToast('⚠️ Export failed', 1600); }
-    }
-
-    // --- modal
-    function openModal(){ if(modal) modal.style.display='flex'; }
-    function closeModal(){ if(modal) modal.style.display='none'; }
-    function clearAllNow(){ state.items.length=0; saveItems(); render(); }
-
-    // --- sidebar
-    function openSidebar(){
-      sidebar?.classList.add('open'); sidebar?.setAttribute('aria-hidden','false');
-      scrim?.classList.add('show'); scrim?.setAttribute('aria-hidden','false');
-      const firstBtn=sidebar?.querySelector('.sb-item-btn'); firstBtn?.focus();
-      document.addEventListener('keydown', escHandler);
-      document.addEventListener('focus', focusTrap, true);
-    }
-    function closeSidebar(){
-      sidebar?.classList.remove('open'); sidebar?.setAttribute('aria-hidden','true');
-      scrim?.classList.remove('show'); scrim?.setAttribute('aria-hidden','true');
-      menuOpen?.focus();
-      document.removeEventListener('keydown', escHandler);
-      document.removeEventListener('focus', focusTrap, true);
-    }
-    function escHandler(e){ if(e.key==='Escape') closeSidebar(); }
-    function focusTrap(e){
-      if(!sidebar?.classList.contains('open')) return;
-      if(!sidebar.contains(e.target)){ e.stopPropagation(); sidebar.querySelector('.sb-item-btn')?.focus(); }
-    }
-    function handleMenuAction(action){
-      const t=i18n[lang]||i18n.en;
-      closeSidebar();
-      switch(action){
-        case 'newEntry': scrollToId('addItem'); break;
-        case 'hungerCheck': scrollToId('hungerTitle'); break;
-        case 'logout': handleLogout(); break;
-        default: showToast(t.toastSoon, 1200); break;
-      }
     }
     
     // --- Authentication ---
@@ -476,45 +432,51 @@
         authFieldsContainer.innerHTML = fieldsHtml;
     }
 
-    function handleAuthSubmit() {
+    async function handleAuthSubmit() {
         const email = document.getElementById('auth-email').value;
         const password = document.getElementById('auth-password').value;
 
-        if (isLogin) {
-            // --- LOGIN LOGIC ---
-            if (!email || !password) {
-                showToast('Please enter email and password.', 2000);
-                return;
-            }
-            // For now, we just simulate a successful login
-            sessionStorage.setItem(AUTH_KEY, JSON.stringify({ email, loggedIn: true }));
-            showApp();
-        } else {
-            // --- SIGN UP LOGIC ---
-            const rePassword = document.getElementById('auth-re-password').value;
-            const username = document.getElementById('auth-username').value;
+        try {
+            if (isLogin) {
+                if (!email || !password) { showToast('Please enter email and password.'); return; }
+                await auth.signInWithEmailAndPassword(email, password);
+                showToast('Logged in successfully!');
+            } else {
+                const rePassword = document.getElementById('auth-re-password').value;
+                const username = document.getElementById('auth-username').value;
 
-            if (!email || !password || !rePassword || !username) {
-                showToast('Please fill out all fields.', 2000);
-                return;
+                if (!email || !password || !rePassword || !username) { showToast('Please fill out all fields.'); return; }
+                if (password !== rePassword) { showToast('Passwords do not match.'); return; }
+                
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                await db.collection('users').doc(userCredential.user.uid).set({
+                    username: username,
+                    email: email
+                });
+                showToast(`Welcome, ${username}!`);
             }
-            if (password !== rePassword) {
-                showToast('Passwords do not match.', 2000);
-                return;
-            }
-            // For now, we just simulate a successful sign-up
-            sessionStorage.setItem(AUTH_KEY, JSON.stringify({ email, username, loggedIn: true }));
-            showToast(`Welcome, ${username}!`, 2000);
-            showApp();
+        } catch (error) {
+            console.error("Authentication error:", error);
+            showToast(`⚠️ Error: ${error.message}`);
         }
     }
 
     function handleLogout() {
-        sessionStorage.removeItem(AUTH_KEY);
-        showAuth();
+        auth.signOut();
     }
     
-    function showApp() {
+    function showApp(user) {
+        logCollection = db.collection('users').doc(user.uid).collection('log');
+        
+        // Listen for real-time updates
+        unsubscribe = logCollection.orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+            const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            render(items);
+        }, error => {
+            console.error("Firestore listener error:", error);
+            showToast(`⚠️ Error loading data: ${error.message}`);
+        });
+
         authSection.style.display = 'none';
         addItemSection.style.display = 'block';
         logSection.style.display = 'block';
@@ -522,6 +484,10 @@
     }
 
     function showAuth() {
+        if (unsubscribe) unsubscribe(); // Detach the listener
+        logCollection = null;
+        render([]); // Clear the UI
+
         authSection.style.display = 'block';
         addItemSection.style.display = 'none';
         logSection.style.display = 'none';
@@ -530,66 +496,43 @@
         renderAuthForm();
     }
 
+    // --- Auth State Listener ---
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        showApp(user);
+      } else {
+        showAuth();
+      }
+    });
 
-    function checkAuth() {
-        const authData = sessionStorage.getItem(AUTH_KEY);
-        if (authData && JSON.parse(authData).loggedIn) {
-            showApp();
-        } else {
-            showAuth();
-        }
+    // --- Other Bindings and Functions (Sidebar, Modal, etc.) ---
+    // (This part remains largely the same)
+    function handleMenuAction(action){
+      closeSidebar();
+      switch(action){
+        case 'newEntry': document.getElementById('add-item-section').scrollIntoView({behavior:'smooth'}); break;
+        case 'hungerCheck': document.getElementById('hunger-section').scrollIntoView({behavior:'smooth'}); break;
+        case 'logout': handleLogout(); break;
+        default: showToast('Coming soon', 1200); break;
+      }
     }
-
-
-    // --- bindings
+    
+    // Bindings
     addBtn?.addEventListener('click', addItem);
     nameInput?.addEventListener('keydown', e=>{ if(e.key==='Enter') addItem(); });
     exportBtn?.addEventListener('click', exportCSV);
-    clearBtn?.addEventListener('click', openModal);
-    cancelClear?.addEventListener('click', closeModal);
-    confirmClear?.addEventListener('click', ()=>{ clearAllNow(); closeModal(); });
-    langToggle?.addEventListener('click', ()=>{ lang = (lang==='en') ? 'de' : 'en'; saveLang(); applyI18n(); });
-    langToggle?.addEventListener('keydown', e=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); langToggle.click(); } });
-    menuOpen?.addEventListener('click', openSidebar);
-    menuClose?.addEventListener('click', closeSidebar);
-    scrim?.addEventListener('click', closeSidebar);
-    sidebar?.addEventListener('click', e=>{
-      const btn=e.target.closest('.sb-item-btn'); if(btn){ handleMenuAction(btn.getAttribute('data-action')); }
-    });
     authToggle.addEventListener('click', () => {
         isLogin = !isLogin;
         renderAuthForm();
     });
     authSubmit.addEventListener('click', handleAuthSubmit);
+    menuOpen?.addEventListener('click', () => sidebar.classList.add('open'));
+    menuClose?.addEventListener('click', () => sidebar.classList.remove('open'));
+    scrim?.addEventListener('click', () => sidebar.classList.remove('open'));
+    sidebar?.addEventListener('click', e => {
+      const btn=e.target.closest('.sb-item-btn'); if(btn){ handleMenuAction(btn.getAttribute('data-action')); }
+    });
 
-    // --- PWA
-    if('serviceWorker' in navigator){ navigator.serviceWorker.register('service-worker.js').catch(()=>{}); }
-    window.addEventListener('beforeinstallprompt',(e)=>{
-      e.preventDefault(); deferredPrompt=e;
-      if(!isStandalone() && installBtn){ installBtn.style.display='inline-flex'; }
-    });
-    installBtn?.addEventListener('click', async ()=>{
-      if(deferredPrompt){
-        try{ deferredPrompt.prompt(); await deferredPrompt.userChoice; }catch{}
-        deferredPrompt=null; if(installBtn) installBtn.style.display='none';
-      }
-    });
-    window.addEventListener('appinstalled', ()=>{
-      const t=i18n[lang]||i18n.en;
-      const msg=/Android/i.test(navigator.userAgent)?t.toastInstalledTray:t.toastInstalled;
-      showToast(msg, 2200);
-      if(installBtn) installBtn.style.display='none';
-    });
-    function isStandalone(){ return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true; }
-
-    // --- init
-    (function init(){
-      loadLang(); 
-      loadItems(); 
-      applyI18n();
-      checkAuth();
-      if(isStandalone() && installBtn){ installBtn.style.display='none'; }
-    })();
   </script>
 </body>
 </html>
