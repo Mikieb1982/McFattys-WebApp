@@ -41,7 +41,7 @@
     .icon{width:22px;height:22px;display:block}
 
     /* Lang toggle */
-    .lang-toggle{display:inline-flex;align-items:center;gap:var(--sp-8);user-select:none}
+    .lang-toggle{display:inline-flex;align-items:center;gap:var(--sp-8);user-select:none;cursor:pointer}
     .lang-toggle span{font-size:12px;font-weight:700}
     .switch{position:relative;width:50px;height:28px;background:#232834;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow-md) inset 0 0 4px rgba(0,0,0,.3);transition:.25s}
     .switch::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;background:var(--primary);border-radius:50%;transition:.25s}
@@ -129,32 +129,34 @@
   <div id="scrim" class="scrim" tabindex="-1" aria-hidden="true"></div>
   <aside id="sidebar" class="sidebar" aria-hidden="true" aria-labelledby="menu-title" role="dialog">
     <div class="sb-head">
-      <h3 id="menu-title" class="sb-title">Menu</h3>
+      <h3 id="menu-title" class="sb-title" data-i18n="menuTitle">Menu</h3>
       <button id="menu-close" class="icon-btn" aria-label="Close menu">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.7L12 12l6.3 6.3-1.3 1.3L10.7 13.3 4.4 19.6 3.1 18.3 9.4 12 3.1 5.7 4.4 4.4l6.3 6.3 6.3-6.3z"/></svg>
       </button>
     </div>
     <div>
-      <div class="sb-section-title">Core Practices</div>
+      <div class="sb-section-title" data-i18n="corePractices">Core Practices</div>
       <ul class="sb-list">
-        <li><button class="sb-item-btn" data-action="newEntry"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg><span>New Journal Entry</span></button></li>
+        <li><button class="sb-item-btn" data-action="newEntry"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg><span data-i18n="newJournal">New Journal Entry</span></button></li>
       </ul>
-      <div class="sb-section-title">Application Settings</div>
+      <div class="sb-section-title" data-i18n="settings">Application Settings</div>
       <ul class="sb-list">
-        <li><button class="sb-item-btn" data-action="account"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/></svg><span>Account</span></button></li>
-        <li><button class="sb-item-btn" data-action="logout"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 17v-3H9v-2h7V9l4 4-4 4zm-5-3H4V5h7V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2z"></path></svg><span>Log Out</span></button></li>
+        <li><button class="sb-item-btn" data-action="account"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/></svg><span data-i18n="account">Account</span></button></li>
+        <li><button class="sb-item-btn" data-action="logout"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 17v-3H9v-2h7V9l4 4-4 4zm-5-3H4V5h7V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2z"></path></svg><span data-i18n="logout">Log Out</span></button></li>
       </ul>
     </div>
   </aside>
 
-  <div id="install-banner" class="install-banner" role="status" aria-live="polite">✅ Installed</div>
+  <div id="install-banner" class="install-banner" role="status" aria-live="polite"></div>
 
   <div class="container stack-20">
     <div class="utility-bar" role="region" aria-label="App controls">
       <div class="utility-row">
-        <div></div>
+        <div id="lang-toggle" class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language EN/DE">
+          <span>EN</span><div id="switch" class="switch" aria-hidden="true"></div><span>DE</span>
+        </div>
         <div style="display:flex;align-items:center;gap:12px">
-          <button id="pwa-install" class="btn btn-secondary" type="button" aria-label="Install app">Install</button>
+          <button id="pwa-install" class="btn btn-secondary" type="button" aria-label="Install app" data-i18n="installBtn">Install</button>
           <button id="menu-open" class="icon-btn" aria-label="Open menu">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
           </button>
@@ -164,59 +166,59 @@
 
     <header class="hero-logo"><img src="Logo.png" alt="McFatty's Food Tracker logo"></header>
 
-    <section id="welcome-section" class="section" style="display: none;">
-        <h2 id="welcome-message"></h2>
-    </section>
-
     <div id="landing-page">
-      <section id="about-section" class="section">
-          <h2>McFatty's Manifesto</h2>
-          <p>McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
-          <p>This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
-          <p>Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
-          <p>We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
-          <p>The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
-          <button id="donate-button" class="btn btn-primary" type="button">Donate</button>
-      </section>
-
-      <section id="auth-section" class="section stack-16">
-          <h2 id="auth-title">Join the Movement</h2>
-          <div id="auth-fields-container" class="stack-16"></div>
-          <div class="controls" style="margin-top: 16px;">
-              <button id="auth-submit" class="btn btn-primary" type="button">Login</button>
-              <button id="auth-toggle" class="btn btn-secondary" type="button">Need an account?</button>
-          </div>
-      </section>
+        <section id="auth-section" class="section stack-16">
+            <h2 id="auth-title" data-i18n="loginTitle">Login / Sign Up</h2>
+            <div id="auth-fields-container" class="stack-16"></div>
+            <div class="controls" style="margin-top: 16px;">
+                <button id="auth-submit" class="btn btn-primary" type="button"></button>
+                <button id="auth-toggle" class="btn btn-secondary" type="button"></button>
+            </div>
+        </section>
+        <section id="about-section" class="section">
+            <h2 data-i18n="manifestoTitle">McFatty's Manifesto</h2>
+            <p data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
+            <p data-i18n="manifestoP2">This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
+            <p data-i18n="manifestoP3">Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
+            <p data-i18n="manifestoP4">We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
+            <p data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
+            <button id="donate-button" class="btn btn-primary" type="button" data-i18n="donateBtn">Donate</button>
+        </section>
     </div>
 
-    <section class="section stack-16" aria-labelledby="addItem" id="add-item-section" style="display: none;">
-      <h2 id="addItem">Add item</h2>
-      <div class="controls">
-        <div class="grow">
-          <label for="food-name" class="label">Food item name</label>
-          <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" autocomplete="off">
-        </div>
-        <button id="add-button" class="btn btn-primary" type="button">Add to log</button>
-      </div>
-      <label style="display:flex;align-items:center;margin-top:var(--sp-8);">
-        <input id="contains-dairy" type="checkbox" class="checkbox" aria-label="Contains dairy">
-        <span>Contains dairy</span>
-      </label>
-    </section>
+    <div id="app-content" style="display: none;">
+        <section id="welcome-section" class="section">
+            <h2 id="welcome-message"></h2>
+        </section>
+        <section class="section stack-16" aria-labelledby="addItem" id="add-item-section">
+          <h2 id="addItem" data-i18n="addTitle">Add item</h2>
+          <div class="controls">
+            <div class="grow">
+              <label for="food-name" class="label" data-i18n="foodLabel">Food item name</label>
+              <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" autocomplete="off">
+            </div>
+            <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
+          </div>
+          <label style="display:flex;align-items:center;margin-top:var(--sp-8);">
+            <input id="contains-dairy" type="checkbox" class="checkbox" aria-label="Contains dairy">
+            <span data-i18n="dairyLabel">Contains dairy</span>
+          </label>
+        </section>
 
-    <section class="section stack-16" aria-labelledby="todaysLog" id="log-section" style="display: none;">
-      <div class="section-head">
-        <h2 id="todaysLog">Today’s log</h2>
-        <button id="export-button" class="btn btn-secondary" type="button">Export</button>
-      </div>
-      <table class="table" aria-describedby="todaysLog">
-        <thead><tr><th>Item</th><th>Dairy</th><th></th></tr></thead>
-        <tbody id="log-body"></tbody>
-      </table>
-      <div id="empty-state" class="label" style="display:none">No items yet. Add your first item above.</div>
-    </section>
+        <section class="section stack-16" aria-labelledby="todaysLog" id="log-section">
+          <div class="section-head">
+            <h2 id="todaysLog" data-i18n="logTitle">Today’s log</h2>
+            <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
+          </div>
+          <table class="table" aria-describedby="todaysLog">
+            <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thDairy">Dairy</th><th></th></tr></thead>
+            <tbody id="log-body"></tbody>
+          </table>
+          <div id="empty-state" class="label" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
+        </section>
+    </div>
 
-    <footer class="footer">Designed and created by Burrow · 2025</footer>
+    <footer class="footer" data-i18n="footerText">Designed and created by Burrow · 2025</footer>
   </div>
 
   <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
@@ -224,25 +226,25 @@
       <h3 id="confirm-title">Are you sure?</h3>
       <p id="confirm-desc"></p>
       <div class="modal-actions">
-        <button id="cancel-action" class="btn btn-secondary">Cancel</button>
-        <button id="confirm-action" class="btn btn-danger">Confirm</button>
+        <button id="cancel-action" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
+        <button id="confirm-action" class="btn btn-danger" data-i18n="confirmClearBtn">Confirm</button>
       </div>
     </div>
   </div>
 
   <div class="modal-backdrop" id="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title">
     <div class="modal">
-      <h3 id="account-title">Edit Account</h3>
+      <h3 id="account-title" data-i18n="accountModalTitle">Edit Account</h3>
       <div class="stack-16" style="text-align: left;">
-          <label for="account-name" class="label">Name</label>
+          <label for="account-name" class="label" data-i18n="nameLabel">Name</label>
           <input id="account-name" class="input" type="text" placeholder="e.g., Mike">
-          <label for="account-email" class="label">Email</label>
+          <label for="account-email" class="label" data-i18n="emailLabel">Email</label>
           <input id="account-email" class="input" type="email" disabled>
       </div>
       <div class="modal-actions">
-        <button id="delete-account" class="btn btn-danger">Delete Account</button>
-        <button id="cancel-account" class="btn btn-secondary">Cancel</button>
-        <button id="save-account" class="btn btn-primary">Save</button>
+        <button id="delete-account" class="btn btn-danger" data-i18n="deleteAccountBtn">Delete Account</button>
+        <button id="cancel-account" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
+        <button id="save-account" class="btn btn-primary" data-i18n="saveBtn">Save</button>
       </div>
     </div>
   </div>
@@ -266,6 +268,7 @@
     const db = firebase.firestore();
     let logCollection;
     let unsubscribe;
+    let lang = 'en';
 
     // Elements
     const nameInput = document.getElementById('food-name');
@@ -279,18 +282,15 @@
     const welcomeSection = document.getElementById('welcome-section');
     const welcomeMessage = document.getElementById('welcome-message');
     const landingPage = document.getElementById('landing-page');
+    const appContent = document.getElementById('app-content');
     const donateBtn = document.getElementById('donate-button');
+    const langToggle = document.getElementById('lang-toggle');
+    const switchEl = document.getElementById('switch');
 
     // Auth Elements
-    const authSection = document.getElementById('auth-section');
-    const authTitle = document.getElementById('auth-title');
     const authFieldsContainer = document.getElementById('auth-fields-container');
     const authSubmit = document.getElementById('auth-submit');
     const authToggle = document.getElementById('auth-toggle');
-
-    // Content Sections
-    const addItemSection = document.getElementById('add-item-section');
-    const logSection = document.getElementById('log-section');
 
     // Account Modal Elements
     const accountModal = document.getElementById('account-modal');
@@ -308,6 +308,101 @@
 
     let isLogin = true;
 
+    const i18n = {
+      en: {
+        loginTitle: "Login / Sign Up",
+        manifestoTitle: "McFatty's Manifesto",
+        manifestoP1: "McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
+        manifestoP2: "This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.",
+        manifestoP3: "Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.",
+        manifestoP4: "We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.",
+        manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.",
+        donateBtn: "Donate",
+        addTitle: "Add item",
+        foodLabel: "Food item name",
+        addBtn: "Add to log",
+        dairyLabel: "Contains dairy",
+        logTitle: "Today’s log",
+        exportBtn: "Export",
+        thItem: "Item",
+        thDairy: "Dairy",
+        emptyState: "No items yet. Add your first item above.",
+        footerText: "Designed and created by Burrow · 2025",
+        menuTitle:"Menu",
+        corePractices:"Core Practices",
+        newJournal:"New Journal Entry",
+        settings:"Application Settings",
+        account:"Account",
+        logout:"Log Out",
+        installBtn:"Install",
+        accountModalTitle:"Edit Account",
+        nameLabel:"Name",
+        emailLabel:"Email",
+        deleteAccountBtn:"Delete Account",
+        saveBtn:"Save",
+        cancelBtn:"Cancel",
+        confirmClearBtn:"Confirm",
+        pillYes:"Yes",
+        pillNo:"No",
+        toastAdded:"✅ Added",
+        toastRemoved:"🗑️ Removed",
+        toastExported:"📄 Exported",
+      },
+      de: {
+        loginTitle: "Anmelden / Registrieren",
+        manifestoTitle: "McFatty's Manifest",
+        manifestoP1: "Bei McFatty’s Food Tracker geht es nicht um Kalorien, Einschränkungen oder Schuld. Wenn du Chips willst, iss sie. Keine Scham, keine Bestrafung. Schreib es einfach auf. Das urteilsfreie Notieren ist der entscheidende Akt.",
+        manifestoP2: "Diese App ist kostenlos. Keine Abonnements, keine Zusatzverkäufe, keine Lifestyle-Pakete. Wir lehnen die Vorstellung ab, dass uns Essen und Gesundheit zurückverkauft werden sollten. Essen sollte kein Geschäftsmodell sein.",
+        manifestoP3: "Stattdessen hilft McFatty’s dir, innezuhalten, auf deinen Körper zu hören und deine Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht dir das einfache Protokollieren, Muster zu erkennen und deine Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt vor deinen Entscheidungen verwurzelt sein.",
+        manifestoP4: "Wir sind gegen Zyklen von Schuld, Scham und unmöglichen Versprechen. Wir werden keinen als Selbstfürsorge getarnten Konsumismus feiern. Wir glauben, die radikale Wahl ist, zu verlangsamen, auf sich selbst zu hören und zu seinen eigenen Bedingungen zu essen.",
+        manifestoP5: "Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von deiner Schuld profitieren.",
+        donateBtn: "Spenden",
+        addTitle: "Eintrag hinzufügen",
+        foodLabel: "Name des Lebensmittels",
+        addBtn: "Zum Protokoll hinzufügen",
+        dairyLabel: "Enthält Milchprodukte",
+        logTitle: "Heutiges Protokoll",
+        exportBtn: "Exportieren",
+        thItem: "Artikel",
+        thDairy: "Milchprodukte",
+        emptyState: "Noch keine Einträge. Füge oben deinen ersten hinzu.",
+        footerText: "Entworfen und erstellt von Burrow · 2025",
+        menuTitle:"Menü",
+        corePractices:"Kernpraktiken",
+        newJournal:"Neuer Journaleintrag",
+        settings:"App-Einstellungen",
+        account:"Konto",
+        logout:"Abmelden",
+        installBtn:"Installieren",
+        accountModalTitle:"Konto bearbeiten",
+        nameLabel:"Name",
+        emailLabel:"Email",
+        deleteAccountBtn:"Konto löschen",
+        saveBtn:"Speichern",
+        cancelBtn:"Abbrechen",
+        confirmClearBtn:"Bestätigen",
+        pillYes:"Ja",
+        pillNo:"Nein",
+        toastAdded:"✅ Hinzugefügt",
+        toastRemoved:"🗑️ Entfernt",
+        toastExported:"📄 Exportiert",
+      }
+    };
+
+    function setLanguage(newLang) {
+      lang = newLang;
+      localStorage.setItem('mcfattys_lang', lang);
+      const elements = document.querySelectorAll('[data-i18n]');
+      elements.forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[lang][key]) {
+          el.textContent = i18n[lang][key];
+        }
+      });
+      switchEl.classList.toggle('active', lang === 'de');
+      renderAuthForm();
+    }
+
     function showToast(message, duration = 2000) {
       toastEl.textContent = message;
       toastEl.classList.add('show');
@@ -315,14 +410,15 @@
     }
     
     function render(items = []) {
+      const t = i18n[lang] || i18n.en;
       tbody.innerHTML = '';
       emptyState.style.display = items.length ? 'none' : 'block';
       items.forEach(item => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${item.name}</td>
-          <td><span class="pill ${item.dairy ? 'pill-yes' : 'pill-no'}">${item.dairy ? 'Yes' : 'No'}</span></td>
-          <td class="row-actions"><button class="btn btn-danger" onclick="removeItem('${item.id}')">Remove</button></td>
+          <td><span class="pill ${item.dairy ? 'pill-yes' : 'pill-no'}">${item.dairy ? t.pillYes : t.pillNo}</span></td>
+          <td class="row-actions"><button class="btn btn-danger" onclick="removeItem('${item.id}')">${lang === 'de' ? 'Entfernen' : 'Remove'}</button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -340,7 +436,7 @@
         nameInput.value = '';
         dairyCheckbox.checked = false;
         nameInput.focus();
-        showToast('✅ Added');
+        showToast(i18n[lang].toastAdded);
       } catch (error) { showToast(`⚠️ Error: ${error.message}`); }
     }
 
@@ -348,22 +444,23 @@
       if (!logCollection) return;
       try {
         await logCollection.doc(docId).delete();
-        showToast('🗑️ Removed');
+        showToast(i18n[lang].toastRemoved);
       } catch (error) { showToast(`⚠️ Error: ${error.message}`); }
     }
 
     function renderAuthForm() {
-        authSubmit.textContent = isLogin ? 'Login' : 'Sign Up';
-        authToggle.textContent = isLogin ? 'Need an account?' : 'Have an account?';
+        const t = i18n[lang] || i18n.en;
+        authSubmit.textContent = isLogin ? (t.loginTitle.split(' / ')[0]) : (t.loginTitle.split(' / ')[1] || 'Sign Up');
+        authToggle.textContent = isLogin ? (t.de ? 'Brauchst du ein Konto?' : 'Need an account?') : (t.de ? 'Hast du ein Konto?' : 'Have an account?');
         
         let fieldsHtml = `
-            <div class="controls"><div class="grow"><label for="auth-email" class="label">Email Address</label><input id="auth-email" class="input" type="email" autocomplete="email"></div></div>
-            <div class="controls"><div class="grow"><label for="auth-password" class="label">Password</label><input id="auth-password" class="input" type="password" autocomplete="${isLogin ? 'current-password' : 'new-password'}"></div></div>
+            <div class="controls"><div class="grow"><label for="auth-email" class="label">${t.emailLabel || 'Email Address'}</label><input id="auth-email" class="input" type="email" autocomplete="email"></div></div>
+            <div class="controls"><div class="grow"><label for="auth-password" class="label">${lang === 'de' ? 'Passwort' : 'Password'}</label><input id="auth-password" class="input" type="password" autocomplete="${isLogin ? 'current-password' : 'new-password'}"></div></div>
         `;
         if (!isLogin) {
             fieldsHtml += `
-                <div class="controls"><div class="grow"><label for="auth-username" class="label">Username</label><input id="auth-username" class="input" type="text" autocomplete="username"></div></div>
-                <div class="controls"><div class="grow"><label for="auth-re-password" class="label">Re-type Password</label><input id="auth-re-password" class="input" type="password" autocomplete="new-password"></div></div>
+                <div class="controls"><div class="grow"><label for="auth-username" class="label">${lang === 'de' ? 'Benutzername' : 'Username'}</label><input id="auth-username" class="input" type="text" autocomplete="username"></div></div>
+                <div class="controls"><div class="grow"><label for="auth-re-password" class="label">${lang === 'de' ? 'Passwort wiederholen' : 'Re-type Password'}</label><input id="auth-re-password" class="input" type="password" autocomplete="new-password"></div></div>
             `;
         }
         authFieldsContainer.innerHTML = fieldsHtml;
@@ -378,14 +475,14 @@
             } else {
                 const rePassword = document.getElementById('auth-re-password').value;
                 const username = document.getElementById('auth-username').value;
-                if (password !== rePassword) { showToast('Passwords do not match.'); return; }
+                if (password !== rePassword) { showToast(lang === 'de' ? 'Passwörter stimmen nicht überein.' : 'Passwords do not match.'); return; }
                 const userCredential = await auth.createUserWithEmailAndPassword(email, password);
                 await db.collection('users').doc(userCredential.user.uid).set({
                     username: username,
                     email: email,
                     name: username
                 });
-                showToast(`Welcome, ${username}!`);
+                showToast(`${lang === 'de' ? 'Willkommen' : 'Welcome'}, ${username}!`);
             }
         } catch (error) { showToast(`⚠️ Error: ${error.message}`); }
     }
@@ -393,28 +490,23 @@
     async function showApp(user) {
         const userDoc = await db.collection('users').doc(user.uid).get();
         const userData = userDoc.data();
-        welcomeMessage.textContent = `Welcome, ${userData.name}!`;
-        welcomeSection.style.display = 'block';
+        welcomeMessage.textContent = `${lang === 'de' ? 'Willkommen' : 'Welcome'}, ${userData.name}!`;
         landingPage.style.display = 'none';
+        appContent.style.display = 'block';
 
         logCollection = db.collection('users').doc(user.uid).collection('log');
         if (unsubscribe) unsubscribe();
         unsubscribe = logCollection.orderBy('createdAt', 'desc').onSnapshot(snapshot => {
             render(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         }, error => showToast(`⚠️ Error: ${error.message}`));
-        
-        addItemSection.style.display = 'block';
-        logSection.style.display = 'block';
     }
 
     function showAuth() {
         if (unsubscribe) unsubscribe();
         logCollection = null;
         render([]);
-        welcomeSection.style.display = 'none';
         landingPage.style.display = 'block';
-        addItemSection.style.display = 'none';
-        logSection.style.display = 'none';
+        appContent.style.display = 'none';
         isLogin = true;
         renderAuthForm();
     }
@@ -455,20 +547,12 @@
             const user = auth.currentUser;
             if (user) {
                 try {
-                    // Delete user's log subcollection
                     const logSnapshot = await db.collection('users').doc(user.uid).collection('log').get();
                     const batch = db.batch();
-                    logSnapshot.docs.forEach(doc => {
-                        batch.delete(doc.ref);
-                    });
+                    logSnapshot.docs.forEach(doc => batch.delete(doc.ref));
                     await batch.commit();
-
-                    // Delete user document
                     await db.collection('users').doc(user.uid).delete();
-
-                    // Delete user auth account
                     await user.delete();
-
                     confirmModal.classList.remove('show');
                     showToast('Account deleted successfully.');
                 } catch (error) {
@@ -482,18 +566,23 @@
       sidebar.classList.remove('open');
       scrim.classList.remove('show');
       switch(action) {
-        case 'newEntry': addItemSection.scrollIntoView({ behavior: 'smooth' }); break;
+        case 'newEntry': appContent.scrollIntoView({ behavior: 'smooth' }); break;
         case 'account': openAccountModal(); break;
         case 'logout': auth.signOut(); break;
         default: showToast('Coming soon'); break;
       }
     }
     
+    // Initial Load
+    const savedLang = localStorage.getItem('mcfattys_lang') || 'en';
+    setLanguage(savedLang);
+
     // Bindings
     auth.onAuthStateChanged(user => user ? showApp(user) : showAuth());
     addBtn?.addEventListener('click', addItem);
     authToggle.addEventListener('click', () => { isLogin = !isLogin; renderAuthForm(); });
     authSubmit.addEventListener('click', handleAuthSubmit);
+    langToggle.addEventListener('click', () => setLanguage(lang === 'en' ? 'de' : 'en'));
     document.getElementById('menu-open')?.addEventListener('click', () => { sidebar.classList.add('open'); scrim.classList.add('show'); });
     document.getElementById('menu-close')?.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
     scrim?.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
