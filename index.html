@@ -169,8 +169,13 @@
     </section>
 
     <section id="about-section" class="section">
-        <h2>About McFatty's</h2>
-        <p>A lightweight web app for mindful food tracking, now powered by Firebase. Create an account to save your food log and access it from any device.</p>
+        <h2>McFatty’s Food Tracker: from mindless consumption to mindful eating.</h2>
+        <p><strong>McFatty's Manifesto</strong></p>
+        <p>McFatty’s Food Tracker is not about calories, restrictions, or quick fixes. It is about awareness. We refuse the idea that health must be sold through gyms, subscriptions, and endless “healthy” products. Eating should not be a business model.</p>
+        <p>This app is free. No subscriptions. No lifestyle packages. No tricks. Just a tool that helps you pause, check in with your body, and reflect on what you eat and why.</p>
+        <p>We are against the cycle of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. Instead, we choose something radical: slowing down, listening to ourselves, and changing our relationship with food on our own terms.</p>
+        <p>There is a donation button for those who wish to support, because the world is not free, even if it should be. But McFatty’s will never sell you back your own well-being.</p>
+        <button id="donate-button" class="btn btn-primary" type="button">Donate</button>
     </section>
 
     <section id="auth-section" class="section stack-16">
@@ -272,6 +277,7 @@
     const welcomeSection = document.getElementById('welcome-section');
     const welcomeMessage = document.getElementById('welcome-message');
     const aboutSection = document.getElementById('about-section');
+    const donateBtn = document.getElementById('donate-button');
 
     // Auth Elements
     const authSection = document.getElementById('auth-section');
@@ -500,6 +506,7 @@
     cancelAccountBtn.addEventListener('click', () => accountModal.classList.remove('show'));
     deleteAccountBtn.addEventListener('click', confirmDeletion);
     cancelActionBtn.addEventListener('click', () => confirmModal.classList.remove('show'));
+    donateBtn.addEventListener('click', () => showToast('Donation feature coming soon!'));
   </script>
 </body>
 </html>
