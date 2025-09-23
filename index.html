@@ -258,18 +258,21 @@
   </div>
 
 
-  <script>
-    // --- Firebase Configuration ---
-    // PASTE YOUR FIREBASE CONFIG OBJECT HERE
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT_ID.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
+ // --- Firebase Configuration ---
+const firebaseConfig = {
+  apiKey: "AIzaSyC1qN3ksU0uYhXRXYNmYlmGX0iyUa-BJFQ",
+  authDomain: "mcfattys-food-tracker.firebaseapp.com",
+  projectId: "mcfattys-food-tracker",
+  storageBucket: "mcfattys-food-tracker.firebasestorage.app",
+  messagingSenderId: "831603858264",
+  appId: "1:831603858264:web:58506c01975e9a1991e32d",
+  measurementId: "G-KQX4BQ71VK"
+};
 
+// --- Initialize Firebase ---
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
     // --- Initialize Firebase ---
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
