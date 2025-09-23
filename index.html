@@ -170,7 +170,34 @@
     <div id="landing-page">
         <section id="auth-section" class="section stack-16">
             <h2 id="auth-title" data-i18n="loginTitle">Login / Sign Up</h2>
-            <div id="auth-fields-container" class="stack-16"></div>
+            <div id="auth-fields-container" class="stack-16">
+                <div class="controls">
+                    <div class="grow">
+                        <label for="auth-email" class="label" data-i18n="emailLabel">Email</label>
+                        <input id="auth-email" class="input" type="email" autocomplete="email">
+                    </div>
+                </div>
+                <div class="controls">
+                    <div class="grow">
+                        <label for="auth-password" class="label" data-i18n="passwordLabel">Password</label>
+                        <input id="auth-password" class="input" type="password" autocomplete="current-password">
+                    </div>
+                </div>
+                <div id="signup-fields" style="display: none;">
+                    <div class="controls">
+                        <div class="grow">
+                            <label for="auth-username" class="label" data-i18n="usernameLabel">Username</label>
+                            <input id="auth-username" class="input" type="text" autocomplete="username">
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <div class="grow">
+                            <label for="auth-re-password" class="label" data-i18n="rePasswordLabel">Re-type Password</label>
+                            <input id="auth-re-password" class="input" type="password" autocomplete="new-password">
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="controls" style="margin-top: 16px;">
                 <button id="auth-submit" class="btn btn-primary" type="button"></button>
                 <button id="auth-toggle" class="btn btn-secondary" type="button"></button>
@@ -293,33 +320,4 @@
     const googleSigninBtn = document.getElementById('google-signin');
 
     // Auth Elements
-    const authFieldsContainer = document.getElementById('auth-fields-container');
-    const authSubmit = document.getElementById('auth-submit');
-    const authToggle = document.getElementById('auth-toggle');
-
-    // Account Modal Elements
-    const accountModal = document.getElementById('account-modal');
-    const accountNameInput = document.getElementById('account-name');
-    const accountEmailInput = document.getElementById('account-email');
-    const saveAccountBtn = document.getElementById('save-account');
-    const cancelAccountBtn = document.getElementById('cancel-account');
-    const deleteAccountBtn = document.getElementById('delete-account');
-
-    // Confirmation Modal Elements
-    const confirmModal = document.getElementById('confirm-modal');
-    const confirmDesc = document.getElementById('confirm-desc');
-    const cancelActionBtn = document.getElementById('cancel-action');
-    const confirmActionBtn = document.getElementById('confirm-action');
-
-    let isLogin = true;
-
-    const i18n = {
-      en: {
-        loginTitle: "Login / Sign Up",
-        loginLabel: "Login",
-        signupLabel: "Sign Up",
-        needAccountLabel: "Need an account?",
-        haveAccountLabel: "Have an account?",
-        manifestoTitle: "McFatty's Manifesto",
-        manifestoP1: "McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
-        manifestoP2: "This app is free. No subs
+    const authS
