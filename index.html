@@ -254,8 +254,6 @@
       </div>
     </div>
 
-    <header class="hero-logo"><img src="Logo.png" alt="McFatty's Food Tracker logo"></header>
-
     <div id="landing-page">
       <section id="auth-section" class="section stack-16" style="display: none;">
         <h2 id="auth-title" data-i18n="loginTitle">Login / Sign Up</h2>
@@ -313,6 +311,12 @@
       <section id="logo-card" class="section dashboard-card logo-card" data-card-id="logo" aria-label="McFatty's logo">
         <div class="logo-card-inner">
           <img src="Logo.png" alt="McFatty's Food Tracker logo">
+        </div>
+      </section>
+
+      <section id="manifesto-card" class="section dashboard-card logo-card" data-card-id="manifesto" aria-label="McFatty's Manifesto">
+        <div class="logo-card-inner">
+          <img src="manifesto.png" alt="McFatty's Manifesto logo">
         </div>
       </section>
 
@@ -1626,6 +1630,14 @@
       sidebar.classList.remove('open');
       scrim.classList.remove('show');
     });
+
+    // Manifesto card click
+    const manifestoCard = document.getElementById('manifesto-card');
+    if (manifestoCard) {
+      manifestoCard.addEventListener('click', () => {
+        manifestoModal.classList.add('show');
+      });
+    }
 
     closeManifestoBtn.addEventListener('click', () => manifestoModal.classList.remove('show'));
     closeHistoryBtn.addEventListener('click', () => historyModal.classList.remove('show'));
