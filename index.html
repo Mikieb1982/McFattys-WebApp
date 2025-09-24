@@ -106,10 +106,11 @@
     /* Modal */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:500}
     .modal-backdrop.show{display:flex}
-    .modal{background:var(--card);padding:20px;border-radius:var(--r-12);text-align:center;max-width:360px;width:90%}
+    .modal{background:var(--card);padding:20px;border-radius:var(--r-12);text-align:center;max-width:480px;width:90%}
     .modal h3{margin:0 0 10px;font-family:Oswald,sans-serif;font-size:20px}
-    .modal p{margin:0 0 16px;color:var(--text-1)}
+    .modal p{margin:0 0 16px;color:var(--text-1); text-align: left;}
     .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:16px}
+    #manifesto-modal .modal-content { max-height: 60vh; overflow-y: auto; margin-bottom: 16px; }
 
     /* Toast (centered) */
     .install-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);opacity:0;background:var(--card);color:var(--text-0);padding:16px 22px;border:1px solid var(--border);border-radius:var(--r-16);box-shadow:var(--shadow-md);font-weight:700;font-size:14px;display:none;z-index:550;transition:opacity .2s ease,transform .2s ease}
@@ -128,8 +129,6 @@
     .sb-item-btn:focus{outline:none;box-shadow:inset 0 0 0 2px rgba(242,197,109,.35)}
     .sb-item-btn:hover{background:#161a22}
     .sb-item-icon{width:18px;height:18px;opacity:.9}
-    .sb-manifesto{padding:12px 14px;border-top:1px solid rgba(255,255,255,.05);margin:0;color:var(--text-1);font-size:13px;line-height:1.6;overflow:auto;max-height:calc(100vh - 240px)}
-    .sb-manifesto .manifesto-paragraph{margin-bottom:var(--sp-12)}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
     /* New styles for header buttons */
@@ -159,19 +158,13 @@
       <div class="sb-section-title" data-i18n="corePractices">Core Practices</div>
       <ul class="sb-list">
         <li><button class="sb-item-btn" data-action="newEntry"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg><span data-i18n="newJournal">New Journal Entry</span></button></li>
+        <li><button class="sb-item-btn" data-action="manifesto"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M20 6v14H6v2h14c1.1 0 2-.9 2-2V6h-2zm-4-4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h6v2zm-6 4h4v-2H9v2zm8-8H9V5h8v2z"></path></svg><span data-i18n="manifesto">McFatty's Manifesto</span></button></li>
       </ul>
       <div class="sb-section-title" data-i18n="settings">Application Settings</div>
       <ul class="sb-list">
         <li><button class="sb-item-btn" data-action="account"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/></svg><span data-i18n="account">Account</span></button></li>
         <li><button class="sb-item-btn" data-action="logout" id="logout-btn"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 17v-3H9v-2h7V9l4 4-4 4zm-5-3H4V5h7V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2z"></path></svg><span data-i18n="logout">Log Out</span></button></li>
       </ul>
-      <div id="sidebar-manifesto" class="sb-manifesto" hidden>
-        <p class="manifesto-paragraph" data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP2">This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP3">Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP4">We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
-      </div>
     </div>
   </aside>
 
@@ -316,6 +309,22 @@
       </div>
     </div>
   </div>
+
+  <div class="modal-backdrop" id="manifesto-modal" role="dialog" aria-modal="true" aria-labelledby="manifesto-title">
+    <div class="modal">
+      <h3 id="manifesto-title" data-i18n="manifestoTitle">McFatty's Manifesto</h3>
+      <div class="modal-content">
+        <p class="manifesto-paragraph" data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
+        <p class="manifesto-paragraph" data-i18n="manifestoP2">This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
+        <p class="manifesto-paragraph" data-i18n="manifestoP3">Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
+        <p class="manifesto-paragraph" data-i18n="manifestoP4">We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
+        <p class="manifesto-paragraph" data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
+      </div>
+      <div class="modal-actions">
+        <button id="close-manifesto" class="btn btn-primary" data-i18n="closeBtn">Close</button>
+      </div>
+    </div>
+  </div>
   
   <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
@@ -363,7 +372,8 @@
     const userInfo = document.getElementById('user-info');
     const userName = document.getElementById('user-name');
     const exportBtn = document.getElementById('export-button');
-    const sidebarManifesto = document.getElementById('sidebar-manifesto');
+    const manifestoModal = document.getElementById('manifesto-modal');
+    const closeManifestoBtn = document.getElementById('close-manifesto');
 
     // Auth Elements
     const authSection = document.getElementById('auth-section');
@@ -387,6 +397,7 @@
             logoutBtn: 'Logout',
             installBtn: 'Install',
             googleSignin: 'Sign in with Google',
+            manifesto: "McFatty's Manifesto",
             manifestoTitle: "McFatty's Manifesto",
             manifestoP1: "McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
             manifestoP2: "This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.",
@@ -408,6 +419,7 @@
             emptyState: 'No items yet. Add your first item above.',
             confirmTitle: 'Are you sure?',
             cancelBtn: 'Cancel',
+            closeBtn: 'Close',
             confirmClearBtn: 'Confirm',
             accountModalTitle: 'Edit Account',
             nameLabel: 'Name',
@@ -458,6 +470,7 @@
             logoutBtn: 'Abmelden',
             installBtn: 'Installieren',
             googleSignin: 'Mit Google anmelden',
+            manifesto: 'McFettys Manifest',
             manifestoTitle: 'McFettys Manifest',
             manifestoP1: 'Bei McFettys Food Tracker geht es nicht um Kalorien, Einschränkungen oder Schuldgefühle. Wenn du Chips willst, iss sie. Keine Scham, keine Bestrafung. Schreib es einfach auf. Das Aufzeichnen ohne Urteil ist der entscheidende Akt.',
             manifestoP2: 'Diese App ist kostenlos. Keine Abonnements, keine Upsells, keine Lifestyle-Pakete. Wir lehnen die Idee ab, dass uns Essen und Gesundheit zurückverkauft werden sollten. Essen sollte kein Geschäftsmodell sein.',
@@ -479,6 +492,7 @@
             emptyState: 'Noch keine Einträge. Fügen Sie oben Ihren ersten Eintrag hinzu.',
             confirmTitle: 'Sind Sie sicher?',
             cancelBtn: 'Abbrechen',
+            closeBtn: 'Schließen',
             confirmClearBtn: 'Bestätigen',
             accountModalTitle: 'Konto bearbeiten',
             nameLabel: 'Name',
@@ -741,7 +755,6 @@
             const welcomeText = getTranslation('welcome');
             welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : welcomeText;
             userName.textContent = displayName;
-            sidebarManifesto.hidden = false;
 
             logCollection = db.collection('users').doc(user.uid).collection('logs');
             unsubscribe = logCollection.orderBy('timestamp', 'desc').onSnapshot(renderEntries);
@@ -754,7 +767,6 @@
             logCollection = null;
             setAuthMode(true);
             resetAuthFields();
-            sidebarManifesto.hidden = true;
         }
     });
 
@@ -820,6 +832,23 @@
     menuOpenBtn.addEventListener('click', () => { sidebar.classList.add('open'); scrim.classList.add('show'); });
     menuCloseBtn.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
     scrim.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
+    
+    sidebar.addEventListener('click', (event) => {
+        const button = event.target.closest('.sb-item-btn');
+        if (!button) return;
+
+        const action = button.dataset.action;
+        if (action === 'manifesto') {
+            manifestoModal.classList.add('show');
+        }
+        // Close sidebar after action
+        sidebar.classList.remove('open');
+        scrim.classList.remove('show');
+    });
+
+    closeManifestoBtn.addEventListener('click', () => {
+        manifestoModal.classList.remove('show');
+    });
 
     window.addEventListener('beforeinstallprompt', e => {
         e.preventDefault();
