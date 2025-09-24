@@ -111,6 +111,7 @@
     .modal p{margin:0 0 16px;color:var(--text-1); text-align: left;}
     .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:16px}
     #manifesto-modal .modal-content { max-height: 60vh; overflow-y: auto; margin-bottom: 16px; }
+    #manifesto-modal .modal-image { width: 100%; max-width: 200px; margin: 0 auto 16px; display: block; }
 
     /* Toast (centered) */
     .install-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);opacity:0;background:var(--card);color:var(--text-0);padding:16px 22px;border:1px solid var(--border);border-radius:var(--r-16);box-shadow:var(--shadow-md);font-weight:700;font-size:14px;display:none;z-index:550;transition:opacity .2s ease,transform .2s ease}
@@ -312,6 +313,7 @@
 
   <div class="modal-backdrop" id="manifesto-modal" role="dialog" aria-modal="true" aria-labelledby="manifesto-title">
     <div class="modal">
+      <img src="manifesto.png" alt="McFatty's Manifesto" class="modal-image">
       <h3 id="manifesto-title" data-i18n="manifestoTitle">McFatty's Manifesto</h3>
       <div class="modal-content">
         <p class="manifesto-paragraph" data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
