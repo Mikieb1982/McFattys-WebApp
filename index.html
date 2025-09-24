@@ -332,10 +332,9 @@
     const addBtn = document.getElementById('add-button');
     const tbody = document.getElementById('log-body');
     const emptyState = document.getElementById('empty-state');
-    const toastEl = document.getElementById('install-banner');
+    const installBanner = document.getElementById('install-banner');
     const sidebar = document.getElementById('sidebar');
     const scrim = document.getElementById('scrim');
-    const welcomeSection = document.getElementById('welcome-section');
     const welcomeMessage = document.getElementById('welcome-message');
     const landingPage = document.getElementById('landing-page');
     const appContent = document.getElementById('app-content');
@@ -343,6 +342,7 @@
     const langToggle = document.getElementById('lang-toggle');
     const switchEl = document.getElementById('switch');
     const googleSigninBtn = document.getElementById('google-signin');
+    const pwaInstallBtn = document.getElementById('pwa-install');
     const menuOpenBtn = document.getElementById('menu-open');
     const menuCloseBtn = document.getElementById('menu-close');
     const logoutBtn = document.getElementById('logout-btn');
@@ -360,6 +360,10 @@
     const signupFields = document.getElementById('signup-fields');
     const authTitle = document.getElementById('auth-title');
     const authToggle = document.getElementById('auth-toggle');
+    const authEmail = document.getElementById('auth-email');
+    const authPassword = document.getElementById('auth-password');
+    const authUsername = document.getElementById('auth-username');
+    const authRePassword = document.getElementById('auth-re-password');
     
     // --- Translations ---
     const translations = {
@@ -401,10 +405,17 @@
             settings: 'Application Settings',
             account: 'Account',
             logout: 'Log Out',
-            loginTitle: 'Login / Sign Up',
+            loginTitle: 'Login',
+            signupTitle: 'Sign Up',
+            loginAction: 'Login',
+            signupAction: 'Sign Up',
+            authToggleToSignup: 'Need an account? Sign Up',
+            authToggleToLogin: 'Have an account? Login',
             passwordLabel: 'Password',
             usernameLabel: 'Username',
             rePasswordLabel: 'Re-type Password',
+            installSuccess: 'App installed! Find McFatty’s on your home screen.',
+            installDismissed: 'Install dismissed.',
         },
         de: {
             loginBtn: 'Anmelden',
@@ -444,32 +455,64 @@
             settings: 'Anwendungseinstellungen',
             account: 'Konto',
             logout: 'Abmelden',
-            loginTitle: 'Anmelden / Registrieren',
+            loginTitle: 'Anmelden',
+            signupTitle: 'Registrieren',
+            loginAction: 'Anmelden',
+            signupAction: 'Registrieren',
+            authToggleToSignup: 'Noch kein Konto? Registrieren',
+            authToggleToLogin: 'Konto vorhanden? Anmelden',
             passwordLabel: 'Passwort',
             usernameLabel: 'Benutzername',
             rePasswordLabel: 'Passwort erneut eingeben',
+            installSuccess: 'App installiert! McFatty’s ist jetzt auf deinem Startbildschirm.',
+            installDismissed: 'Installation abgebrochen.',
         }
     };
 
-    const setLanguage = (lang) => {
-        document.documentElement.lang = lang;
+    let isLoginMode = true;
+    let deferredInstallPrompt = null;
+    let installBannerTimeout;
+
+    const updateAuthTexts = () => {
+        const dictionary = translations[lang];
+        if (!dictionary) return;
+        authTitle.textContent = dictionary[isLoginMode ? 'loginTitle' : 'signupTitle'];
+        authSubmit.textContent = dictionary[isLoginMode ? 'loginAction' : 'signupAction'];
+        authToggle.textContent = dictionary[isLoginMode ? 'authToggleToSignup' : 'authToggleToLogin'];
+    };
+
+    const showInstallBanner = (message) => {
+        if (!message) return;
+        installBanner.textContent = message;
+        installBanner.classList.add('show');
+        clearTimeout(installBannerTimeout);
+        installBannerTimeout = setTimeout(() => {
+            installBanner.classList.remove('show');
+        }, 4000);
+    };
+
+    const setLanguage = (newLang) => {
+        lang = newLang;
+        document.documentElement.lang = newLang;
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
-            if(translations[lang] && translations[lang][key]) {
-                el.textContent = translations[lang][key];
+            if(translations[newLang] && translations[newLang][key]) {
+                el.textContent = translations[newLang][key];
             }
         });
         document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
             const key = el.getAttribute('data-i18n-placeholder');
-            if(translations[lang] && translations[lang][key]) {
-                el.placeholder = translations[lang][key];
+            if(translations[newLang] && translations[newLang][key]) {
+                el.placeholder = translations[newLang][key];
             }
         });
         const user = auth.currentUser;
         if (user) {
-            const welcomeText = translations[lang].welcome;
-            welcomeMessage.textContent = `${welcomeText}, ${user.displayName}!`;
+            const welcomeText = translations[newLang].welcome;
+            const displayName = user.displayName || user.email || '';
+            welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : welcomeText;
         }
+        updateAuthTexts();
     };
     
     // --- Firestore and CSV Functions ---
@@ -546,83 +589,156 @@
     addBtn.addEventListener('click', addEntry);
     exportBtn.addEventListener('click', exportToCsv);
 
+    const resetAuthFields = () => {
+        authEmail.value = '';
+        authPassword.value = '';
+        authUsername.value = '';
+        authRePassword.value = '';
+    };
+
+    const setAuthMode = (isLogin) => {
+        isLoginMode = isLogin;
+        signupFields.style.display = isLogin ? 'none' : 'block';
+        updateAuthTexts();
+    };
+
     // --- Auth State Observer ---
     auth.onAuthStateChanged(user => {
+        if (unsubscribe) {
+            unsubscribe();
+            unsubscribe = null;
+        }
+
         if (user) {
-            // User is signed in.
             landingPage.style.display = 'none';
             appContent.style.display = 'block';
             authActions.style.display = 'none';
             userInfo.style.display = 'flex';
+            authSection.style.display = 'none';
+
+            const displayName = user.displayName || user.email || '';
             const welcomeText = translations[lang].welcome;
-            welcomeMessage.textContent = `${welcomeText}, ${user.displayName}!`;
-            userName.textContent = user.displayName;
-            
+            welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : welcomeText;
+            userName.textContent = displayName;
+
             logCollection = db.collection('users').doc(user.uid).collection('logs');
             unsubscribe = logCollection.orderBy('timestamp', 'desc').onSnapshot(renderEntries);
-            
         } else {
-            // User is signed out.
-            if (unsubscribe) {
-                unsubscribe();
-            }
             landingPage.style.display = 'block';
             appContent.style.display = 'none';
             authActions.style.display = 'flex';
             userInfo.style.display = 'none';
+            authSection.style.display = 'none';
+            logCollection = null;
+            userName.textContent = '';
+            welcomeMessage.textContent = '';
+            setAuthMode(true);
+            resetAuthFields();
         }
     });
 
-    // --- Event Listeners ---
+    // --- Auth Handlers ---
+    const handleAuthSubmit = async () => {
+        const email = authEmail.value.trim();
+        const password = authPassword.value.trim();
 
-    // Toggle between Login and Sign Up modes
-    const setAuthMode = (isLogin) => {
-        authTitle.textContent = isLogin ? 'Login' : 'Sign Up';
-        authSubmit.textContent = isLogin ? 'Login' : 'Sign Up';
-        authToggle.textContent = isLogin ? 'Need an account? Sign Up' : 'Have an account? Login';
-        signupFields.style.display = isLogin ? 'none' : 'block';
+        if (!email || !password) {
+            alert('Please enter an email and password.');
+            return;
+        }
+
+        if (!isLoginMode) {
+            const username = authUsername.value.trim();
+            const confirmPassword = authRePassword.value.trim();
+
+            if (!username) {
+                alert('Please choose a username.');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                alert('Passwords do not match.');
+                return;
+            }
+        }
+
+        authSubmit.disabled = true;
+
+        try {
+            if (isLoginMode) {
+                await auth.signInWithEmailAndPassword(email, password);
+            } else {
+                const username = authUsername.value.trim();
+                const credential = await auth.createUserWithEmailAndPassword(email, password);
+                await credential.user.updateProfile({ displayName: username });
+                await db.collection('users').doc(credential.user.uid).set({
+                    displayName: username,
+                    email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
+            authSection.style.display = 'none';
+            resetAuthFields();
+        } catch (error) {
+            alert(`Error: ${error.message}`);
+            console.error('Auth error:', error);
+        } finally {
+            authSubmit.disabled = false;
+        }
     };
 
     loginBtn.addEventListener('click', () => {
+        resetAuthFields();
         authSection.style.display = 'block';
         setAuthMode(true);
     });
 
     signupBtn.addEventListener('click', () => {
+        resetAuthFields();
         authSection.style.display = 'block';
         setAuthMode(false);
     });
 
     authToggle.addEventListener('click', () => {
-        const isLogin = authSubmit.textContent === 'Login';
-        setAuthMode(!isLogin);
+        setAuthMode(!isLoginMode);
     });
-    
+
+    authSubmit.addEventListener('click', handleAuthSubmit);
+
     // Google Sign-in
     googleSigninBtn.addEventListener('click', () => {
       const provider = new firebase.auth.GoogleAuthProvider();
       auth.signInWithPopup(provider)
         .catch((error) => {
           alert(`Error: ${error.message}`);
-          console.error("Google sign-in error:", error);
+          console.error('Google sign-in error:', error);
         });
     });
 
     // Logout
     const signOut = () => {
         auth.signOut().catch(error => {
-            console.error("Sign out error:", error);
+            console.error('Sign out error:', error);
         });
     };
     logoutBtn.addEventListener('click', signOut);
     logoutBtnMain.addEventListener('click', signOut);
 
+    // Donation link
+    if (donateBtn) {
+        donateBtn.addEventListener('click', () => {
+            const donateWindow = window.open('https://www.paypal.com/donate', '_blank');
+            if (donateWindow) {
+                donateWindow.opener = null;
+            }
+        });
+    }
 
     // Language Toggle
     langToggle.addEventListener('click', () => {
-        lang = lang === 'en' ? 'de' : 'en';
+        const nextLang = lang === 'en' ? 'de' : 'en';
         switchEl.classList.toggle('active');
-        setLanguage(lang);
+        setLanguage(nextLang);
     });
 
     // Sidebar Menu
@@ -640,9 +756,52 @@
         sidebar.classList.remove('open');
         scrim.classList.remove('show');
     });
-    
+
+    // PWA install handling
+    window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        if (pwaInstallBtn) {
+            pwaInstallBtn.style.display = 'inline-flex';
+            pwaInstallBtn.disabled = false;
+        }
+    });
+
+    if (pwaInstallBtn) {
+        pwaInstallBtn.addEventListener('click', async () => {
+            if (!deferredInstallPrompt) return;
+            pwaInstallBtn.disabled = true;
+            deferredInstallPrompt.prompt();
+            const choice = await deferredInstallPrompt.userChoice;
+            if (choice.outcome === 'accepted') {
+                showInstallBanner(translations[lang].installSuccess);
+            } else {
+                showInstallBanner(translations[lang].installDismissed);
+            }
+            deferredInstallPrompt = null;
+            pwaInstallBtn.style.display = 'none';
+            pwaInstallBtn.disabled = false;
+        });
+    }
+
+    window.addEventListener('appinstalled', () => {
+        showInstallBanner(translations[lang].installSuccess);
+        deferredInstallPrompt = null;
+        if (pwaInstallBtn) {
+            pwaInstallBtn.style.display = 'none';
+        }
+    });
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('service-worker.js').catch((error) => {
+                console.error('Service worker registration failed:', error);
+            });
+        });
+    }
+
     // Initial Load
-    setLanguage('en');
+    setLanguage(lang);
 
   </script>
 </body>
