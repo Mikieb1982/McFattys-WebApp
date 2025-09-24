@@ -79,7 +79,8 @@
     /* Sections */
     .section{background:var(--card);border:1px solid var(--border);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:18px}
     .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:var(--fs-22);margin:0 0 var(--sp-12)}
-    #landing-page,#app-content{display:grid;gap:var(--sp-16)}
+    #landing-page{display:grid;gap:var(--sp-16)}
+    #app-content{display:grid;gap:var(--sp-16)}
     .section-head{display:flex;justify-content:space-between;align-items:center}
     .actions{display:flex;gap:10px;flex-wrap:wrap}
     .label{font-size:var(--fs-14);color:var(--text-1);margin-bottom:var(--sp-8);display:block}
@@ -89,6 +90,29 @@
     .controls .grow{flex:1 1 260px}
     .manifesto-paragraph{color:var(--text-0);line-height:1.6;margin:0 0 var(--sp-16)}
     .info-text{color:var(--text-1);font-size:13px;text-align:center;margin-top:var(--sp-12)}
+
+    /* Dashboard */
+    .dashboard-grid{display:grid;gap:var(--sp-16)}
+    .span-2{grid-column:1 / -1}
+    .quick-stats-grid{display:grid;gap:var(--sp-12);grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+    .stat-card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--r-12);padding:16px;box-shadow:var(--shadow-md)}
+    .stat-label{font-size:13px;color:var(--text-1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;display:block}
+    .stat-value{font-family:Oswald,sans-serif;font-size:32px;line-height:1}
+    .stat-subtext{font-size:13px;color:var(--text-1);margin-top:4px}
+
+    .quick-add-subtext{color:var(--text-1);font-size:13px;margin:0 0 var(--sp-12);text-align:left}
+    .quick-add-body{display:grid;gap:var(--sp-12)}
+    .quick-add-actions{display:flex;gap:var(--sp-12);align-items:center;flex-wrap:wrap}
+
+    .log-controls{display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:center;margin-bottom:var(--sp-12)}
+    .log-search{flex:1 1 220px}
+    .filter-group{display:inline-flex;gap:var(--sp-8);background:var(--bg-1);padding:6px;border-radius:var(--r-12);border:1px solid var(--border)}
+    .filter-btn{border:none;background:none;color:var(--text-0);font-weight:600;padding:8px 12px;border-radius:var(--r-8);cursor:pointer;transition:.15s}
+    .filter-btn.is-active{background:var(--primary);color:#1b1b1b}
+    .filter-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(242,197,109,.35)}
+    .filter-btn:active{transform:scale(.98)}
+
+    .pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;display:inline-block}
 
     /* Table */
     .table{width:100%;border-collapse:separate;border-spacing:0 var(--sp-8)}
@@ -155,6 +179,10 @@
 
     @media (min-width: 680px) {
       .hero-logo img { max-width: 240px; }
+    }
+
+    @media (min-width: 900px) {
+      .dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     }
   </style>
 </head>
@@ -269,36 +297,86 @@
       </section>
     </div>
 
-    <div id="app-content" style="display: none;">
-      <section id="welcome-section" class="section">
+    <div id="app-content" class="dashboard-grid" style="display: none;">
+      <section id="welcome-section" class="section span-2">
         <h2 id="welcome-message" data-i18n="welcome"></h2>
       </section>
 
-      <section class="section stack-16" aria-labelledby="addItem" id="add-item-section">
-        <h2 id="addItem" data-i18n="addTitle">Add item</h2>
-        <div class="controls">
-          <div class="grow">
+      <section id="stats-section" class="section span-2" aria-labelledby="quick-stats-title">
+        <h2 id="quick-stats-title" data-i18n="quickStatsTitle">Quick stats</h2>
+        <div class="quick-stats-grid">
+          <div class="stat-card">
+            <span class="stat-label" data-i18n="statEntriesToday">Entries today</span>
+            <div id="stat-total" class="stat-value">0</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label" data-i18n="statDairyToday">Dairy items</span>
+            <div id="stat-dairy" class="stat-value">0</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label" data-i18n="statOutsideMeals">Outside of mealtimes</span>
+            <div id="stat-outside" class="stat-value">0</div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label" data-i18n="statLastEntry">Last entry</span>
+            <div id="stat-last" class="stat-value" aria-live="polite">—</div>
+            <div id="stat-last-subtext" class="stat-subtext"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="addItem" id="add-item-section">
+        <h2 id="addItem" data-i18n="quickAddTitle">Quick add</h2>
+        <p class="quick-add-subtext" data-i18n="quickAddHint">Log what you’re eating right now—no pressure, no judgement.</p>
+        <div class="quick-add-body">
+          <div>
             <label for="food-name" class="label" data-i18n="foodLabel">Food item name</label>
             <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" data-i18n-placeholder="foodPlaceholder">
           </div>
-          <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
+          <div class="quick-add-actions">
+            <label style="display:flex;align-items:center;gap:var(--sp-8);margin:0;">
+              <input id="contains-dairy" type="checkbox" class="checkbox" aria-label="Contains dairy">
+              <span data-i18n="dairyLabel">Contains dairy</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:var(--sp-8);margin:0;">
+              <input id="outside-meals" type="checkbox" class="checkbox" aria-label="Outside of mealtimes">
+              <span data-i18n="outsideMealsLabel">Outside of mealtimes</span>
+            </label>
+            <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
+          </div>
         </div>
-        <label style="display:flex;align-items:center;margin-top:var(--sp-8);">
-          <input id="contains-dairy" type="checkbox" class="checkbox" aria-label="Contains dairy">
-          <span data-i18n="dairyLabel">Contains dairy</span>
-        </label>
       </section>
 
-      <section class="section stack-16" aria-labelledby="todaysLog" id="log-section">
+      <section id="growth-section" class="section" aria-labelledby="growth-title">
+        <h2 id="growth-title" data-i18n="growthTitle">Room to grow</h2>
+        <p data-i18n="growthCopy">This space is ready for habits, reflections, or whatever else you need next.</p>
+      </section>
+
+      <section class="section span-2" aria-labelledby="recentLog" id="log-section">
         <div class="section-head">
-          <h2 id="todaysLog" data-i18n="logTitle">Today’s log</h2>
+          <h2 id="recentLog" data-i18n="recentLogTitle">Recent log</h2>
           <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
         </div>
-        <table class="table" aria-describedby="todaysLog">
-          <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thTime">Time</th><th data-i18n="thDairy">Dairy</th><th></th></tr></thead>
+        <div class="log-controls" role="search">
+          <div class="log-search">
+            <label class="sr-only" for="log-search" data-i18n="logSearchLabel">Search log</label>
+            <input id="log-search" class="input" type="search" placeholder="Search entries" data-i18n-placeholder="logSearchPlaceholder">
+          </div>
+          <div class="filter-group" role="group" aria-labelledby="log-filters-label">
+            <span id="log-filters-label" class="sr-only" data-i18n="filterGroupLabel">Filters</span>
+            <button type="button" class="filter-btn is-active" data-filter="all" data-i18n="filterAll">All</button>
+            <button type="button" class="filter-btn" data-filter="dairy" data-i18n="filterDairy">Dairy</button>
+            <button type="button" class="filter-btn" data-filter="non-dairy" data-i18n="filterNonDairy">No dairy</button>
+            <button type="button" class="filter-btn" data-filter="outside-meals" data-i18n="filterOutsideMeals">Outside of mealtimes</button>
+            <button type="button" class="filter-btn" data-filter="during-meals" data-i18n="filterMeals">At mealtimes</button>
+          </div>
+        </div>
+        <table class="table" aria-describedby="recentLog">
+          <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thTime">Time</th><th data-i18n="thDairy">Dairy</th><th data-i18n="thOutsideMeals">Outside of mealtimes</th><th></th></tr></thead>
           <tbody id="log-body"></tbody>
         </table>
         <div id="empty-state" class="info-text" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
+        <div id="no-results" class="info-text" style="display:none" data-i18n="noResults">No entries match your filters yet.</div>
       </section>
     </div>
 
@@ -394,6 +472,7 @@
     const app = firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
+    const MAX_RECENT_ROWS = 10;
 
     let logCollection;
     let unsubscribe;
@@ -402,10 +481,14 @@
     let installBannerTimeout;
     let latestSnapshot = null;
     let isLoginMode = true;
+    let allEntries = [];
+    let activeFilter = 'all';
+    let searchTerm = '';
 
     // Elements
     const nameInput = document.getElementById('food-name');
     const dairyCheckbox = document.getElementById('contains-dairy');
+    const outsideMealsCheckbox = document.getElementById('outside-meals');
     const addBtn = document.getElementById('add-button');
     const tbody = document.getElementById('log-body');
     const emptyState = document.getElementById('empty-state');
@@ -427,6 +510,14 @@
     const userInfo = document.getElementById('user-info');
     const userName = document.getElementById('user-name');
     const exportBtn = document.getElementById('export-button');
+    const statTotal = document.getElementById('stat-total');
+    const statDairy = document.getElementById('stat-dairy');
+    const statOutside = document.getElementById('stat-outside');
+    const statLast = document.getElementById('stat-last');
+    const statLastSubtext = document.getElementById('stat-last-subtext');
+    const logSearchInput = document.getElementById('log-search');
+    const noResultsMessage = document.getElementById('no-results');
+    const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
 
     // Modals / legal links
     const manifestoModal = document.getElementById('manifesto-modal');
@@ -472,16 +563,37 @@
         manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.",
         donateBtn: 'Donate',
         welcome: 'Welcome',
+        quickStatsTitle: 'Quick stats',
+        statEntriesToday: 'Entries today',
+        statDairyToday: 'Dairy items',
+        statOutsideMeals: 'Outside of mealtimes',
+        statLastEntry: 'Last entry',
+        quickAddTitle: 'Quick add',
+        quickAddHint: 'Log what you’re eating right now—no pressure, no judgement.',
+        growthTitle: 'Room to grow',
+        growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
+        recentLogTitle: 'Recent log',
+        logSearchLabel: 'Search log',
+        logSearchPlaceholder: 'Search entries',
+        filterGroupLabel: 'Filters',
+        filterAll: 'All',
+        filterDairy: 'Dairy',
+        filterNonDairy: 'No dairy',
+        filterOutsideMeals: 'Outside of mealtimes',
+        filterMeals: 'At mealtimes',
+        noResults: 'No entries match your filters yet.',
         addTitle: 'Add item',
         foodLabel: 'Food item name',
         foodPlaceholder: 'e.g., Cheeseburger',
         addBtn: 'Add to log',
         dairyLabel: 'Contains dairy',
+        outsideMealsLabel: 'Outside of mealtimes',
         logTitle: 'Today’s log',
         exportBtn: 'Export',
         thItem: 'Item',
         thTime: 'Time',
         thDairy: 'Dairy',
+        thOutsideMeals: 'Outside of mealtimes',
         emptyState: 'No items yet. Add your first item above.',
         confirmTitle: 'Are you sure?',
         cancelBtn: 'Cancel',
@@ -526,6 +638,7 @@
         csvHeaderDate: 'Date',
         csvHeaderItem: 'Item',
         csvHeaderDairy: 'Dairy',
+        csvHeaderOutsideMeals: 'Outside of mealtimes',
         csvYes: 'Yes',
         csvNo: 'No',
         notAvailable: 'N/A',
@@ -549,16 +662,37 @@
         manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von Ihrer Schuld profitieren.',
         donateBtn: 'Spenden',
         welcome: 'Willkommen',
+        quickStatsTitle: 'Schnelle Statistiken',
+        statEntriesToday: 'Einträge heute',
+        statDairyToday: 'Milchprodukte',
+        statOutsideMeals: 'Außerhalb der Mahlzeiten',
+        statLastEntry: 'Letzter Eintrag',
+        quickAddTitle: 'Schnell hinzufügen',
+        quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
+        growthTitle: 'Platz für mehr',
+        growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
+        recentLogTitle: 'Aktuelles Protokoll',
+        logSearchLabel: 'Protokoll durchsuchen',
+        logSearchPlaceholder: 'Einträge durchsuchen',
+        filterGroupLabel: 'Filter',
+        filterAll: 'Alle',
+        filterDairy: 'Milch',
+        filterNonDairy: 'Ohne Milch',
+        filterOutsideMeals: 'Außerhalb der Mahlzeiten',
+        filterMeals: 'Zu den Mahlzeiten',
+        noResults: 'Keine Einträge passen zu deinen Filtern.',
         addTitle: 'Element hinzufügen',
         foodLabel: 'Name des Lebensmittels',
         foodPlaceholder: 'z.B. Käseburger',
         addBtn: 'Zum Protokoll hinzufügen',
         dairyLabel: 'Enthält Milchprodukte',
+        outsideMealsLabel: 'Außerhalb der Mahlzeiten',
         logTitle: 'Heutiges Protokoll',
         exportBtn: 'Exportieren',
         thItem: 'Element',
         thTime: 'Uhrzeit',
         thDairy: 'Milchprodukte',
+        thOutsideMeals: 'Außerhalb der Mahlzeiten',
         emptyState: 'Noch keine Einträge. Fügen Sie oben Ihren ersten Eintrag hinzu.',
         confirmTitle: 'Sind Sie sicher?',
         cancelBtn: 'Abbrechen',
@@ -603,6 +737,7 @@
         csvHeaderDate: 'Datum',
         csvHeaderItem: 'Element',
         csvHeaderDairy: 'Milchprodukte',
+        csvHeaderOutsideMeals: 'Außerhalb der Mahlzeiten',
         csvYes: 'Ja',
         csvNo: 'Nein',
         notAvailable: 'k. A.',
@@ -711,10 +846,12 @@
       logCollection.add({
         name,
         dairy: dairyCheckbox.checked,
+        outsideMeals: outsideMealsCheckbox.checked,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
         nameInput.value = '';
         dairyCheckbox.checked = false;
+        outsideMealsCheckbox.checked = false;
         nameInput.focus();
       }).catch((error) => {
         console.error('Error adding document: ', error);
@@ -722,35 +859,73 @@
       });
     };
 
-    const renderEntries = (snapshot) => {
-      latestSnapshot = snapshot;
+    const getEntryDate = (entry) => {
+      if (entry && entry.timestamp && typeof entry.timestamp.toDate === 'function') {
+        return entry.timestamp.toDate();
+      }
+      return null;
+    };
+
+    const isSameDay = (dateA, dateB) => {
+      if (!dateA || !dateB) return false;
+      return dateA.getFullYear() === dateB.getFullYear() &&
+        dateA.getMonth() === dateB.getMonth() &&
+        dateA.getDate() === dateB.getDate();
+    };
+
+    const updateStats = () => {
+      if (!statTotal || !statDairy || !statOutside || !statLast || !statLastSubtext) return;
+
+      const today = new Date();
+      const locale = lang === 'de' ? 'de-DE' : 'en-US';
+      const entriesToday = allEntries.filter(entry => {
+        const date = getEntryDate(entry);
+        return isSameDay(date, today);
+      });
+      const dairyToday = entriesToday.filter(entry => entry.dairy).length;
+      const outsideMealsToday = entriesToday.filter(entry => entry.outsideMeals).length;
+      const latestEntry = allEntries.find(entry => getEntryDate(entry));
+      const latestDate = latestEntry ? getEntryDate(latestEntry) : null;
+
+      statTotal.textContent = entriesToday.length;
+      statDairy.textContent = dairyToday;
+      statOutside.textContent = outsideMealsToday;
+
+      if (latestDate) {
+        statLast.textContent = latestDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+        statLastSubtext.textContent = latestDate.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' });
+      } else {
+        statLast.textContent = '—';
+        statLastSubtext.textContent = '';
+      }
+    };
+
+    const renderRows = (entries) => {
       tbody.innerHTML = '';
 
-      if (snapshot.empty) {
-        emptyState.style.display = 'block';
-        return;
-      }
-      emptyState.style.display = 'none';
-
-      snapshot.forEach(doc => {
-        const entry = doc.data();
+      entries.forEach(entry => {
         const tr = document.createElement('tr');
 
         const nameCell = document.createElement('td');
         nameCell.textContent = entry.name || '';
 
         const timeCell = document.createElement('td');
-        if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
-          timeCell.textContent = entry.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        } else {
-          timeCell.textContent = getTranslation('notAvailable');
-        }
+        const date = getEntryDate(entry);
+        timeCell.textContent = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : getTranslation('notAvailable');
 
         const dairyCell = document.createElement('td');
-        const pill = document.createElement('span');
-        pill.className = `pill ${entry.dairy ? 'pill-yes' : 'pill-no'}`;
-        pill.textContent = entry.dairy ? getTranslation('yes') : getTranslation('no');
-        dairyCell.appendChild(pill);
+        const hasDairy = Boolean(entry.dairy);
+        const dairyPill = document.createElement('span');
+        dairyPill.className = `pill ${hasDairy ? 'pill-yes' : 'pill-no'}`;
+        dairyPill.textContent = hasDairy ? getTranslation('yes') : getTranslation('no');
+        dairyCell.appendChild(dairyPill);
+
+        const outsideCell = document.createElement('td');
+        const outsideValue = Boolean(entry.outsideMeals);
+        const outsidePill = document.createElement('span');
+        outsidePill.className = `pill ${outsideValue ? 'pill-yes' : 'pill-no'}`;
+        outsidePill.textContent = outsideValue ? getTranslation('yes') : getTranslation('no');
+        outsideCell.appendChild(outsidePill);
 
         const actionsCell = document.createElement('td');
         actionsCell.className = 'row-actions actions';
@@ -758,14 +933,14 @@
         const editBtn = document.createElement('button');
         editBtn.className = 'btn btn-secondary edit-entry';
         editBtn.type = 'button';
-        editBtn.dataset.id = doc.id;
+        editBtn.dataset.id = entry.id;
         editBtn.textContent = getTranslation('editBtn');
         editBtn.setAttribute('aria-label', `${getTranslation('editEntryAria')} ${entry.name || ''}`.trim());
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'btn btn-danger remove-entry';
         removeBtn.type = 'button';
-        removeBtn.dataset.id = doc.id;
+        removeBtn.dataset.id = entry.id;
         removeBtn.textContent = getTranslation('removeBtn');
         removeBtn.setAttribute('aria-label', `${getTranslation('removeEntryAria')} ${entry.name || ''}`.trim());
 
@@ -775,9 +950,83 @@
         tr.appendChild(nameCell);
         tr.appendChild(timeCell);
         tr.appendChild(dairyCell);
+        tr.appendChild(outsideCell);
         tr.appendChild(actionsCell);
         tbody.appendChild(tr);
       });
+    };
+
+    const resetFilters = () => {
+      activeFilter = 'all';
+      searchTerm = '';
+      if (logSearchInput) {
+        logSearchInput.value = '';
+      }
+      filterButtons.forEach(btn => btn.classList.toggle('is-active', btn.dataset.filter === 'all'));
+      toggleNoResults(false);
+    };
+
+    const toggleNoResults = (show) => {
+      if (!noResultsMessage) return;
+      noResultsMessage.style.display = show ? 'block' : 'none';
+    };
+
+    const applyFilters = () => {
+      if (!allEntries.length) {
+        tbody.innerHTML = '';
+        toggleNoResults(false);
+        return;
+      }
+
+      let filtered = [...allEntries];
+
+      if (searchTerm) {
+        filtered = filtered.filter(entry => (entry.name || '').toLowerCase().includes(searchTerm));
+      }
+
+      if (activeFilter === 'dairy') {
+        filtered = filtered.filter(entry => entry.dairy);
+      } else if (activeFilter === 'non-dairy') {
+        filtered = filtered.filter(entry => !entry.dairy);
+      } else if (activeFilter === 'outside-meals') {
+        filtered = filtered.filter(entry => entry.outsideMeals);
+      } else if (activeFilter === 'during-meals') {
+        filtered = filtered.filter(entry => !entry.outsideMeals);
+      }
+
+      if (!filtered.length) {
+        tbody.innerHTML = '';
+        toggleNoResults(true);
+        return;
+      }
+
+      toggleNoResults(false);
+      renderRows(filtered.slice(0, MAX_RECENT_ROWS));
+    };
+
+    const renderEntries = (snapshot) => {
+      latestSnapshot = snapshot;
+      allEntries = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          dairy: Boolean(data.dairy),
+          outsideMeals: Boolean(data.outsideMeals)
+        };
+      });
+
+      updateStats();
+
+      if (!allEntries.length) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        toggleNoResults(false);
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      applyFilters();
     };
 
     const renderHistory = (snapshot) => {
@@ -803,12 +1052,16 @@
         const display = new Date(y, m-1, d).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
         html += `<h3>${display}</h3>`;
-        html += `<table class="table" style="margin-bottom:20px;"><thead><tr><th>${getTranslation('thItem')}</th><th>${getTranslation('thTime')}</th><th>${getTranslation('thDairy')}</th></tr></thead><tbody>`;
+        html += `<table class="table" style="margin-bottom:20px;"><thead><tr><th>${getTranslation('thItem')}</th><th>${getTranslation('thTime')}</th><th>${getTranslation('thDairy')}</th><th>${getTranslation('thOutsideMeals')}</th></tr></thead><tbody>`;
         entriesByDate[key].sort((a,b)=>b.timestamp.seconds - a.timestamp.seconds).forEach(entry=>{
           const time = entry.timestamp.toDate().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-          const dairyText = entry.dairy ? getTranslation('yes') : getTranslation('no');
-          const pillClass = entry.dairy ? 'pill-yes' : 'pill-no';
-          html += `<tr><td>${entry.name}</td><td>${time}</td><td><span class="pill ${pillClass}">${dairyText}</span></td></tr>`;
+          const hasDairy = Boolean(entry.dairy);
+          const dairyText = hasDairy ? getTranslation('yes') : getTranslation('no');
+          const pillClass = hasDairy ? 'pill-yes' : 'pill-no';
+          const outsideValue = Boolean(entry.outsideMeals);
+          const outsideText = outsideValue ? getTranslation('yes') : getTranslation('no');
+          const outsideClass = outsideValue ? 'pill-yes' : 'pill-no';
+          html += `<tr><td>${entry.name}</td><td>${time}</td><td><span class="pill ${pillClass}">${dairyText}</span></td><td><span class="pill ${outsideClass}">${outsideText}</span></td></tr>`;
         });
         html += `</tbody></table>`;
       });
@@ -848,7 +1101,12 @@
       if (!logCollection) return;
 
       logCollection.orderBy('timestamp', 'desc').get().then(snapshot => {
-        const header = [getTranslation('csvHeaderDate'), getTranslation('csvHeaderItem'), getTranslation('csvHeaderDairy')].join(',');
+        const header = [
+          getTranslation('csvHeaderDate'),
+          getTranslation('csvHeaderItem'),
+          getTranslation('csvHeaderDairy'),
+          getTranslation('csvHeaderOutsideMeals')
+        ].join(',');
         let csvContent = "data:text/csv;charset=utf-8," + header + "\n";
         const locale = lang === 'de' ? 'de-DE' : 'en-US';
 
@@ -856,7 +1114,14 @@
           const entry = doc.data();
           const date = entry.timestamp ? entry.timestamp.toDate().toLocaleDateString(locale) : getTranslation('notAvailable');
           const safeName = `"${(entry.name || '').replace(/"/g, '""')}"`;
-          const row = [date, safeName, entry.dairy ? getTranslation('csvYes') : getTranslation('csvNo')].join(',');
+          const hasDairy = Boolean(entry.dairy);
+          const outsideValue = Boolean(entry.outsideMeals);
+          const row = [
+            date,
+            safeName,
+            hasDairy ? getTranslation('csvYes') : getTranslation('csvNo'),
+            outsideValue ? getTranslation('csvYes') : getTranslation('csvNo')
+          ].join(',');
           csvContent += row + "\n";
         });
 
@@ -894,6 +1159,7 @@
       authSection.style.display = 'none';
 
       if (loggedIn) {
+        resetFilters();
         const displayName = user.displayName || user.email || '';
         const welcomeText = getTranslation('welcome');
         welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : welcomeText;
@@ -908,6 +1174,9 @@
         tbody.innerHTML = '';
         emptyState.style.display = 'block';
         logCollection = null;
+        allEntries = [];
+        resetFilters();
+        updateStats();
         setAuthMode(true);
         resetAuthFields();
       }
@@ -965,6 +1234,23 @@
     addBtn.addEventListener('click', addEntry);
     tbody.addEventListener('click', handleLogAction);
     exportBtn.addEventListener('click', exportToCsv);
+
+    if (logSearchInput) {
+      logSearchInput.addEventListener('input', (event) => {
+        searchTerm = event.target.value.trim().toLowerCase();
+        applyFilters();
+      });
+    }
+
+    filterButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const { filter } = button.dataset;
+        if (!filter) return;
+        activeFilter = filter;
+        filterButtons.forEach(btn => btn.classList.toggle('is-active', btn === button));
+        applyFilters();
+      });
+    });
 
     loginBtn.addEventListener('click', () => { resetAuthFields(); authSection.style.display = 'block'; setAuthMode(true); });
     signupBtn.addEventListener('click', () => { resetAuthFields(); authSection.style.display = 'block'; setAuthMode(false); });
