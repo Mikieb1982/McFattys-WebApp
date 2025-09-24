@@ -23,10 +23,10 @@
       --danger: #d9534f;    /* Muted Red */
       --info: #5bc0de;      /* Teal Blue */
       --text-0: #f7f5e6;    /* Cream White */
-      --bg-0:#1a1a1a;       /* Dark Charcoal */
-      --bg-1:#2a2a2a;       /* Lighter Charcoal */
-      --card:#333333;       /* Card Background */
-      --border:#444444;     /* Border Color */
+      --bg-0:#1a1a1a;        /* Dark Charcoal */
+      --bg-1:#2a2a2a;        /* Lighter Charcoal */
+      --card:#333333;        /* Card Background */
+      --border:#444444;      /* Border Color */
 
       --sp-4:4px; --sp-8:8px; --sp-12:12px; --sp-16:16px; --sp-20:20px; --sp-24:24px;
       --fs-22:22px; --fs-18:18px; --fs-16:16px; --fs-14:14px; --lh:1.45;
@@ -92,7 +92,14 @@
     .info-text{color:var(--text-1);font-size:13px;text-align:center;margin-top:var(--sp-12)}
 
     /* Dashboard */
-    .dashboard-grid{display:grid;gap:var(--sp-16)}
+    .dashboard-grid{display:grid;gap:var(--sp-16);position:relative}
+    .dashboard-card{position:relative;cursor:grab;transition:transform .18s ease,box-shadow .18s ease}
+    .dashboard-card:active{cursor:grabbing}
+    .dashboard-card.is-dragging{opacity:.92;cursor:grabbing;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+    .dashboard-grid.is-reordering .dashboard-card{transition:transform .18s ease}
+    .dashboard-placeholder{border:1px dashed var(--border);border-radius:var(--r-12);background:rgba(255,255,255,.04);min-height:120px;margin:0}
+    .dashboard-placeholder.span-2{grid-column:1 / -1}
+    body.card-dragging{user-select:none}
     .span-2{grid-column:1 / -1}
     .quick-stats-grid{display:grid;gap:var(--sp-12);grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
     .stat-card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--r-12);padding:16px;box-shadow:var(--shadow-md)}
@@ -174,6 +181,11 @@
     .auth-actions{display:flex;gap:10px}
     .user-info{display:none;align-items:center;gap:10px}
     .user-info.show{display:flex}
+
+    .logo-card{display:flex;align-items:center;justify-content:center;padding:var(--sp-16)}
+    .logo-card .logo-card-inner{width:100%;max-width:280px;aspect-ratio:1/1;border-radius:var(--r-12);background:var(--bg-1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;padding:var(--sp-16)}
+    .logo-card img{width:70%;max-width:180px;height:auto;display:block}
+    @media (max-width:680px){.logo-card .logo-card-inner{max-width:220px}}
 
     @media (prefers-reduced-motion:reduce){.install-banner,.sidebar{transition:none}.btn:active{transform:none}}
 
@@ -298,11 +310,17 @@
     </div>
 
     <div id="app-content" class="dashboard-grid" style="display: none;">
-      <section id="welcome-section" class="section span-2">
+      <section id="logo-card" class="section dashboard-card logo-card" data-card-id="logo" aria-label="McFatty's logo">
+        <div class="logo-card-inner">
+          <img src="Logo.png" alt="McFatty's Food Tracker logo">
+        </div>
+      </section>
+
+      <section id="welcome-section" class="section dashboard-card" data-card-id="welcome">
         <h2 id="welcome-message" data-i18n="welcome"></h2>
       </section>
 
-      <section id="stats-section" class="section span-2" aria-labelledby="quick-stats-title">
+      <section id="stats-section" class="section dashboard-card span-2" data-card-id="stats" aria-labelledby="quick-stats-title">
         <h2 id="quick-stats-title" data-i18n="quickStatsTitle">Quick stats</h2>
         <div class="quick-stats-grid">
           <div class="stat-card">
@@ -325,7 +343,7 @@
         </div>
       </section>
 
-      <section class="section" aria-labelledby="addItem" id="add-item-section">
+      <section class="section dashboard-card" aria-labelledby="addItem" id="add-item-section" data-card-id="quick-add">
         <h2 id="addItem" data-i18n="quickAddTitle">Quick add</h2>
         <p class="quick-add-subtext" data-i18n="quickAddHint">Log what you’re eating right now—no pressure, no judgement.</p>
         <div class="quick-add-body">
@@ -347,12 +365,12 @@
         </div>
       </section>
 
-      <section id="growth-section" class="section" aria-labelledby="growth-title">
+      <section id="growth-section" class="section dashboard-card" aria-labelledby="growth-title" data-card-id="growth">
         <h2 id="growth-title" data-i18n="growthTitle">Room to grow</h2>
         <p data-i18n="growthCopy">This space is ready for habits, reflections, or whatever else you need next.</p>
       </section>
 
-      <section class="section span-2" aria-labelledby="recentLog" id="log-section">
+      <section class="section dashboard-card span-2" aria-labelledby="recentLog" id="log-section" data-card-id="recent-log">
         <div class="section-head">
           <h2 id="recentLog" data-i18n="recentLogTitle">Recent log</h2>
           <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
@@ -519,6 +537,12 @@
     const noResultsMessage = document.getElementById('no-results');
     const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
 
+    const DASHBOARD_ORDER_KEY = 'dashboard-card-order-v1';
+    const LONG_PRESS_DELAY_TOUCH = 280;
+    const LONG_PRESS_DELAY_POINTER = 160;
+    const DRAG_MOVE_CANCEL_THRESHOLD = 10;
+    let dragSession = null;
+
     // Modals / legal links
     const manifestoModal = document.getElementById('manifesto-modal');
     const closeManifestoBtn = document.getElementById('close-manifesto');
@@ -531,6 +555,307 @@
     const closeLegalBtn = document.getElementById('close-legal');
     const impressumLink = document.getElementById('impressum-link');
     const privacyLink = document.getElementById('privacy-link');
+
+    function getDashboardCards() {
+      if (!appContent) return [];
+      return Array.from(appContent.querySelectorAll('.dashboard-card'));
+    }
+
+    function persistCardOrder() {
+      if (!appContent) return;
+      try {
+        const order = getDashboardCards().map(card => card.dataset.cardId).filter(Boolean);
+        localStorage.setItem(DASHBOARD_ORDER_KEY, JSON.stringify(order));
+      } catch (error) {
+        console.warn('Unable to save dashboard order', error);
+      }
+    }
+
+    function applyStoredCardOrder() {
+      if (!appContent) return;
+      const cards = getDashboardCards();
+      if (!cards.length) return;
+
+      const defaultOrder = cards.map(card => card.dataset.cardId).filter(Boolean);
+      let storedOrder = [];
+
+      try {
+        const storedValue = localStorage.getItem(DASHBOARD_ORDER_KEY);
+        storedOrder = storedValue ? JSON.parse(storedValue) : [];
+      } catch (error) {
+        storedOrder = [];
+      }
+
+      if (!Array.isArray(storedOrder) || !storedOrder.length) return;
+
+      const validStored = storedOrder.filter(id => defaultOrder.includes(id));
+      const storedSet = new Set(validStored);
+      const queue = [...validStored];
+      const finalOrder = [];
+
+      defaultOrder.forEach(id => {
+        if (!id) return;
+        if (!storedSet.has(id)) {
+          if (!finalOrder.includes(id)) {
+            finalOrder.push(id);
+          }
+        } else {
+          const nextStored = queue.shift();
+          if (nextStored && !finalOrder.includes(nextStored)) {
+            finalOrder.push(nextStored);
+          }
+        }
+      });
+
+      queue.forEach(id => {
+        if (id && !finalOrder.includes(id)) {
+          finalOrder.push(id);
+        }
+      });
+
+      defaultOrder.forEach(id => {
+        if (id && !finalOrder.includes(id)) {
+          finalOrder.push(id);
+        }
+      });
+
+      finalOrder.forEach(id => {
+        const card = appContent.querySelector(`[data-card-id="${id}"]`);
+        if (card) {
+          appContent.appendChild(card);
+        }
+      });
+    }
+
+    function detachGlobalPointerListeners() {
+      window.removeEventListener('pointermove', handleCardPointerMove);
+      window.removeEventListener('pointerup', handleCardPointerUp);
+      window.removeEventListener('pointercancel', handleCardPointerUp);
+    }
+
+    function endCardDrag(commit) {
+      if (!dragSession) return;
+
+      clearTimeout(dragSession.longPressTimer);
+      dragSession.longPressTimer = null;
+
+      detachGlobalPointerListeners();
+
+      const { card, placeholder, active } = dragSession;
+
+      if (active && placeholder && placeholder.parentNode) {
+        placeholder.parentNode.replaceChild(card, placeholder);
+      }
+
+      if (active && card) {
+        card.classList.remove('is-dragging');
+        card.style.position = '';
+        card.style.zIndex = '';
+        card.style.width = '';
+        card.style.height = '';
+        card.style.left = '';
+        card.style.top = '';
+        card.style.pointerEvents = '';
+        card.style.transition = '';
+      }
+
+      if (active) {
+        appContent.classList.remove('is-reordering');
+        document.body.classList.remove('card-dragging');
+        if (commit) {
+          persistCardOrder();
+        }
+      }
+
+      dragSession = null;
+    }
+
+    function positionDraggedCard(event) {
+      if (!dragSession || !dragSession.card) return;
+      const card = dragSession.card;
+      const containerRect = appContent.getBoundingClientRect();
+      const cardWidth = card.offsetWidth;
+      const cardHeight = card.offsetHeight;
+      const rawX = event.clientX - containerRect.left - dragSession.offsetX;
+      const rawY = event.clientY - containerRect.top - dragSession.offsetY;
+      const maxX = Math.max(containerRect.width - cardWidth, 0);
+      const maxY = Math.max(containerRect.height - cardHeight, 0);
+      const clampedX = Math.min(Math.max(rawX, 0), maxX);
+      const clampedY = Math.min(Math.max(rawY, 0), maxY);
+      card.style.left = `${clampedX}px`;
+      card.style.top = `${clampedY}px`;
+    }
+
+    function updatePlaceholderPosition(event) {
+      if (!dragSession || !dragSession.placeholder) return false;
+
+      const { placeholder, card } = dragSession;
+      const cards = getDashboardCards().filter(el => el !== card);
+      if (!cards.length) return false;
+
+      const { clientX, clientY } = event;
+      const element = document.elementFromPoint(clientX, clientY);
+      const targetCard = element ? element.closest('.dashboard-card') : null;
+
+      if (targetCard && targetCard !== card) {
+        const rect = targetCard.getBoundingClientRect();
+        const verticalMiddle = rect.top + rect.height / 2;
+        const horizontalMiddle = rect.left + rect.width / 2;
+        const before = clientY < verticalMiddle || (Math.abs(clientY - verticalMiddle) < rect.height / 3 && clientX < horizontalMiddle);
+
+        if (before) {
+          if (placeholder.nextSibling !== targetCard) {
+            appContent.insertBefore(placeholder, targetCard);
+            return true;
+          }
+        } else if (targetCard.nextSibling !== placeholder) {
+          appContent.insertBefore(placeholder, targetCard.nextSibling);
+          return true;
+        }
+
+        return false;
+      }
+
+      const firstCard = cards[0];
+      const firstRect = firstCard.getBoundingClientRect();
+      if (clientY < firstRect.top) {
+        if (placeholder !== firstCard) {
+          appContent.insertBefore(placeholder, firstCard);
+          return true;
+        }
+        return false;
+      }
+
+      const lastCard = cards[cards.length - 1];
+      const lastRect = lastCard.getBoundingClientRect();
+      if (clientY > lastRect.bottom) {
+        if (lastCard.nextSibling !== placeholder) {
+          appContent.appendChild(placeholder);
+          return true;
+        }
+        return false;
+      }
+
+      return false;
+    }
+
+    function beginCardDrag(event) {
+      if (!dragSession || dragSession.active) return;
+
+      clearTimeout(dragSession.longPressTimer);
+      dragSession.longPressTimer = null;
+
+      const card = dragSession.card;
+      if (!card) return;
+
+      const cardRect = card.getBoundingClientRect();
+      const containerRect = appContent.getBoundingClientRect();
+
+      dragSession.active = true;
+      dragSession.offsetX = event.clientX - cardRect.left;
+      dragSession.offsetY = event.clientY - cardRect.top;
+
+      const placeholder = document.createElement('div');
+      placeholder.className = 'dashboard-placeholder';
+      if (card.classList.contains('span-2')) {
+        placeholder.classList.add('span-2');
+      }
+      placeholder.style.minHeight = `${cardRect.height}px`;
+
+      dragSession.placeholder = placeholder;
+
+      appContent.insertBefore(placeholder, card);
+      appContent.appendChild(card);
+
+      card.classList.add('is-dragging');
+      card.style.position = 'absolute';
+      card.style.zIndex = '900';
+      card.style.width = `${cardRect.width}px`;
+      card.style.height = `${cardRect.height}px`;
+      card.style.left = `${cardRect.left - containerRect.left}px`;
+      card.style.top = `${cardRect.top - containerRect.top}px`;
+      card.style.pointerEvents = 'none';
+
+      appContent.classList.add('is-reordering');
+      document.body.classList.add('card-dragging');
+    }
+
+    function handleCardPointerMove(event) {
+      if (!dragSession || event.pointerId !== dragSession.pointerId) return;
+
+      dragSession.lastEvent = event;
+
+      if (!dragSession.active) {
+        if (dragSession.longPressTimer) {
+          const dx = Math.abs(event.clientX - dragSession.startX);
+          const dy = Math.abs(event.clientY - dragSession.startY);
+          if (dx > DRAG_MOVE_CANCEL_THRESHOLD || dy > DRAG_MOVE_CANCEL_THRESHOLD) {
+            endCardDrag(false);
+          }
+        }
+        return;
+      }
+
+      event.preventDefault();
+      positionDraggedCard(event);
+      const moved = updatePlaceholderPosition(event);
+      if (moved) {
+        dragSession.hasMoved = true;
+      }
+    }
+
+    function handleCardPointerUp(event) {
+      if (!dragSession || event.pointerId !== dragSession.pointerId) return;
+      const shouldCommit = Boolean(dragSession.active);
+      endCardDrag(shouldCommit);
+    }
+
+    function handleCardPointerDown(event) {
+      if (!event.isPrimary) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      if (dragSession) return;
+      if (!appContent) return;
+
+      const interactiveTarget = event.target.closest('button, input, textarea, select, label, a');
+      if (interactiveTarget) return;
+
+      const card = event.currentTarget;
+      if (!card || !card.dataset.cardId) return;
+
+      const delay = event.pointerType === 'touch' ? LONG_PRESS_DELAY_TOUCH : LONG_PRESS_DELAY_POINTER;
+
+      dragSession = {
+        card,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        longPressTimer: setTimeout(() => {
+          if (!dragSession) return;
+          const triggerEvent = dragSession.lastEvent || event;
+          beginCardDrag(triggerEvent);
+        }, delay),
+        hasMoved: false,
+        active: false,
+        offsetX: 0,
+        offsetY: 0,
+        placeholder: null,
+        lastEvent: event
+      };
+
+      window.addEventListener('pointermove', handleCardPointerMove, { passive: false });
+      window.addEventListener('pointerup', handleCardPointerUp);
+      window.addEventListener('pointercancel', handleCardPointerUp);
+    }
+
+    function initDashboardReordering() {
+      if (!appContent) return;
+      applyStoredCardOrder();
+      persistCardOrder();
+      getDashboardCards().forEach(card => {
+        if (!card.dataset.cardId) return;
+        card.addEventListener('pointerdown', handleCardPointerDown);
+      });
+    }
 
     // Auth Elements
     const authSection = document.getElementById('auth-section');
@@ -1229,6 +1554,8 @@
     // Helpers
     const signOut = () => auth.signOut();
     const toggleLanguage = () => setLanguage(lang === 'en' ? 'de' : 'en');
+
+    initDashboardReordering();
 
     // Event Listeners
     addBtn.addEventListener('click', addEntry);
