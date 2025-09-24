@@ -117,6 +117,11 @@
     .sb-item-icon{width:18px;height:18px;opacity:.9}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
+    /* New styles for header buttons */
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+    .auth-actions { display: flex; gap: 10px; }
+
+
     @media (prefers-reduced-motion:reduce){.install-banner,.sidebar{transition:none}.btn:active{transform:none}}
     
     @media (min-width: 680px) {
@@ -152,23 +157,27 @@
 
   <div class="container stack-20">
     <div class="utility-bar" role="region" aria-label="App controls">
-      <div class="utility-row">
-        <div id="lang-toggle" class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language EN/DE">
-          <span>EN</span><div id="switch" class="switch" aria-hidden="true"></div><span>DE</span>
+        <div class="utility-row">
+            <div id="lang-toggle" class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language EN/DE">
+                <span>EN</span><div id="switch" class="switch" aria-hidden="true"></div><span>DE</span>
+            </div>
+            <div class="header-actions">
+                <div class="auth-actions">
+                    <button id="login-btn" class="btn btn-secondary" type="button">Login</button>
+                    <button id="signup-btn" class="btn btn-primary" type="button">Sign Up</button>
+                </div>
+                <button id="pwa-install" class="btn btn-secondary" type="button" aria-label="Install app" data-i18n="installBtn">Install</button>
+                <button id="menu-open" class="icon-btn" aria-label="Open menu">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg>
+                </button>
+            </div>
         </div>
-        <div style="display:flex;align-items:center;gap:12px">
-          <button id="pwa-install" class="btn btn-secondary" type="button" aria-label="Install app" data-i18n="installBtn">Install</button>
-          <button id="menu-open" class="icon-btn" aria-label="Open menu">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"/></svg>
-          </button>
-        </div>
-      </div>
     </div>
 
     <header class="hero-logo"><img src="Logo.png" alt="McFatty's Food Tracker logo"></header>
 
     <div id="landing-page">
-        <section id="auth-section" class="section stack-16">
+        <section id="auth-section" class="section stack-16" style="display: none;">
             <h2 id="auth-title" data-i18n="loginTitle">Login / Sign Up</h2>
             <div class="stack-16">
                 <div class="controls">
@@ -244,80 +253,4 @@
             <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thDairy">Dairy</th><th></th></tr></thead>
             <tbody id="log-body"></tbody>
           </table>
-          <div id="empty-state" class="label" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
-        </section>
-    </div>
-
-    <footer class="footer" data-i18n="footerText">Designed and created by Burrow · 2025</footer>
-  </div>
-
-  <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
-    <div class="modal">
-      <h3 id="confirm-title">Are you sure?</h3>
-      <p id="confirm-desc"></p>
-      <div class="modal-actions">
-        <button id="cancel-action" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
-        <button id="confirm-action" class="btn btn-danger" data-i18n="confirmClearBtn">Confirm</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title">
-    <div class="modal">
-      <h3 id="account-title" data-i18n="accountModalTitle">Edit Account</h3>
-      <div class="stack-16" style="text-align: left;">
-          <label for="account-name" class="label" data-i18n="nameLabel">Name</label>
-          <input id="account-name" class="input" type="text" placeholder="e.g., Mike">
-          <label for="account-email" class="label" data-i18n="emailLabel">Email</label>
-          <input id="account-email" class="input" type="email" disabled>
-      </div>
-      <div class="modal-actions">
-        <button id="delete-account" class="btn btn-danger" data-i18n="deleteAccountBtn">Delete Account</button>
-        <button id="cancel-account" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
-        <button id="save-account" class="btn btn-primary" data-i18n="saveBtn">Save</button>
-      </div>
-    </div>
-  </div>
-  
-  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyC1qN3ksU0uYhXRXYNmYlmGX0iyUa-BJFQ",
-      authDomain: "mcfattys-food-tracker.firebaseapp.com",
-      projectId: "mcfattys-food-tracker",
-      storageBucket: "mcfattys-food-tracker.appspot.com",
-      messagingSenderId: "831603858264",
-      appId: "1:831603858264:web:58506c01975e9a1991e32d",
-      measurementId: "G-KQX4BQ71VK"
-    };
-
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    let logCollection;
-    let unsubscribe;
-    let lang = 'en';
-
-    // Elements
-    const nameInput = document.getElementById('food-name');
-    const dairyCheckbox = document.getElementById('contains-dairy');
-    const addBtn = document.getElementById('add-button');
-    const tbody = document.getElementById('log-body');
-    const emptyState = document.getElementById('empty-state');
-    const toastEl = document.getElementById('install-banner');
-    const sidebar = document.getElementById('sidebar');
-    const scrim = document.getElementById('scrim');
-    const welcomeSection = document.getElementById('welcome-section');
-    const welcomeMessage = document.getElementById('welcome-message');
-    const landingPage = document.getElementById('landing-page');
-    const appContent = document.getElementById('app-content');
-    const donateBtn = document.getElementById('donate-button');
-    const langToggle = document.getElementById('lang-toggle');
-    const switchEl = document.getElementById('switch');
-    const googleSigninBtn = document.getElementById('google-signin');
-
-    // Auth Elements
-    const authSubmit = do
+          <div id="empty-state" class="label" style="display:none" data-i1…
