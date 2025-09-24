@@ -314,6 +314,10 @@
             <div id="stat-dairy" class="stat-value">0</div>
           </div>
           <div class="stat-card">
+            <span class="stat-label" data-i18n="statOutsideMeals">Outside of mealtimes</span>
+            <div id="stat-outside" class="stat-value">0</div>
+          </div>
+          <div class="stat-card">
             <span class="stat-label" data-i18n="statLastEntry">Last entry</span>
             <div id="stat-last" class="stat-value" aria-live="polite">—</div>
             <div id="stat-last-subtext" class="stat-subtext"></div>
@@ -333,6 +337,10 @@
             <label style="display:flex;align-items:center;gap:var(--sp-8);margin:0;">
               <input id="contains-dairy" type="checkbox" class="checkbox" aria-label="Contains dairy">
               <span data-i18n="dairyLabel">Contains dairy</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:var(--sp-8);margin:0;">
+              <input id="outside-meals" type="checkbox" class="checkbox" aria-label="Outside of mealtimes">
+              <span data-i18n="outsideMealsLabel">Outside of mealtimes</span>
             </label>
             <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
           </div>
@@ -359,10 +367,12 @@
             <button type="button" class="filter-btn is-active" data-filter="all" data-i18n="filterAll">All</button>
             <button type="button" class="filter-btn" data-filter="dairy" data-i18n="filterDairy">Dairy</button>
             <button type="button" class="filter-btn" data-filter="non-dairy" data-i18n="filterNonDairy">No dairy</button>
+            <button type="button" class="filter-btn" data-filter="outside-meals" data-i18n="filterOutsideMeals">Outside of mealtimes</button>
+            <button type="button" class="filter-btn" data-filter="during-meals" data-i18n="filterMeals">At mealtimes</button>
           </div>
         </div>
         <table class="table" aria-describedby="recentLog">
-          <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thTime">Time</th><th data-i18n="thDairy">Dairy</th><th></th></tr></thead>
+          <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thTime">Time</th><th data-i18n="thDairy">Dairy</th><th data-i18n="thOutsideMeals">Outside of mealtimes</th><th></th></tr></thead>
           <tbody id="log-body"></tbody>
         </table>
         <div id="empty-state" class="info-text" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
@@ -478,6 +488,7 @@
     // Elements
     const nameInput = document.getElementById('food-name');
     const dairyCheckbox = document.getElementById('contains-dairy');
+    const outsideMealsCheckbox = document.getElementById('outside-meals');
     const addBtn = document.getElementById('add-button');
     const tbody = document.getElementById('log-body');
     const emptyState = document.getElementById('empty-state');
@@ -501,6 +512,7 @@
     const exportBtn = document.getElementById('export-button');
     const statTotal = document.getElementById('stat-total');
     const statDairy = document.getElementById('stat-dairy');
+    const statOutside = document.getElementById('stat-outside');
     const statLast = document.getElementById('stat-last');
     const statLastSubtext = document.getElementById('stat-last-subtext');
     const logSearchInput = document.getElementById('log-search');
@@ -554,6 +566,7 @@
         quickStatsTitle: 'Quick stats',
         statEntriesToday: 'Entries today',
         statDairyToday: 'Dairy items',
+        statOutsideMeals: 'Outside of mealtimes',
         statLastEntry: 'Last entry',
         quickAddTitle: 'Quick add',
         quickAddHint: 'Log what you’re eating right now—no pressure, no judgement.',
@@ -566,17 +579,21 @@
         filterAll: 'All',
         filterDairy: 'Dairy',
         filterNonDairy: 'No dairy',
+        filterOutsideMeals: 'Outside of mealtimes',
+        filterMeals: 'At mealtimes',
         noResults: 'No entries match your filters yet.',
         addTitle: 'Add item',
         foodLabel: 'Food item name',
         foodPlaceholder: 'e.g., Cheeseburger',
         addBtn: 'Add to log',
         dairyLabel: 'Contains dairy',
+        outsideMealsLabel: 'Outside of mealtimes',
         logTitle: 'Today’s log',
         exportBtn: 'Export',
         thItem: 'Item',
         thTime: 'Time',
         thDairy: 'Dairy',
+        thOutsideMeals: 'Outside of mealtimes',
         emptyState: 'No items yet. Add your first item above.',
         confirmTitle: 'Are you sure?',
         cancelBtn: 'Cancel',
@@ -621,6 +638,7 @@
         csvHeaderDate: 'Date',
         csvHeaderItem: 'Item',
         csvHeaderDairy: 'Dairy',
+        csvHeaderOutsideMeals: 'Outside of mealtimes',
         csvYes: 'Yes',
         csvNo: 'No',
         notAvailable: 'N/A',
@@ -647,6 +665,7 @@
         quickStatsTitle: 'Schnelle Statistiken',
         statEntriesToday: 'Einträge heute',
         statDairyToday: 'Milchprodukte',
+        statOutsideMeals: 'Außerhalb der Mahlzeiten',
         statLastEntry: 'Letzter Eintrag',
         quickAddTitle: 'Schnell hinzufügen',
         quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
@@ -659,17 +678,21 @@
         filterAll: 'Alle',
         filterDairy: 'Milch',
         filterNonDairy: 'Ohne Milch',
+        filterOutsideMeals: 'Außerhalb der Mahlzeiten',
+        filterMeals: 'Zu den Mahlzeiten',
         noResults: 'Keine Einträge passen zu deinen Filtern.',
         addTitle: 'Element hinzufügen',
         foodLabel: 'Name des Lebensmittels',
         foodPlaceholder: 'z.B. Käseburger',
         addBtn: 'Zum Protokoll hinzufügen',
         dairyLabel: 'Enthält Milchprodukte',
+        outsideMealsLabel: 'Außerhalb der Mahlzeiten',
         logTitle: 'Heutiges Protokoll',
         exportBtn: 'Exportieren',
         thItem: 'Element',
         thTime: 'Uhrzeit',
         thDairy: 'Milchprodukte',
+        thOutsideMeals: 'Außerhalb der Mahlzeiten',
         emptyState: 'Noch keine Einträge. Fügen Sie oben Ihren ersten Eintrag hinzu.',
         confirmTitle: 'Sind Sie sicher?',
         cancelBtn: 'Abbrechen',
@@ -714,6 +737,7 @@
         csvHeaderDate: 'Datum',
         csvHeaderItem: 'Element',
         csvHeaderDairy: 'Milchprodukte',
+        csvHeaderOutsideMeals: 'Außerhalb der Mahlzeiten',
         csvYes: 'Ja',
         csvNo: 'Nein',
         notAvailable: 'k. A.',
@@ -822,10 +846,12 @@
       logCollection.add({
         name,
         dairy: dairyCheckbox.checked,
+        outsideMeals: outsideMealsCheckbox.checked,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
         nameInput.value = '';
         dairyCheckbox.checked = false;
+        outsideMealsCheckbox.checked = false;
         nameInput.focus();
       }).catch((error) => {
         console.error('Error adding document: ', error);
@@ -848,7 +874,7 @@
     };
 
     const updateStats = () => {
-      if (!statTotal || !statDairy || !statLast || !statLastSubtext) return;
+      if (!statTotal || !statDairy || !statOutside || !statLast || !statLastSubtext) return;
 
       const today = new Date();
       const locale = lang === 'de' ? 'de-DE' : 'en-US';
@@ -857,11 +883,13 @@
         return isSameDay(date, today);
       });
       const dairyToday = entriesToday.filter(entry => entry.dairy).length;
+      const outsideMealsToday = entriesToday.filter(entry => entry.outsideMeals).length;
       const latestEntry = allEntries.find(entry => getEntryDate(entry));
       const latestDate = latestEntry ? getEntryDate(latestEntry) : null;
 
       statTotal.textContent = entriesToday.length;
       statDairy.textContent = dairyToday;
+      statOutside.textContent = outsideMealsToday;
 
       if (latestDate) {
         statLast.textContent = latestDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
@@ -886,10 +914,18 @@
         timeCell.textContent = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : getTranslation('notAvailable');
 
         const dairyCell = document.createElement('td');
-        const pill = document.createElement('span');
-        pill.className = `pill ${entry.dairy ? 'pill-yes' : 'pill-no'}`;
-        pill.textContent = entry.dairy ? getTranslation('yes') : getTranslation('no');
-        dairyCell.appendChild(pill);
+        const hasDairy = Boolean(entry.dairy);
+        const dairyPill = document.createElement('span');
+        dairyPill.className = `pill ${hasDairy ? 'pill-yes' : 'pill-no'}`;
+        dairyPill.textContent = hasDairy ? getTranslation('yes') : getTranslation('no');
+        dairyCell.appendChild(dairyPill);
+
+        const outsideCell = document.createElement('td');
+        const outsideValue = Boolean(entry.outsideMeals);
+        const outsidePill = document.createElement('span');
+        outsidePill.className = `pill ${outsideValue ? 'pill-yes' : 'pill-no'}`;
+        outsidePill.textContent = outsideValue ? getTranslation('yes') : getTranslation('no');
+        outsideCell.appendChild(outsidePill);
 
         const actionsCell = document.createElement('td');
         actionsCell.className = 'row-actions actions';
@@ -914,6 +950,7 @@
         tr.appendChild(nameCell);
         tr.appendChild(timeCell);
         tr.appendChild(dairyCell);
+        tr.appendChild(outsideCell);
         tr.appendChild(actionsCell);
         tbody.appendChild(tr);
       });
@@ -951,6 +988,10 @@
         filtered = filtered.filter(entry => entry.dairy);
       } else if (activeFilter === 'non-dairy') {
         filtered = filtered.filter(entry => !entry.dairy);
+      } else if (activeFilter === 'outside-meals') {
+        filtered = filtered.filter(entry => entry.outsideMeals);
+      } else if (activeFilter === 'during-meals') {
+        filtered = filtered.filter(entry => !entry.outsideMeals);
       }
 
       if (!filtered.length) {
@@ -965,7 +1006,15 @@
 
     const renderEntries = (snapshot) => {
       latestSnapshot = snapshot;
-      allEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      allEntries = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          dairy: Boolean(data.dairy),
+          outsideMeals: Boolean(data.outsideMeals)
+        };
+      });
 
       updateStats();
 
@@ -1003,12 +1052,16 @@
         const display = new Date(y, m-1, d).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
 
         html += `<h3>${display}</h3>`;
-        html += `<table class="table" style="margin-bottom:20px;"><thead><tr><th>${getTranslation('thItem')}</th><th>${getTranslation('thTime')}</th><th>${getTranslation('thDairy')}</th></tr></thead><tbody>`;
+        html += `<table class="table" style="margin-bottom:20px;"><thead><tr><th>${getTranslation('thItem')}</th><th>${getTranslation('thTime')}</th><th>${getTranslation('thDairy')}</th><th>${getTranslation('thOutsideMeals')}</th></tr></thead><tbody>`;
         entriesByDate[key].sort((a,b)=>b.timestamp.seconds - a.timestamp.seconds).forEach(entry=>{
           const time = entry.timestamp.toDate().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-          const dairyText = entry.dairy ? getTranslation('yes') : getTranslation('no');
-          const pillClass = entry.dairy ? 'pill-yes' : 'pill-no';
-          html += `<tr><td>${entry.name}</td><td>${time}</td><td><span class="pill ${pillClass}">${dairyText}</span></td></tr>`;
+          const hasDairy = Boolean(entry.dairy);
+          const dairyText = hasDairy ? getTranslation('yes') : getTranslation('no');
+          const pillClass = hasDairy ? 'pill-yes' : 'pill-no';
+          const outsideValue = Boolean(entry.outsideMeals);
+          const outsideText = outsideValue ? getTranslation('yes') : getTranslation('no');
+          const outsideClass = outsideValue ? 'pill-yes' : 'pill-no';
+          html += `<tr><td>${entry.name}</td><td>${time}</td><td><span class="pill ${pillClass}">${dairyText}</span></td><td><span class="pill ${outsideClass}">${outsideText}</span></td></tr>`;
         });
         html += `</tbody></table>`;
       });
@@ -1048,7 +1101,12 @@
       if (!logCollection) return;
 
       logCollection.orderBy('timestamp', 'desc').get().then(snapshot => {
-        const header = [getTranslation('csvHeaderDate'), getTranslation('csvHeaderItem'), getTranslation('csvHeaderDairy')].join(',');
+        const header = [
+          getTranslation('csvHeaderDate'),
+          getTranslation('csvHeaderItem'),
+          getTranslation('csvHeaderDairy'),
+          getTranslation('csvHeaderOutsideMeals')
+        ].join(',');
         let csvContent = "data:text/csv;charset=utf-8," + header + "\n";
         const locale = lang === 'de' ? 'de-DE' : 'en-US';
 
@@ -1056,7 +1114,14 @@
           const entry = doc.data();
           const date = entry.timestamp ? entry.timestamp.toDate().toLocaleDateString(locale) : getTranslation('notAvailable');
           const safeName = `"${(entry.name || '').replace(/"/g, '""')}"`;
-          const row = [date, safeName, entry.dairy ? getTranslation('csvYes') : getTranslation('csvNo')].join(',');
+          const hasDairy = Boolean(entry.dairy);
+          const outsideValue = Boolean(entry.outsideMeals);
+          const row = [
+            date,
+            safeName,
+            hasDairy ? getTranslation('csvYes') : getTranslation('csvNo'),
+            outsideValue ? getTranslation('csvYes') : getTranslation('csvNo')
+          ].join(',');
           csvContent += row + "\n";
         });
 
