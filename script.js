@@ -1,117 +1,94 @@
-/* Simple, feature-parity logic:
-   - Add item with dairy flag
-   - Remove item
-   - Export CSV
-   - Clear all
-   No storage added. Single page.
-*/
+// --- DOM Elements ---
+const loginBtn = document.getElementById('login-btn');
+const signupBtn = document.getElementById('signup-btn');
+const logoutBtn = document.getElementById('logout-btn');
 
-const state = {
-  items: [] // { name: string, dairy: boolean }
-};
+const menuOpenBtn = document.getElementById('menu-open-btn');
+const menuCloseBtn = document.getElementById('menu-close-btn');
+const sidebar = document.getElementById('sidebar');
+const scrim = document.getElementById('scrim');
 
-// Elements
-const nameInput = document.getElementById('food-name');
-const dairyCheckbox = document.getElementById('contains-dairy');
-const addBtn = document.getElementById('add-button');
-const exportBtn = document.getElementById('export-button');
-const clearBtn = document.getElementById('clear-all');
-const tbody = document.getElementById('log-body');
+const authActions = document.getElementById('auth-actions');
+const landingPage = document.getElementById('landing-page');
+const appContent = document.getElementById('app-content');
+const welcomeMessage = document.getElementById('welcome-message');
 
-// Helpers
-function render() {
-  tbody.innerHTML = '';
+// --- Firebase Auth ---
+// (Assuming 'auth' is initialized in app.js)
+const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } = firebase.auth;
+const auth = getAuth();
+const provider = new GoogleAuthProvider();
 
-  state.items.forEach((item, idx) => {
-    const tr = document.createElement('tr');
+// --- Authentication State Listener ---
+// This is the core of the solution. It runs whenever a user signs in or out.
+onAuthStateChanged(auth, user => {
+    if (user) {
+        // User is signed in.
+        console.log('User is logged in:', user);
+        authActions.style.display = 'none';      // Hide Login/Signup buttons
+        menuOpenBtn.style.display = 'block';     // Show the hamburger menu icon
+        landingPage.style.display = 'none';      // Hide the landing page content
+        appContent.style.display = 'block';      // Show the main app content
+        welcomeMessage.textContent = `Welcome, ${user.displayName || 'User'}`; // Display a welcome message
+    } else {
+        // User is signed out.
+        console.log('User is logged out.');
+        authActions.style.display = 'flex';      // Show Login/Signup buttons
+        menuOpenBtn.style.display = 'none';      // Hide the hamburger menu icon
+        landingPage.style.display = 'block';     // Show the landing page content
+        appContent.style.display = 'none';       // Hide the main app content
+    }
+});
 
-    const tdName = document.createElement('td');
-    tdName.textContent = item.name;
 
-    const tdDairy = document.createElement('td');
-    const chip = document.createElement('span');
-    chip.className = 'pill ' + (item.dairy ? 'pill-yes' : 'pill-no');
-    chip.textContent = item.dairy ? 'Yes' : 'No';
-    tdDairy.appendChild(chip);
+// --- Event Listeners ---
 
-    const tdActions = document.createElement('td');
-    tdActions.className = 'row-actions';
-    const rm = document.createElement('button');
-    rm.className = 'btn btn-danger';
-    rm.type = 'button';
-    rm.setAttribute('aria-label', `Remove ${item.name}`);
-    rm.textContent = 'Remove';
-    rm.addEventListener('click', () => removeItem(idx));
-    tdActions.appendChild(rm);
+// Google Sign-In
+loginBtn.addEventListener('click', () => {
+    signInWithPopup(auth, provider)
+        .then((result) => {
+            // This gives you a Google Access Token. You can use it to access the Google API.
+            const credential = GoogleAuthProvider.credentialFromResult(result);
+            const token = credential.accessToken;
+            // The signed-in user info.
+            const user = result.user;
+            console.log('Signed in user:', user);
+        }).catch((error) => {
+            // Handle Errors here.
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            const email = error.customData.email;
+            const credential = GoogleAuthProvider.credentialFromError(error);
+            console.error("Authentication Error:", errorMessage);
+        });
+});
 
-    tr.appendChild(tdName);
-    tr.appendChild(tdDairy);
-    tr.appendChild(tdActions);
-    tbody.appendChild(tr);
-  });
-}
+// Sign-Out
+logoutBtn.addEventListener('click', () => {
+    signOut(auth).then(() => {
+        // Sign-out successful.
+        // The onAuthStateChanged observer will handle the UI changes automatically.
+        // We just need to close the sidebar if it's open.
+        sidebar.classList.remove('open');
+        scrim.classList.remove('show');
+    }).catch((error) => {
+        // An error happened.
+        console.error('Sign-out Error:', error);
+    });
+});
 
-function addItem() {
-  const name = (nameInput.value || '').trim();
-  if (!name) {
-    nameInput.focus();
-    // brief visual nudge
-    nameInput.style.boxShadow = '0 0 0 6px rgba(230,57,70,.22)';
-    setTimeout(() => (nameInput.style.boxShadow = ''), 300);
-    return;
-  }
-  const dairy = !!dairyCheckbox.checked;
-  state.items.push({ name, dairy });
-  render();
-  // feedback pulse
-  nameInput.value = '';
-  dairyCheckbox.checked = false;
-  nameInput.style.boxShadow = '0 0 0 6px rgba(67,170,139,.22)';
-  setTimeout(() => (nameInput.style.boxShadow = ''), 350);
-  nameInput.focus();
-}
+// Sidebar Toggle
+menuOpenBtn.addEventListener('click', () => {
+    sidebar.classList.add('open');
+    scrim.classList.add('show');
+});
 
-function removeItem(index) {
-  state.items.splice(index, 1);
-  render();
-}
+menuCloseBtn.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    scrim.classList.remove('show');
+});
 
-function clearAll() {
-  if (!state.items.length) return;
-  // keep the action as visual only, no alerts added
-  state.items.length = 0;
-  render();
-}
-
-function exportCSV() {
-  if (!state.items.length) return;
-
-  const rows = [['Item', 'Dairy']];
-  state.items.forEach(i => rows.push([i.name, i.dairy ? 'Yes' : 'No']));
-
-  const csv = rows.map(r =>
-    r.map(field => {
-      const f = String(field).replace(/"/g, '""');
-      return `"${f}"`;
-    }).join(',')
-  ).join('\n');
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'mcFattys-log.csv';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-// Events
-addBtn.addEventListener('click', addItem);
-nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
-exportBtn.addEventListener('click', exportCSV);
-clearBtn.addEventListener('click', clearAll);
-
-// Initial render
-render();
+scrim.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    scrim.classList.remove('show');
+});
