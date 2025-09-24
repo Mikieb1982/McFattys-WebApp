@@ -72,10 +72,6 @@
     #pwa-install{padding:12px 16px;font-size:14px;line-height:1;white-space:nowrap;max-width:100%;display:none}
     @media (max-width:620px){.utility-row{flex-wrap:wrap;gap:12px}#pwa-install{width:100%}}
 
-    /* Logo (2/3 size) */
-    .hero-logo{background:var(--bg-1);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:var(--sp-8)}
-    .hero-logo img{width:100%;max-width:320px;display:block;margin:0 auto}
-
     /* Sections */
     .section{background:var(--card);border:1px solid var(--border);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:18px}
     .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:var(--fs-22);margin:0 0 var(--sp-12)}
@@ -92,7 +88,7 @@
     .info-text{color:var(--text-1);font-size:13px;text-align:center;margin-top:var(--sp-12)}
 
     /* Dashboard */
-    .dashboard-grid{display:grid;gap:var(--sp-16);position:relative}
+    .dashboard-grid{display:grid;gap:var(--sp-16);position:relative;grid-template-columns:repeat(2,minmax(0,1fr))}
     .dashboard-card{position:relative;cursor:grab;transition:transform .18s ease,box-shadow .18s ease}
     .dashboard-card:active{cursor:grabbing}
     .dashboard-card.is-dragging{opacity:.92;cursor:grabbing;box-shadow:0 18px 40px rgba(0,0,0,.5)}
@@ -183,19 +179,11 @@
     .user-info.show{display:flex}
 
     .logo-card{display:flex;align-items:center;justify-content:center;padding:var(--sp-16)}
-    .logo-card .logo-card-inner{width:100%;max-width:280px;aspect-ratio:1/1;border-radius:var(--r-12);background:var(--bg-1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;padding:var(--sp-16)}
-    .logo-card img{width:70%;max-width:180px;height:auto;display:block}
-    @media (max-width:680px){.logo-card .logo-card-inner{max-width:220px}}
+    .logo-card .logo-card-inner{width:100%;aspect-ratio:1/1;border-radius:var(--r-12);background:var(--bg-1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;padding:var(--sp-16); overflow: hidden;}
+    .logo-card img{width:100%; height: 100%; object-fit: contain; display:block;}
 
     @media (prefers-reduced-motion:reduce){.install-banner,.sidebar{transition:none}.btn:active{transform:none}}
 
-    @media (min-width: 680px) {
-      .hero-logo img { max-width: 240px; }
-    }
-
-    @media (min-width: 900px) {
-      .dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
-    }
   </style>
 </head>
 <body>
@@ -320,7 +308,7 @@
         </div>
       </section>
 
-      <section id="welcome-section" class="section dashboard-card" data-card-id="welcome">
+      <section id="welcome-section" class="section dashboard-card span-2" data-card-id="welcome">
         <h2 id="welcome-message" data-i18n="welcome"></h2>
       </section>
 
@@ -347,7 +335,7 @@
         </div>
       </section>
 
-      <section class="section dashboard-card" aria-labelledby="addItem" id="add-item-section" data-card-id="quick-add">
+      <section class="section dashboard-card span-2" aria-labelledby="addItem" id="add-item-section" data-card-id="quick-add">
         <h2 id="addItem" data-i18n="quickAddTitle">Quick add</h2>
         <p class="quick-add-subtext" data-i18n="quickAddHint">Log what you’re eating right now—no pressure, no judgement.</p>
         <div class="quick-add-body">
@@ -369,7 +357,7 @@
         </div>
       </section>
 
-      <section id="growth-section" class="section dashboard-card" aria-labelledby="growth-title" data-card-id="growth">
+      <section id="growth-section" class="section dashboard-card span-2" aria-labelledby="growth-title" data-card-id="growth">
         <h2 id="growth-title" data-i18n="growthTitle">Room to grow</h2>
         <p data-i18n="growthCopy">This space is ready for habits, reflections, or whatever else you need next.</p>
       </section>
