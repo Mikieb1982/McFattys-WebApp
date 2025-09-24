@@ -1,65 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>McFattys</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png">
-    <meta name="theme-color" content="#007bff">
+    <meta name="theme-color" content="#222c31">
 </head>
 <body>
+    <div class="container">
 
-    <header class="header">
-        <div class="logo-container">
-            <img src="Logo.png" alt="McFattys Logo" class="logo-img">
-            <span class="logo-text">McFattys</span>
-        </div>
-        <div id="auth-actions" class="auth-actions">
-            <button id="login-btn" class="btn" data-i18n="login">Login</button>
-            <button id="signup-btn" class="btn btn-primary" data-i18n="signup">Sign Up</button>
-        </div>
-        <button id="menu-open-btn" class="menu-btn" style="display: none;">
-            <svg class="menu-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg>
-        </button>
-    </header>
+        <header class="header">
+            <div class="logo-container">
+                <img src="Logo.png" alt="McFattys Logo" class="logo-img">
+                <span class="logo-text">McFattys</span>
+            </div>
+            <div id="auth-actions" class="auth-actions">
+                <button id="login-btn" class="btn">Login</button>
+            </div>
+            <button id="menu-open-btn" class="menu-btn" style="display: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            </button>
+        </header>
 
-    <main>
-        <div id="landing-page">
-            <section class="hero">
-                <h1 data-i18n="heroTitle">Welcome to McFattys</h1>
-                <p data-i18n="heroSubtitle">Your simple food tracker.</p>
-            </section>
-        </div>
+        <main>
+            <div id="landing-page">
+                <section class="hero">
+                    <h1>Welcome to McFattys</h1>
+                    <p>Your simple, mindful food tracker.</p>
+                </section>
+            </div>
 
-        <div id="app-content" style="display: none;">
-            <section class="dashboard">
-                <div class="dashboard-header">
-                    <h2 id="welcome-message"></h2>
-                    <button id="log-meal-btn" class="btn btn-primary">Log a Meal</button>
+            <div id="app-content" style="display: none;">
+                <div class="log-header">
+                    <h2 id="welcome-message">Today's Log</h2>
                 </div>
-                <div class="recent-activity">
-                    <h3>Today's Meals</h3>
-                    <ul id="meal-list">
-                        </ul>
-                    <p id="empty-state-message" class="empty-state">No meals logged yet today. Ready to add your first?</p>
+                <div id="log-body" class="log-body">
+                    </div>
+                <div class="log-footer">
+                    <input type="text" id="entry-input" placeholder="What did you eat?" />
+                    <button id="add-button" class="add-button">+</button>
                 </div>
-            </section>
-        </div>
-    </main>
+            </div>
+        </main>
+    </div>
 
     <aside id="sidebar" class="sidebar">
-        <div class="sb-header">
-            <span class="sb-title" data-i18n="menu">Menu</span>
+         <div class="sb-header">
+            <span class="sb-title">Menu</span>
             <button id="menu-close-btn" class="menu-btn">
-                <svg class="menu-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
         </div>
         <div class="sb-content">
             <ul class="sb-list">
-                <li><button class="sb-item-btn" data-action="account"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/></svg><span data-i18n="account">Account</span></button></li>
-                <li><button id="logout-btn" class="sb-item-btn" data-action="logout"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 17v-3H9v-2h7V9l4 4-4 4zm-5-3H4V5h7V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2z"></path></svg><span data-i18n="logout">Log Out</span></button></li>
+                <li><button id="logout-btn" class="sb-item-btn">Log Out</button></li>
             </ul>
         </div>
     </aside>
@@ -67,8 +65,8 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+
     <script src="app.js"></script>
     <script src="script.js"></script>
-
 </body>
 </html>
