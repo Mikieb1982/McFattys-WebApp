@@ -18,199 +18,130 @@
 
   <style>
     :root{
-      --primary:#f6c35b;
-      --primary-strong:#ffb347;
-      --danger:#e25546;
-      --info:#67c8f0;
-      --accent:#f16e54;
-      --text-0:#fff8e9;
-      --text-1:rgba(255,248,233,.72);
-      --text-2:rgba(255,248,233,.58);
-      --bg-0:#060913;
-      --bg-1:rgba(18,23,37,.82);
-      --bg-2:rgba(10,13,22,.68);
-      --card:rgba(15,20,34,.88);
-      --card-strong:#1c2339;
-      --border:rgba(255,199,109,.22);
-      --glow:rgba(255,199,109,.35);
+      /* New Color Palette from Logo */
+      --primary: #f2c56d;   /* Golden Yellow */
+      --danger: #d9534f;    /* Muted Red */
+      --info: #5bc0de;      /* Teal Blue */
+      --text-0: #f7f5e6;    /* Cream White */
+      --bg-0:#1a1a1a;       /* Dark Charcoal */
+      --bg-1:#2a2a2a;       /* Lighter Charcoal */
+      --card:#333333;       /* Card Background */
+      --border:#444444;     /* Border Color */
+      
       --sp-4:4px; --sp-8:8px; --sp-12:12px; --sp-16:16px; --sp-20:20px; --sp-24:24px;
-      --fs-22:22px; --fs-18:18px; --fs-16:16px; --fs-14:14px; --lh:1.5;
-      --r-8:8px; --r-12:12px; --r-16:16px;
-      --shadow-md:0 14px 36px rgba(3,6,16,.55);
-      --shadow-lg:0 24px 60px rgba(3,6,16,.65);
-      --transition:all .28s cubic-bezier(.25,.8,.25,1);
+      --fs-22:22px; --fs-18:18px; --fs-16:16px; --fs-14:14px; --lh:1.45;
+      --r-8:8px; --r-12:12px; --r-16:16px; --shadow-md:0 8px 20px rgba(0,0,0,.35);
       --safe-top: env(safe-area-inset-top, 0px);
     }
     *{box-sizing:border-box}
-    html,body{margin:0;min-height:100%;background:var(--bg-0);color:var(--text-0);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:var(--lh)}
-    body{position:relative;overflow-x:hidden}
-    body::before,body::after{content:"";position:fixed;inset:-40%;z-index:-2;opacity:.65;pointer-events:none}
-    body::before{background:radial-gradient(circle at 20% 20%,rgba(255,195,90,.25),transparent 55%),radial-gradient(circle at 80% 0,rgba(105,186,255,.14),transparent 45%),radial-gradient(circle at 50% 80%,rgba(241,110,84,.12),transparent 55%)}
-    body::after{opacity:.35;background:radial-gradient(circle at 10% 90%,rgba(255,195,90,.22),transparent 50%),radial-gradient(circle at 85% 75%,rgba(241,110,84,.18),transparent 55%);z-index:-3}
-    p{color:var(--text-1);margin:0 0 var(--sp-16)}
-    a{color:var(--primary);text-decoration:none}
-    a:hover{text-decoration:underline}
-    .container{max-width:960px;margin:0 auto;padding:var(--sp-12) var(--sp-16) var(--sp-24)}
+    html,body{margin:0;height:100%;background:var(--bg-0);color:var(--text-0);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:var(--lh)}
+    .container{max-width:860px;margin:0 auto;padding:var(--sp-12) var(--sp-16) var(--sp-24)}
     .stack-16 > *+*{margin-top:var(--sp-16)}
     .stack-20 > *+*{margin-top:var(--sp-20)}
 
     /* Top bar */
-    .utility-bar{position:sticky;top:0;z-index:300;padding:calc(var(--sp-8)+var(--safe-top)) var(--sp-8) var(--sp-12);
+    .utility-bar{position:sticky;top:0;z-index:300;padding:calc(var(--sp-8)+var(--safe-top)) var(--sp-8) var(--sp-8);
       margin:0 calc(-1*var(--sp-16)) var(--sp-12);
-      background:linear-gradient(180deg,rgba(8,12,23,.92),rgba(8,11,20,.62) 70%,rgba(7,9,19,0));
-      backdrop-filter:blur(18px)}
+      background:linear-gradient(180deg,rgba(26,26,26,.95),rgba(26,26,26,.75) 70%,rgba(26,26,26,0));
+      backdrop-filter:blur(4px)}
     .utility-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 var(--sp-8)}
-    .header-actions{display:flex;align-items:center;gap:var(--sp-12);flex-wrap:wrap;justify-content:flex-end}
-    .auth-actions{display:flex;gap:10px;flex-wrap:wrap}
-    .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:16px;
-      border:1px solid rgba(255,199,109,.28);background:linear-gradient(145deg,rgba(28,33,52,.86),rgba(15,20,34,.86));
-      color:var(--text-0);cursor:pointer;transition:var(--transition);box-shadow:0 6px 18px rgba(5,7,15,.45)}
-    .icon-btn:hover{transform:translateY(-1px);box-shadow:0 12px 26px rgba(5,7,15,.55)}
-    .icon-btn:active{transform:translateY(0) scale(.97)}
+    .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--bg-1);color:var(--text-0);cursor:pointer;transition:.15s}
+    .icon-btn:active{transform:scale(.98)}
     .icon{width:22px;height:22px;display:block}
 
     /* Lang toggle */
-    .lang-toggle{display:inline-flex;align-items:center;gap:var(--sp-8);user-select:none;cursor:pointer;padding:6px 10px;border-radius:999px;
-      background:rgba(28,34,54,.58);border:1px solid rgba(255,199,109,.16);backdrop-filter:blur(10px);box-shadow:0 10px 26px rgba(6,8,18,.45)}
-    .lang-toggle span{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--text-0);text-transform:uppercase}
-    .switch{position:relative;width:52px;height:28px;background:linear-gradient(135deg,rgba(28,34,54,.92),rgba(15,20,34,.92));
-      border-radius:18px;border:1px solid rgba(255,199,109,.18);box-shadow:inset 0 2px 6px rgba(0,0,0,.35);transition:var(--transition)}
-    .switch::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;
-      background:linear-gradient(135deg,var(--primary),var(--primary-strong));box-shadow:0 6px 14px rgba(246,195,91,.5);
-      transition:var(--transition)}
-    .switch.active{background:linear-gradient(135deg,rgba(32,40,63,.92),rgba(20,26,44,.92))}
-    .switch.active::after{left:26px}
+    .lang-toggle{display:inline-flex;align-items:center;gap:var(--sp-8);user-select:none;cursor:pointer}
+    .lang-toggle span{font-size:12px;font-weight:700}
+    .switch{position:relative;width:50px;height:28px;background:var(--bg-1);border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow-md) inset 0 0 4px rgba(0,0,0,.3);transition:.25s}
+    .switch::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;background:var(--primary);border-radius:50%;transition:.25s}
+    .switch.active{background:#3b3f4a}
+    .switch.active::after{left:24px}
 
     /* Buttons */
-    .btn{padding:12px 20px;border-radius:16px;font-weight:700;cursor:pointer;min-height:44px;transition:var(--transition);
-      border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center;letter-spacing:.02em;position:relative;
-      overflow:hidden}
-    .btn:active{transform:translateY(0) scale(.99)}
-    .btn[disabled]{opacity:.55;pointer-events:none}
-    .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-strong));color:#2d1a07;border-color:rgba(255,211,125,.35);
-      box-shadow:0 16px 32px rgba(246,195,91,.32)}
-    .btn-primary:hover{box-shadow:0 20px 40px rgba(246,195,91,.4);transform:translateY(-1px)}
-    .btn-secondary{background:linear-gradient(145deg,rgba(30,37,58,.85),rgba(15,21,34,.85));color:var(--text-0);
-      border-color:rgba(255,199,109,.18);box-shadow:0 12px 28px rgba(5,7,15,.45)}
-    .btn-secondary:hover{transform:translateY(-1px);box-shadow:0 16px 36px rgba(5,7,15,.55)}
-    .btn-danger{background:linear-gradient(135deg,var(--danger),#ba3d30);color:#fff;box-shadow:0 16px 32px rgba(226,85,70,.35)}
-    .btn-danger:hover{box-shadow:0 18px 38px rgba(226,85,70,.45);transform:translateY(-1px)}
-    .btn:focus,.input:focus,.switch:focus-visible,.icon-btn:focus{outline:none;box-shadow:0 0 0 3px var(--glow)}
-    .btn-google{background:linear-gradient(135deg,#ffffff,#f2f2f2);color:#1f1f1f;border:1px solid rgba(0,0,0,.08);
-      width:100%;gap:10px;box-shadow:0 12px 26px rgba(6,8,18,.35)}
-    .btn-google:hover{transform:translateY(-1px);box-shadow:0 16px 34px rgba(6,8,18,.45)}
+    .btn{padding:12px 18px;border-radius:var(--r-12);font-weight:700;cursor:pointer;min-height:44px;transition:.15s;border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center}
+    .btn:active{transform:scale(.98)}
+    .btn[disabled]{opacity:.5;pointer-events:none}
+    .btn-primary{background:var(--primary);color:#1b1b1b}
+    .btn-secondary{background:var(--bg-1);color:var(--text-0);border-color:var(--border)}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn-danger:hover{background:#c9302c}
+    .btn:focus,.input:focus,.switch:focus-visible,.icon-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(242,197,109,.35)}
+    .btn-google{background-color:#fff;color:#333;border:1px solid #ccc;width:100%; gap: 10px;}
 
     /* Install button hidden unless prompted */
-    #pwa-install{padding:12px 18px;font-size:14px;line-height:1;white-space:nowrap;max-width:100%;display:none}
+    #pwa-install{padding:12px 16px;font-size:14px;line-height:1;white-space:nowrap;max-width:100%;display:none}
     @media (max-width:620px){.utility-row{flex-wrap:wrap;gap:12px}#pwa-install{width:100%}}
 
-    /* Logo */
-    .hero-logo{background:linear-gradient(145deg,rgba(28,35,57,.9),rgba(15,22,36,.85));border-radius:28px;box-shadow:var(--shadow-lg);
-      padding:var(--sp-16);display:flex;justify-content:center;align-items:center;border:1px solid rgba(255,199,109,.18);position:relative;overflow:hidden}
-    .hero-logo::after{content:"";position:absolute;inset:10%;border-radius:24px;border:1px solid rgba(255,199,109,.08);opacity:.5;pointer-events:none}
-    .hero-logo img{width:100%;max-width:300px;display:block;margin:0 auto;filter:drop-shadow(0 20px 30px rgba(0,0,0,.45))}
+    /* Logo (2/3 size) */
+    .hero-logo{background:var(--bg-1);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:var(--sp-8)}
+    .hero-logo img{width:100%;max-width:320px;display:block;margin:0 auto}
 
     /* Sections */
-    .section{position:relative;background:linear-gradient(160deg,var(--card),var(--card-strong));border:1px solid var(--border);
-      border-radius:24px;box-shadow:var(--shadow-md);padding:26px;overflow:hidden;backdrop-filter:blur(12px)}
-    .section::before{content:"";position:absolute;inset:1px;border-radius:22px;border:1px solid rgba(255,199,109,.06);
-      background:radial-gradient(circle at 15% 15%,rgba(255,199,109,.08),transparent 55%),radial-gradient(circle at 85% 20%,rgba(103,200,240,.12),transparent 60%);
-      opacity:.9;pointer-events:none}
-    .section > *{position:relative;z-index:1}
-    .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:26px;margin:0 0 var(--sp-12);
-      background:linear-gradient(90deg,var(--primary),var(--info));-webkit-background-clip:text;color:transparent;text-transform:uppercase;letter-spacing:.04em}
-    #landing-page{display:grid;gap:var(--sp-16)}
-    #app-content{display:grid;gap:var(--sp-16)}
-    .section-head{display:flex;justify-content:space-between;align-items:center;gap:var(--sp-12);flex-wrap:wrap}
+    .section{background:var(--card);border:1px solid var(--border);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:18px}
+    .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:var(--fs-22);margin:0 0 var(--sp-12)}
+    #landing-page,#app-content{display:grid;gap:var(--sp-16)}
+    .section-head{display:flex;justify-content:space-between;align-items:center}
     .actions{display:flex;gap:10px;flex-wrap:wrap}
-    .manifesto-paragraph{color:var(--text-1);font-size:16px;line-height:1.6}
-    .info-text{color:var(--text-2);font-size:14px;text-align:center;margin-top:var(--sp-12)}
-    .label{font-size:var(--fs-14);color:var(--text-2);margin-bottom:var(--sp-8);display:block;text-transform:uppercase;letter-spacing:.08em}
-    .input{width:100%;background:linear-gradient(145deg,rgba(29,36,58,.85),rgba(18,24,38,.88));color:var(--text-0);
-      border:1px solid rgba(255,199,109,.18);border-radius:16px;padding:16px 18px;transition:var(--transition);box-shadow:0 10px 26px rgba(6,8,18,.35)}
-    .input:hover{border-color:rgba(255,199,109,.32)}
-    .input::placeholder{color:rgba(255,248,233,.35)}
-    .checkbox{width:20px;height:20px;cursor:pointer;margin-right:var(--sp-8);border:1px solid rgba(255,199,109,.25);
-      border-radius:6px;background:rgba(18,24,38,.85)}
+    .label{font-size:var(--fs-14);color:var(--text-1);margin-bottom:var(--sp-8);display:block}
+    .input{width:100%;background:var(--bg-1);color:var(--text-0);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+    .checkbox{width:20px;height:20px;cursor:pointer;margin-right:var(--sp-8)}
     .controls{display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-end}
     .controls .grow{flex:1 1 260px}
     .manifesto-paragraph{color:var(--text-0);line-height:1.6;margin:0 0 var(--sp-16)}
     .info-text{color:var(--text-1);font-size:13px;text-align:center;margin-top:var(--sp-12)}
 
     /* Table */
-    .table{width:100%;border-collapse:separate;border-spacing:0 var(--sp-12)}
-    .table thead th{color:var(--text-2);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding-bottom:6px}
-    .table tbody tr{background:linear-gradient(145deg,rgba(29,35,55,.9),rgba(17,23,36,.9));border:1px solid rgba(255,199,109,.16);
-      border-radius:18px;box-shadow:0 12px 28px rgba(5,7,15,.45);transition:var(--transition)}
-    .table tbody tr:hover{transform:translateY(-2px);box-shadow:0 16px 36px rgba(5,7,15,.55)}
-    .table tbody td{padding:14px 16px;color:var(--text-0)}
+    .table{width:100%;border-collapse:separate;border-spacing:0 var(--sp-8)}
+    .table thead th{color:var(--text-1);font-size:13px;font-weight:600;text-align:left;padding-bottom:4px}
+    .table tbody tr{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--r-8)}
+    .table tbody td{padding:10px}
     .row-actions{text-align:right}
-    .pill{padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.05em}
-    .pill-yes{background:rgba(103,200,240,.18);color:#9bd8ff}
-    .pill-no{background:rgba(226,85,70,.2);color:#ffb5a9}
+    .pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
+    .pill-yes{background:rgba(91,192,222,.18);color:#a6e1ec}
+    .pill-no{background:rgba(217,83,79,.18);color:#f2baba}
 
-    .user-info{display:none;align-items:center;gap:var(--sp-12);padding:6px 14px;border-radius:999px;
-      background:rgba(28,34,54,.58);border:1px solid rgba(255,199,109,.18);box-shadow:0 10px 26px rgba(6,8,18,.45)}
-    .user-info.show{display:flex}
-    #user-name{font-weight:600;color:var(--text-0);letter-spacing:.03em}
-
-    .footer{color:var(--text-2);font-size:12px;text-align:center;padding:18px 0;letter-spacing:.1em;text-transform:uppercase}
+    .footer{color:var(--text-1);font-size:12px;text-align:center;padding:14px 0}
 
     /* Modal */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(3,5,14,.72);display:none;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(6px)}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:500}
     .modal-backdrop.show{display:flex}
-    .modal{background:linear-gradient(150deg,rgba(26,32,52,.92),rgba(15,21,34,.92));padding:26px;border-radius:22px;text-align:center;max-width:360px;width:90%;border:1px solid rgba(255,199,109,.16);box-shadow:var(--shadow-md)}
-    .modal h3{margin:0 0 12px;font-family:Oswald,sans-serif;font-size:22px;color:var(--text-0);letter-spacing:.06em}
-    .modal p{margin:0 0 16px;color:var(--text-2)}
-    .modal-actions{display:flex;gap:12px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+    .modal{background:var(--card);padding:20px;border-radius:var(--r-12);text-align:center;max-width:360px;width:90%}
+    .modal h3{margin:0 0 10px;font-family:Oswald,sans-serif;font-size:20px}
+    .modal p{margin:0 0 16px;color:var(--text-1)}
+    .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:16px}
 
     /* Toast (centered) */
-    .install-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);opacity:0;
-      background:linear-gradient(150deg,rgba(28,35,57,.92),rgba(18,24,38,.92));color:var(--text-0);
-      padding:18px 24px;border:1px solid rgba(255,199,109,.18);border-radius:20px;box-shadow:var(--shadow-md);font-weight:700;font-size:14px;display:none;z-index:550;transition:opacity .25s ease,transform .25s ease}
+    .install-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);opacity:0;background:var(--card);color:var(--text-0);padding:16px 22px;border:1px solid var(--border);border-radius:var(--r-16);box-shadow:var(--shadow-md);font-weight:700;font-size:14px;display:none;z-index:550;transition:opacity .2s ease,transform .2s ease}
     .install-banner.show{display:block;opacity:1;transform:translate(-50%,-50%) scale(1)}
 
     /* Sidebar (right) */
-    .scrim{position:fixed;inset:0;background:rgba(5,8,17,.72);display:none;z-index:450;backdrop-filter:blur(4px)}
+    .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:450}
     .scrim.show{display:block}
-    .sidebar{position:fixed;top:0;right:0;height:100%;width:320px;max-width:88%;background:linear-gradient(160deg,rgba(20,26,44,.95),rgba(10,14,24,.92));
-      border-left:1px solid rgba(255,199,109,.16);box-shadow:var(--shadow-lg);transform:translateX(100%);
-      transition:transform .24s ease-out;z-index:600;display:flex;flex-direction:column;overflow:hidden}
+    .sidebar{position:fixed;top:0;right:0;height:100%;width:300px;max-width:85%;background:var(--card);border-left:1px solid var(--border);box-shadow:var(--shadow-md);transform:translateX(100%);transition:transform .22s ease-out;z-index:600;display:flex;flex-direction:column}
     .sidebar.open{transform:translateX(0)}
-    .sb-head{display:flex;align-items:center;justify-content:space-between;padding:18px;border-bottom:1px solid rgba(255,199,109,.12)}
-    .sb-title{font-family:Oswald,sans-serif;font-size:20px;margin:0;letter-spacing:.1em;text-transform:uppercase;color:var(--text-0)}
-    .sb-section-title{padding:16px 20px 8px;color:var(--text-2);font-size:12px;text-transform:uppercase;letter-spacing:.12em}
-    .sb-list{list-style:none;margin:0;padding:0 20px 20px}
-    .sb-item-btn{width:100%;text-align:left;padding:14px 16px;background:linear-gradient(145deg,rgba(29,35,55,.85),rgba(16,21,34,.85));
-      color:var(--text-0);border:1px solid rgba(255,199,109,.14);border-radius:16px;cursor:pointer;display:flex;align-items:center;gap:12px;
-      margin-top:var(--sp-12);box-shadow:0 12px 26px rgba(5,7,15,.45);transition:var(--transition)}
-    .sb-item-btn:first-child{margin-top:0}
-    .sb-item-btn:focus{outline:none;box-shadow:0 0 0 3px var(--glow),0 12px 30px rgba(5,7,15,.55)}
-    .sb-item-btn:hover{transform:translateY(-2px);box-shadow:0 16px 36px rgba(5,7,15,.55)}
+    .sb-head{display:flex;align-items:center;justify-content:space-between;padding:14px 14px;border-bottom:1px solid var(--border)}
+    .sb-title{font-family:Oswald,sans-serif;font-size:18px;margin:0}
+    .sb-section-title{padding:12px 14px;color:var(--text-1);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+    .sb-list{list-style:none;margin:0;padding:0}
+    .sb-item-btn{width:100%;text-align:left;padding:12px 14px;background:none;color:var(--text-0);border:none;border-top:1px solid rgba(255,255,255,.02);cursor:pointer;display:flex;align-items:center;gap:10px}
+    .sb-item-btn:focus{outline:none;box-shadow:inset 0 0 0 2px rgba(242,197,109,.35)}
+    .sb-item-btn:hover{background:#161a22}
     .sb-item-icon{width:18px;height:18px;opacity:.9}
-    .sb-manifesto{margin:0 20px 24px;padding:20px;border-radius:20px;background:linear-gradient(150deg,rgba(30,37,60,.88),rgba(18,23,38,.9));
-      border:1px solid rgba(255,199,109,.14);box-shadow:0 14px 32px rgba(5,7,15,.45);overflow:auto;max-height:calc(100vh - 240px)}
-    .sb-manifesto::-webkit-scrollbar{width:6px}
-    .sb-manifesto::-webkit-scrollbar-thumb{background:rgba(255,199,109,.25);border-radius:999px}
-    .sb-manifesto p{font-size:14px;line-height:1.6;color:var(--text-1)}
+    .sb-manifesto{padding:12px 14px;border-top:1px solid rgba(255,255,255,.05);margin:0;color:var(--text-1);font-size:13px;line-height:1.6;overflow:auto;max-height:calc(100vh - 240px)}
+    .sb-manifesto .manifesto-paragraph{margin-bottom:var(--sp-12)}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
-    @media (prefers-reduced-motion:reduce){.install-banner,.sidebar{transition:none}.btn,.icon-btn{transition:none}.btn:active{transform:none}}
+    /* New styles for header buttons */
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+    .auth-actions { display: flex; gap: 10px; }
 
-    @media (max-width:720px){
-      .utility-bar{margin:0 calc(-1*var(--sp-12)) var(--sp-12)}
-      .section{padding:20px;border-radius:20px}
-      .section::before{border-radius:18px}
-      .hero-logo{padding:var(--sp-12);border-radius:24px}
-      .hero-logo::after{inset:12%}
-      .sb-manifesto{max-height:calc(100vh - 220px)}
-    }
 
-    @media (min-width:820px){
-      .container{padding:var(--sp-24) var(--sp-24) 80px}
-      .hero-logo img{max-width:320px}
-      #landing-page{grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:var(--sp-24)}
-      #auth-section{height:100%}
+    @media (prefers-reduced-motion:reduce){.install-banner,.sidebar{transition:none}.btn:active{transform:none}}
+    
+    @media (min-width: 680px) {
+      .hero-logo img {
+        max-width: 240px;
+      }
     }
   </style>
 </head>
@@ -219,4 +150,776 @@
   <aside id="sidebar" class="sidebar" aria-hidden="true" aria-labelledby="menu-title" role="dialog">
     <div class="sb-head">
       <h3 id="menu-title" class="sb-title" data-i18n="menuTitle">Menu</h3>
-      <button id="menu-close" class="icon-btn" aria-label="C
+      <button id="menu-close" class="icon-btn" aria-label="Close menu">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.7L12 12l6.3 6.3-1.3 1.3L10.7 13.3 4.4 19.6 3.1 18.3 9.4 12 3.1 5.7 4.4 4.4l6.3 6.3 6.3-6.3z"/></svg>
+      </button>
+    </div>
+    <div>
+      <div class="sb-section-title" data-i18n="corePractices">Core Practices</div>
+      <ul class="sb-list">
+        <li><button class="sb-item-btn" data-action="newEntry"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg><span data-i18n="newJournal">New Journal Entry</span></button></li>
+      </ul>
+      <div class="sb-section-title" data-i18n="settings">Application Settings</div>
+      <ul class="sb-list">
+        <li><button class="sb-item-btn" data-action="account"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/></svg><span data-i18n="account">Account</span></button></li>
+        <li><button class="sb-item-btn" data-action="logout" id="logout-btn"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 17v-3H9v-2h7V9l4 4-4 4zm-5-3H4V5h7V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2z"></path></svg><span data-i18n="logout">Log Out</span></button></li>
+      </ul>
+      <div id="sidebar-manifesto" class="sb-manifesto" hidden>
+        <p class="manifesto-paragraph" data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
+        <p class="manifesto-paragraph" data-i18n="manifestoP2">This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
+        <p class="manifesto-paragraph" data-i18n="manifestoP3">Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
+        <p class="manifesto-paragraph" data-i18n="manifestoP4">We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
+        <p class="manifesto-paragraph" data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
+      </div>
+    </div>
+  </aside>
+
+  <div id="install-banner" class="install-banner" role="status" aria-live="polite"></div>
+
+  <div class="container stack-20">
+    <div class="utility-bar" role="region" aria-label="App controls">
+        <div class="utility-row">
+            <div id="lang-toggle" class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language EN/DE">
+                <span>EN</span><div id="switch" class="switch" aria-hidden="true"></div><span>DE</span>
+            </div>
+            <div class="header-actions">
+                <div id="auth-actions" class="auth-actions">
+                    <button id="login-btn" class="btn btn-secondary" type="button" data-i18n="loginBtn">Login</button>
+                    <button id="signup-btn" class="btn btn-primary" type="button" data-i18n="signupBtn">Sign Up</button>
+                </div>
+                <div id="user-info" style="display: none; align-items: center; gap: 10px;">
+                    <span id="user-name"></span>
+                    <button id="logout-btn-main" class="btn btn-secondary" type="button" data-i18n="logoutBtn">Logout</button>
+                </div>
+                <button id="pwa-install" class="btn btn-secondary" type="button" aria-label="Install app" data-i18n="installBtn">Install</button>
+                <button id="menu-open" class="icon-btn" aria-label="Open menu">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <header class="hero-logo"><img src="Logo.png" alt="McFatty's Food Tracker logo"></header>
+
+    <div id="landing-page">
+        <section id="auth-section" class="section stack-16" style="display: none;">
+            <h2 id="auth-title" data-i18n="loginTitle">Login / Sign Up</h2>
+            <div class="stack-16">
+                <div class="controls">
+                    <div class="grow">
+                        <label for="auth-email" class="label" data-i18n="emailLabel">Email</label>
+                        <input id="auth-email" class="input" type="email" autocomplete="email">
+                    </div>
+                </div>
+                <div class="controls">
+                    <div class="grow">
+                        <label for="auth-password" class="label" data-i18n="passwordLabel">Password</label>
+                        <input id="auth-password" class="input" type="password" autocomplete="current-password">
+                    </div>
+                </div>
+                <div id="signup-fields" style="display: none;" class="stack-16">
+                    <div class="controls">
+                        <div class="grow">
+                            <label for="auth-username" class="label" data-i18n="usernameLabel">Username</label>
+                            <input id="auth-username" class="input" type="text" autocomplete="username">
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <div class="grow">
+                            <label for="auth-re-password" class="label" data-i18n="rePasswordLabel">Re-type Password</label>
+                            <input id="auth-re-password" class="input" type="password" autocomplete="new-password">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="controls" style="margin-top: 16px;">
+                <button id="auth-submit" class="btn btn-primary" type="button"></button>
+                <button id="auth-toggle" class="btn btn-secondary" type="button"></button>
+            </div>
+            <div style="text-align:center; margin-top:16px; color:var(--text-1)">OR</div>
+            <button id="google-signin" class="btn btn-google" type="button">
+              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.20455c0-.63864-.05727-1.25182-.16364-1.84091H9v3.48182h4.84364c-.20818 1.125-.84273 2.07818-1.77727 2.72182v2.25818h2.90818c1.70182-1.56636 2.68636-3.87409 2.68636-6.62182z"/><path fill="#34A853" d="M9 18c2.43 0 4.46727-.80545 5.95636-2.18182l-2.90818-2.25818c-.80545.54273-1.84091.86182-3.04818.86182-2.34545 0-4.32818-1.58364-5.03545-3.71091H.957273v2.33182C2.43818 16.1573 5.48182 18 9 18z"/><path fill="#FBBC05" d="M3.96455 10.71c-.18-.54273-.28364-1.11636-.28364-1.71s.10364-1.16727.28364-1.71V4.95818H.957273C.347727 6.17364 0 7.54773 0 9c0 1.45227.347727 2.82636.957273 4.04182L3.96455 10.71z"/><path fill="#EA4335" d="M9 3.57818c1.32182 0 2.50727.45545 3.44 1.34818l2.58182-2.58182C13.4636.891818 11.4259 0 9 0 5.48182 0 2.43818 1.84273.957273 4.95818L3.96455 7.29C4.67182 5.16364 6.65455 3.57818 9 3.57818z"/></svg>
+              <span data-i18n="googleSignin">Sign in with Google</span>
+            </button>
+        </section>
+        <section id="about-section" class="section">
+            <h2 data-i18n="manifestoTitle">McFatty's Manifesto</h2>
+            <p class="manifesto-paragraph" data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
+            <p class="manifesto-paragraph" data-i18n="manifestoP2">This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
+            <p class="manifesto-paragraph" data-i18n="manifestoP3">Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
+            <p class="manifesto-paragraph" data-i18n="manifestoP4">We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
+            <p class="manifesto-paragraph" data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
+            <button id="donate-button" class="btn btn-primary" type="button" data-i18n="donateBtn">Donate</button>
+        </section>
+    </div>
+
+    <div id="app-content" style="display: none;">
+        <section id="welcome-section" class="section">
+            <h2 id="welcome-message" data-i18n="welcome"></h2>
+        </section>
+        <section class="section stack-16" aria-labelledby="addItem" id="add-item-section">
+          <h2 id="addItem" data-i18n="addTitle">Add item</h2>
+          <div class="controls">
+            <div class="grow">
+              <label for="food-name" class="label" data-i18n="foodLabel">Food item name</label>
+              <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" data-i18n-placeholder="foodPlaceholder">
+            </div>
+            <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
+          </div>
+          <label style="display:flex;align-items:center;margin-top:var(--sp-8);">
+            <input id="contains-dairy" type="checkbox" class="checkbox" aria-label="Contains dairy">
+            <span data-i18n="dairyLabel">Contains dairy</span>
+          </label>
+        </section>
+
+        <section class="section stack-16" aria-labelledby="todaysLog" id="log-section">
+          <div class="section-head">
+            <h2 id="todaysLog" data-i18n="logTitle">Today’s log</h2>
+            <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
+          </div>
+          <table class="table" aria-describedby="todaysLog">
+            <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thDairy">Dairy</th><th></th></tr></thead>
+            <tbody id="log-body"></tbody>
+          </table>
+          <div id="empty-state" class="info-text" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
+        </section>
+    </div>
+
+    <footer class="footer" data-i18n="footerText">Designed and created by Burrow · 2025</footer>
+  </div>
+
+  <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
+    <div class="modal">
+      <h3 id="confirm-title" data-i18n="confirmTitle">Are you sure?</h3>
+      <p id="confirm-desc"></p>
+      <div class="modal-actions">
+        <button id="cancel-action" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
+        <button id="confirm-action" class="btn btn-danger" data-i18n="confirmClearBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title">
+    <div class="modal">
+      <h3 id="account-title" data-i18n="accountModalTitle">Edit Account</h3>
+      <div class="stack-16" style="text-align: left;">
+          <label for="account-name" class="label" data-i18n="nameLabel">Name</label>
+          <input id="account-name" class="input" type="text" placeholder="e.g., Mike">
+          <label for="account-email" class="label" data-i18n="emailLabel">Email</label>
+          <input id="account-email" class="input" type="email" disabled>
+      </div>
+      <div class="modal-actions">
+        <button id="delete-account" class="btn btn-danger" data-i18n="deleteAccountBtn">Delete Account</button>
+        <button id="cancel-account" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
+        <button id="save-account" class="btn btn-primary" data-i18n="saveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC1qN3ksU0uYhXRXYNmYlmGX0iyUa-BJFQ",
+      authDomain: "mcfattys-food-tracker.firebaseapp.com",
+      projectId: "mcfattys-food-tracker",
+      storageBucket: "mcfattys-food-tracker.appspot.com",
+      messagingSenderId: "831603858264",
+      appId: "1:831603858264:web:58506c01975e9a1991e32d",
+      measurementId: "G-KQX4BQ71VK"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    let logCollection;
+    let unsubscribe;
+    let lang = 'en';
+
+    // Elements
+    const nameInput = document.getElementById('food-name');
+    const dairyCheckbox = document.getElementById('contains-dairy');
+    const addBtn = document.getElementById('add-button');
+    const tbody = document.getElementById('log-body');
+    const emptyState = document.getElementById('empty-state');
+    const installBanner = document.getElementById('install-banner');
+    const sidebar = document.getElementById('sidebar');
+    const scrim = document.getElementById('scrim');
+    const welcomeMessage = document.getElementById('welcome-message');
+    const landingPage = document.getElementById('landing-page');
+    const appContent = document.getElementById('app-content');
+    const donateBtn = document.getElementById('donate-button');
+    const langToggle = document.getElementById('lang-toggle');
+    const switchEl = document.getElementById('switch');
+    const googleSigninBtn = document.getElementById('google-signin');
+    const pwaInstallBtn = document.getElementById('pwa-install');
+    const menuOpenBtn = document.getElementById('menu-open');
+    const menuCloseBtn = document.getElementById('menu-close');
+    const logoutBtn = document.getElementById('logout-btn');
+    const logoutBtnMain = document.getElementById('logout-btn-main');
+    const userInfo = document.getElementById('user-info');
+    const userName = document.getElementById('user-name');
+    const exportBtn = document.getElementById('export-button');
+    const sidebarManifesto = document.getElementById('sidebar-manifesto');
+
+    // Auth Elements
+    const authSection = document.getElementById('auth-section');
+    const loginBtn = document.getElementById('login-btn');
+    const signupBtn = document.getElementById('signup-btn');
+    const authSubmit = document.getElementById('auth-submit');
+    const authActions = document.getElementById('auth-actions');
+    const signupFields = document.getElementById('signup-fields');
+    const authTitle = document.getElementById('auth-title');
+    const authToggle = document.getElementById('auth-toggle');
+    const authEmail = document.getElementById('auth-email');
+    const authPassword = document.getElementById('auth-password');
+    const authUsername = document.getElementById('auth-username');
+    const authRePassword = document.getElementById('auth-re-password');
+
+    // --- Translations ---
+    const translations = {
+        en: {
+            loginBtn: 'Login',
+            signupBtn: 'Sign Up',
+            logoutBtn: 'Logout',
+            installBtn: 'Install',
+            googleSignin: 'Sign in with Google',
+            manifestoTitle: "McFatty's Manifesto",
+            manifestoP1: "McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
+            manifestoP2: "This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.",
+            manifestoP3: "Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.",
+            manifestoP4: "We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.",
+            manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.",
+            donateBtn: 'Donate',
+            welcome: 'Welcome',
+            addTitle: 'Add item',
+            foodLabel: 'Food item name',
+            foodPlaceholder: 'e.g., Cheeseburger',
+            addBtn: 'Add to log',
+            dairyLabel: 'Contains dairy',
+            logTitle: 'Today’s log',
+            exportBtn: 'Export',
+            thItem: 'Item',
+            thDairy: 'Dairy',
+            emptyState: 'No items yet. Add your first item above.',
+            confirmTitle: 'Are you sure?',
+            cancelBtn: 'Cancel',
+            confirmClearBtn: 'Confirm',
+            accountModalTitle: 'Edit Account',
+            nameLabel: 'Name',
+            emailLabel: 'Email',
+            deleteAccountBtn: 'Delete Account',
+            saveBtn: 'Save',
+            menuTitle: 'Menu',
+            corePractices: 'Core Practices',
+            newJournal: 'New Journal Entry',
+            settings: 'Application Settings',
+            account: 'Account',
+            logout: 'Log Out',
+            footerText: 'Designed and created by Burrow · 2025',
+            loginTitle: 'Login',
+            signupTitle: 'Sign Up',
+            loginAction: 'Login',
+            signupAction: 'Sign Up',
+            authToggleToSignup: 'Need an account? Sign Up',
+            authToggleToLogin: 'Have an account? Login',
+            passwordLabel: 'Password',
+            usernameLabel: 'Username',
+            rePasswordLabel: 'Re-type Password',
+            installSuccess: 'App installed! Find McFatty’s on your home screen.',
+            installDismissed: 'Install dismissed.',
+            yes: 'Yes',
+            no: 'No',
+            removeBtn: 'Remove',
+            removeEntryAria: 'Remove entry',
+            authMissingFields: 'Please enter an email and password.',
+            authMissingUsername: 'Please choose a username.',
+            authPasswordMismatch: 'Passwords do not match.',
+            addError: 'Sorry, there was an error adding your entry.',
+            deleteError: 'Sorry, there was an error removing your entry.',
+            authErrorPrefix: 'Error:',
+            csvHeaderDate: 'Date',
+            csvHeaderItem: 'Item',
+            csvHeaderDairy: 'Dairy',
+            csvYes: 'Yes',
+            csvNo: 'No',
+            notAvailable: 'N/A',
+        },
+        de: {
+            loginBtn: 'Anmelden',
+            signupBtn: 'Registrieren',
+            logoutBtn: 'Abmelden',
+            installBtn: 'Installieren',
+            googleSignin: 'Mit Google anmelden',
+            manifestoTitle: 'McFettys Manifest',
+            manifestoP1: 'Bei McFettys Food Tracker geht es nicht um Kalorien, Einschränkungen oder Schuldgefühle. Wenn du Chips willst, iss sie. Keine Scham, keine Bestrafung. Schreib es einfach auf. Das Aufzeichnen ohne Urteil ist der entscheidende Akt.',
+            manifestoP2: 'Diese App ist kostenlos. Keine Abonnements, keine Upsells, keine Lifestyle-Pakete. Wir lehnen die Idee ab, dass uns Essen und Gesundheit zurückverkauft werden sollten. Essen sollte kein Geschäftsmodell sein.',
+            manifestoP3: 'Stattdessen hilft Ihnen McFatty’s, innezuhalten, auf Ihren Körper zu hören und Ihre Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht Ihnen das einfache Protokollieren, Muster zu erkennen und Ihre Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt für Ihre Entscheidungen verwurzelt sein.',
+            manifestoP4: 'Wir sind gegen Kreisläufe von Schuld, Scham und unmöglichen Versprechungen. Wir werden den als Selbstfürsorge getarnten Konsum nicht feiern. Wir glauben, die radikale Wahl ist, zu verlangsamen, auf sich selbst zu hören und zu Ihren eigenen Bedingungen zu essen.',
+            manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von Ihrer Schuld profitieren.',
+            donateBtn: 'Spenden',
+            welcome: 'Willkommen',
+            addTitle: 'Element hinzufügen',
+            foodLabel: 'Name des Lebensmittels',
+            foodPlaceholder: 'z.B. Käseburger',
+            addBtn: 'Zum Protokoll hinzufügen',
+            dairyLabel: 'Enthält Milchprodukte',
+            logTitle: 'Heutiges Protokoll',
+            exportBtn: 'Exportieren',
+            thItem: 'Element',
+            thDairy: 'Milchprodukte',
+            emptyState: 'Noch keine Einträge. Fügen Sie oben Ihren ersten Eintrag hinzu.',
+            confirmTitle: 'Sind Sie sicher?',
+            cancelBtn: 'Abbrechen',
+            confirmClearBtn: 'Bestätigen',
+            accountModalTitle: 'Konto bearbeiten',
+            nameLabel: 'Name',
+            emailLabel: 'Email',
+            deleteAccountBtn: 'Konto löschen',
+            saveBtn: 'Speichern',
+            menuTitle: 'Menü',
+            corePractices: 'Kernpraktiken',
+            newJournal: 'Neuer Journaleintrag',
+            settings: 'Anwendungseinstellungen',
+            account: 'Konto',
+            logout: 'Abmelden',
+            footerText: 'Designed and created by Burrow · 2025',
+            loginTitle: 'Anmelden',
+            signupTitle: 'Registrieren',
+            loginAction: 'Anmelden',
+            signupAction: 'Registrieren',
+            authToggleToSignup: 'Noch kein Konto? Registrieren',
+            authToggleToLogin: 'Konto vorhanden? Anmelden',
+            passwordLabel: 'Passwort',
+            usernameLabel: 'Benutzername',
+            rePasswordLabel: 'Passwort erneut eingeben',
+            installSuccess: 'App installiert! McFatty’s ist jetzt auf deinem Startbildschirm.',
+            installDismissed: 'Installation abgebrochen.',
+            yes: 'Ja',
+            no: 'Nein',
+            removeBtn: 'Entfernen',
+            removeEntryAria: 'Eintrag entfernen',
+            authMissingFields: 'Bitte E-Mail und Passwort eingeben.',
+            authMissingUsername: 'Bitte einen Benutzernamen wählen.',
+            authPasswordMismatch: 'Passwörter stimmen nicht überein.',
+            addError: 'Beim Hinzufügen deines Eintrags ist ein Fehler aufgetreten.',
+            deleteError: 'Beim Entfernen deines Eintrags ist ein Fehler aufgetreten.',
+            authErrorPrefix: 'Fehler:',
+            csvHeaderDate: 'Datum',
+            csvHeaderItem: 'Element',
+            csvHeaderDairy: 'Milchprodukte',
+            csvYes: 'Ja',
+            csvNo: 'Nein',
+            notAvailable: 'k. A.',
+        }
+    };
+
+    let isLoginMode = true;
+    let deferredInstallPrompt = null;
+    let installBannerTimeout;
+    let latestSnapshot = null;
+
+    const getTranslation = (key) => {
+        const dictionary = translations[lang] || translations.en;
+        if (dictionary && Object.prototype.hasOwnProperty.call(dictionary, key)) {
+            return dictionary[key];
+        }
+        return translations.en[key] ?? '';
+    };
+
+    const updateAuthTexts = () => {
+        const titleKey = isLoginMode ? 'loginTitle' : 'signupTitle';
+        const actionKey = isLoginMode ? 'loginAction' : 'signupAction';
+        const toggleKey = isLoginMode ? 'authToggleToSignup' : 'authToggleToLogin';
+        authTitle.textContent = getTranslation(titleKey);
+        authSubmit.textContent = getTranslation(actionKey);
+        authToggle.textContent = getTranslation(toggleKey);
+    };
+
+    const showInstallBanner = (message) => {
+        if (!message) return;
+        installBanner.textContent = message;
+        installBanner.classList.add('show');
+        clearTimeout(installBannerTimeout);
+        installBannerTimeout = setTimeout(() => {
+            installBanner.classList.remove('show');
+        }, 4000);
+    };
+
+    const setLanguage = (newLang) => {
+        lang = newLang;
+        if (langToggle) {
+            langToggle.setAttribute('aria-pressed', newLang === 'de' ? 'true' : 'false');
+        }
+        if (switchEl) {
+            switchEl.classList.toggle('active', newLang === 'de');
+        }
+        document.documentElement.lang = newLang;
+        const dictionary = translations[newLang] || translations.en;
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (key && Object.prototype.hasOwnProperty.call(dictionary, key)) {
+                el.textContent = dictionary[key];
+            } else if (key && Object.prototype.hasOwnProperty.call(translations.en, key)) {
+                el.textContent = translations.en[key];
+            }
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (key && Object.prototype.hasOwnProperty.call(dictionary, key)) {
+                el.placeholder = dictionary[key];
+            } else if (key && Object.prototype.hasOwnProperty.call(translations.en, key)) {
+                el.placeholder = translations.en[key];
+            }
+        });
+        const user = auth.currentUser;
+        if (user) {
+            const welcomeText = dictionary.welcome || translations.en.welcome || '';
+            const displayName = user.displayName || user.email || '';
+            welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : welcomeText;
+        }
+        updateAuthTexts();
+        if (latestSnapshot) {
+            renderEntries(latestSnapshot);
+        }
+    };
+
+    const addEntry = () => {
+        const name = nameInput.value.trim();
+        if (name && logCollection) {
+            logCollection.add({
+                name: name,
+                dairy: dairyCheckbox.checked,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                nameInput.value = '';
+                dairyCheckbox.checked = false;
+                nameInput.focus();
+            })
+            .catch((error) => {
+                console.error('Error adding document: ', error);
+                alert(getTranslation('addError'));
+            });
+        }
+    };
+
+    const renderEntries = (snapshot) => {
+        latestSnapshot = snapshot;
+        tbody.innerHTML = '';
+        if (snapshot.empty) {
+            emptyState.style.display = 'block';
+            return;
+        }
+        emptyState.style.display = 'none';
+        snapshot.forEach(doc => {
+            const entry = doc.data();
+            const tr = document.createElement('tr');
+
+            const nameCell = document.createElement('td');
+            nameCell.textContent = entry.name || '';
+
+            const dairyCell = document.createElement('td');
+            const pill = document.createElement('span');
+            pill.className = `pill ${entry.dairy ? 'pill-yes' : 'pill-no'}`;
+            pill.textContent = entry.dairy ? getTranslation('yes') : getTranslation('no');
+            dairyCell.appendChild(pill);
+
+            const actionsCell = document.createElement('td');
+            actionsCell.className = 'row-actions';
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'btn btn-danger remove-entry';
+            removeBtn.type = 'button';
+            removeBtn.dataset.id = doc.id;
+            removeBtn.textContent = getTranslation('removeBtn');
+            const ariaLabel = `${getTranslation('removeEntryAria')} ${entry.name || ''}`.trim();
+            removeBtn.setAttribute('aria-label', ariaLabel);
+            actionsCell.appendChild(removeBtn);
+
+            tr.appendChild(nameCell);
+            tr.appendChild(dairyCell);
+            tr.appendChild(actionsCell);
+            tbody.appendChild(tr);
+        });
+    };
+
+    const handleLogAction = (event) => {
+        const button = event.target.closest('.remove-entry');
+        if (!button || !logCollection) {
+            return;
+        }
+        const { id } = button.dataset;
+        if (!id) {
+            return;
+        }
+        logCollection.doc(id).delete().catch(error => {
+            console.error('Error removing document: ', error);
+            alert(getTranslation('deleteError'));
+        });
+    };
+
+    tbody.addEventListener('click', handleLogAction);
+
+    const exportToCsv = () => {
+        if (!logCollection) return;
+
+        logCollection.orderBy('timestamp', 'desc').get().then(snapshot => {
+            const header = [
+                getTranslation('csvHeaderDate'),
+                getTranslation('csvHeaderItem'),
+                getTranslation('csvHeaderDairy')
+            ].join(',');
+            let csvContent = "data:text/csv;charset=utf-8," + header + "\n";
+            const locale = lang === 'de' ? 'de-DE' : 'en-US';
+
+            snapshot.forEach(doc => {
+                const entry = doc.data();
+                const date = entry.timestamp ? entry.timestamp.toDate().toLocaleDateString(locale) : getTranslation('notAvailable');
+                const safeName = (entry.name || '').replace(/"/g, '""');
+                const row = `${date},"${safeName}",${entry.dairy ? getTranslation('csvYes') : getTranslation('csvNo')}`;
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'mcfattys_log.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    };
+
+    addBtn.addEventListener('click', addEntry);
+    exportBtn.addEventListener('click', exportToCsv);
+
+    const resetAuthFields = () => {
+        authEmail.value = '';
+        authPassword.value = '';
+        authUsername.value = '';
+        authRePassword.value = '';
+    };
+
+    const setAuthMode = (isLogin) => {
+        isLoginMode = isLogin;
+        signupFields.style.display = isLogin ? 'none' : 'block';
+        updateAuthTexts();
+    };
+
+    auth.onAuthStateChanged(user => {
+        if (unsubscribe) {
+            unsubscribe();
+            unsubscribe = null;
+        }
+
+        if (user) {
+            landingPage.style.display = 'none';
+            appContent.style.display = 'grid';
+            authActions.style.display = 'none';
+            userInfo.classList.add('show');
+            authSection.style.display = 'none';
+            if (sidebarManifesto) {
+                sidebarManifesto.hidden = false;
+            }
+
+            const displayName = user.displayName || user.email || '';
+            const welcomeText = getTranslation('welcome');
+            welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : welcomeText;
+            userName.textContent = displayName;
+
+            logCollection = db.collection('users').doc(user.uid).collection('logs');
+            unsubscribe = logCollection.orderBy('timestamp', 'desc').onSnapshot(renderEntries);
+        } else {
+            landingPage.style.display = 'grid';
+            appContent.style.display = 'none';
+            authActions.style.display = 'flex';
+            userInfo.classList.remove('show');
+            authSection.style.display = 'none';
+            logCollection = null;
+            userName.textContent = '';
+            welcomeMessage.textContent = '';
+            latestSnapshot = null;
+            tbody.innerHTML = '';
+            emptyState.style.display = 'none';
+            setAuthMode(true);
+            resetAuthFields();
+            if (sidebarManifesto) {
+                sidebarManifesto.hidden = true;
+            }
+        }
+    });
+
+    const handleAuthSubmit = async () => {
+        const email = authEmail.value.trim();
+        const password = authPassword.value.trim();
+
+        if (!email || !password) {
+            alert(getTranslation('authMissingFields'));
+            return;
+        }
+
+        if (!isLoginMode) {
+            const username = authUsername.value.trim();
+            const confirmPassword = authRePassword.value.trim();
+
+            if (!username) {
+                alert(getTranslation('authMissingUsername'));
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                alert(getTranslation('authPasswordMismatch'));
+                return;
+            }
+        }
+
+        authSubmit.disabled = true;
+
+        try {
+            if (isLoginMode) {
+                await auth.signInWithEmailAndPassword(email, password);
+            } else {
+                const username = authUsername.value.trim();
+                const credential = await auth.createUserWithEmailAndPassword(email, password);
+                await credential.user.updateProfile({ displayName: username });
+                await db.collection('users').doc(credential.user.uid).set({
+                    displayName: username,
+                    email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
+            authSection.style.display = 'none';
+            resetAuthFields();
+        } catch (error) {
+            const prefix = getTranslation('authErrorPrefix');
+            const message = `${prefix} ${error.message}`.trim();
+            alert(message);
+            console.error('Auth error:', error);
+        } finally {
+            authSubmit.disabled = false;
+        }
+    };
+
+    loginBtn.addEventListener('click', () => {
+        resetAuthFields();
+        authSection.style.display = 'block';
+        setAuthMode(true);
+    });
+
+    signupBtn.addEventListener('click', () => {
+        resetAuthFields();
+        authSection.style.display = 'block';
+        setAuthMode(false);
+    });
+
+    authToggle.addEventListener('click', () => {
+        setAuthMode(!isLoginMode);
+    });
+
+    authSubmit.addEventListener('click', handleAuthSubmit);
+
+    googleSigninBtn.addEventListener('click', () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .catch((error) => {
+          const prefix = getTranslation('authErrorPrefix');
+          const message = `${prefix} ${error.message}`.trim();
+          alert(message);
+          console.error('Google sign-in error:', error);
+        });
+    });
+
+    const signOut = () => {
+        auth.signOut().catch(error => {
+            console.error('Sign out error:', error);
+        });
+    };
+    logoutBtn.addEventListener('click', signOut);
+    logoutBtnMain.addEventListener('click', signOut);
+
+    if (donateBtn) {
+        donateBtn.addEventListener('click', () => {
+            const donateWindow = window.open('https://www.paypal.com/donate', '_blank');
+            if (donateWindow) {
+                donateWindow.opener = null;
+            }
+        });
+    }
+
+    const toggleLanguage = () => {
+        const nextLang = lang === 'en' ? 'de' : 'en';
+        setLanguage(nextLang);
+    };
+
+    langToggle.addEventListener('click', toggleLanguage);
+    langToggle.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggleLanguage();
+        }
+    });
+
+    menuOpenBtn.addEventListener('click', () => {
+        sidebar.classList.add('open');
+        scrim.classList.add('show');
+    });
+
+    menuCloseBtn.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        scrim.classList.remove('show');
+    });
+
+    scrim.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        scrim.classList.remove('show');
+    });
+
+    window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        if (pwaInstallBtn) {
+            pwaInstallBtn.style.display = 'inline-flex';
+            pwaInstallBtn.disabled = false;
+        }
+    });
+
+    if (pwaInstallBtn) {
+        pwaInstallBtn.addEventListener('click', async () => {
+            if (!deferredInstallPrompt) return;
+            pwaInstallBtn.disabled = true;
+            deferredInstallPrompt.prompt();
+            const choice = await deferredInstallPrompt.userChoice;
+            if (choice.outcome === 'accepted') {
+                showInstallBanner(getTranslation('installSuccess'));
+            } else {
+                showInstallBanner(getTranslation('installDismissed'));
+            }
+            deferredInstallPrompt = null;
+            pwaInstallBtn.style.display = 'none';
+            pwaInstallBtn.disabled = false;
+        });
+    }
+
+    window.addEventListener('appinstalled', () => {
+        showInstallBanner(getTranslation('installSuccess'));
+        deferredInstallPrompt = null;
+        if (pwaInstallBtn) {
+            pwaInstallBtn.style.display = 'none';
+        }
+    });
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('service-worker.js').catch((error) => {
+                console.error('Service worker registration failed:', error);
+            });
+        });
+    }
+
+    setLanguage(lang);
+
+  </script>
+</body>
+</html>
