@@ -351,6 +351,48 @@
     const authTitle = document.getElementById('auth-title');
     const authToggle = document.getElementById('auth-toggle');
 
+    // --- Firestore Functions ---
+    
+    const addEntry = () => {
+        const name = nameInput.value.trim();
+        if (name && logCollection) {
+            logCollection.add({
+                name: name,
+                dairy: dairyCheckbox.checked,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            nameInput.value = '';
+            dairyCheckbox.checked = false;
+        }
+    };
+
+    const renderEntries = (snapshot) => {
+        tbody.innerHTML = '';
+        if (snapshot.empty) {
+            emptyState.style.display = 'block';
+            return;
+        }
+        emptyState.style.display = 'none';
+        snapshot.forEach(doc => {
+            const entry = doc.data();
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${entry.name}</td>
+                <td><span class="pill ${entry.dairy ? 'pill-yes' : 'pill-no'}">${entry.dairy ? 'Yes' : 'No'}</span></td>
+                <td class="row-actions"><button class="btn btn-danger" onclick="deleteEntry('${doc.id}')">Remove</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    };
+    
+    const deleteEntry = (id) => {
+        if (logCollection) {
+            logCollection.doc(id).delete();
+        }
+    };
+    
+    addBtn.addEventListener('click', addEntry);
+
     // --- Auth State Observer ---
     auth.onAuthStateChanged(user => {
         if (user) {
@@ -361,12 +403,14 @@
             userInfo.style.display = 'flex';
             userName.textContent = user.displayName;
             
-            // Set up Firestore collection for the user
             logCollection = db.collection('users').doc(user.uid).collection('logs');
-            // You can now use logCollection to save and retrieve data for the logged-in user
+            unsubscribe = logCollection.orderBy('timestamp', 'desc').onSnapshot(renderEntries);
             
         } else {
             // User is signed out.
+            if (unsubscribe) {
+                unsubscribe();
+            }
             landingPage.style.display = 'block';
             appContent.style.display = 'none';
             authActions.style.display = 'flex';
@@ -404,7 +448,6 @@
       const provider = new firebase.auth.GoogleAuthProvider();
       auth.signInWithPopup(provider)
         .catch((error) => {
-          // Handle Errors here.
           alert(`Error: ${error.message}`);
           console.error("Google sign-in error:", error);
         });
