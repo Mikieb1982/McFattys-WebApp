@@ -163,12 +163,12 @@
             </div>
             <div class="header-actions">
                 <div id="auth-actions" class="auth-actions">
-                    <button id="login-btn" class="btn btn-secondary" type="button">Login</button>
-                    <button id="signup-btn" class="btn btn-primary" type="button">Sign Up</button>
+                    <button id="login-btn" class="btn btn-secondary" type="button" data-i18n="loginBtn">Login</button>
+                    <button id="signup-btn" class="btn btn-primary" type="button" data-i18n="signupBtn">Sign Up</button>
                 </div>
                 <div id="user-info" style="display: none; align-items: center; gap: 10px;">
                     <span id="user-name"></span>
-                    <button id="logout-btn-main" class="btn btn-secondary" type="button">Logout</button>
+                    <button id="logout-btn-main" class="btn btn-secondary" type="button" data-i18n="logoutBtn">Logout</button>
                 </div>
                 <button id="pwa-install" class="btn btn-secondary" type="button" aria-label="Install app" data-i18n="installBtn">Install</button>
                 <button id="menu-open" class="icon-btn" aria-label="Open menu">
@@ -218,7 +218,7 @@
             <div style="text-align:center; margin-top:16px; color:var(--text-1)">OR</div>
             <button id="google-signin" class="btn btn-google" type="button">
               <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.20455c0-.63864-.05727-1.25182-.16364-1.84091H9v3.48182h4.84364c-.20818 1.125-.84273 2.07818-1.77727 2.72182v2.25818h2.90818c1.70182-1.56636 2.68636-3.87409 2.68636-6.62182z"/><path fill="#34A853" d="M9 18c2.43 0 4.46727-.80545 5.95636-2.18182l-2.90818-2.25818c-.80545.54273-1.84091.86182-3.04818.86182-2.34545 0-4.32818-1.58364-5.03545-3.71091H.957273v2.33182C2.43818 16.1573 5.48182 18 9 18z"/><path fill="#FBBC05" d="M3.96455 10.71c-.18-.54273-.28364-1.11636-.28364-1.71s.10364-1.16727.28364-1.71V4.95818H.957273C.347727 6.17364 0 7.54773 0 9c0 1.45227.347727 2.82636.957273 4.04182L3.96455 10.71z"/><path fill="#EA4335" d="M9 3.57818c1.32182 0 2.50727.45545 3.44 1.34818l2.58182-2.58182C13.4636.891818 11.4259 0 9 0 5.48182 0 2.43818 1.84273.957273 4.95818L3.96455 7.29C4.67182 5.16364 6.65455 3.57818 9 3.57818z"/></svg>
-              <span>Sign in with Google</span>
+              <span data-i18n="googleSignin">Sign in with Google</span>
             </button>
         </section>
         <section id="about-section" class="section">
@@ -234,14 +234,14 @@
 
     <div id="app-content" style="display: none;">
         <section id="welcome-section" class="section">
-            <h2 id="welcome-message"></h2>
+            <h2 id="welcome-message" data-i18n="welcome"></h2>
         </section>
         <section class="section stack-16" aria-labelledby="addItem" id="add-item-section">
           <h2 id="addItem" data-i18n="addTitle">Add item</h2>
           <div class="controls">
             <div class="grow">
               <label for="food-name" class="label" data-i18n="foodLabel">Food item name</label>
-              <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" autocomplete="off">
+              <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" data-i18n-placeholder="foodPlaceholder">
             </div>
             <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
           </div>
@@ -269,7 +269,7 @@
 
   <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
     <div class="modal">
-      <h3 id="confirm-title">Are you sure?</h3>
+      <h3 id="confirm-title" data-i18n="confirmTitle">Are you sure?</h3>
       <p id="confirm-desc"></p>
       <div class="modal-actions">
         <button id="cancel-action" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
@@ -351,7 +351,108 @@
     const signupFields = document.getElementById('signup-fields');
     const authTitle = document.getElementById('auth-title');
     const authToggle = document.getElementById('auth-toggle');
+    
+    // --- Translations ---
+    const translations = {
+        en: {
+            loginBtn: 'Login',
+            signupBtn: 'Sign Up',
+            logoutBtn: 'Logout',
+            installBtn: 'Install',
+            googleSignin: 'Sign in with Google',
+            manifestoTitle: "McFatty's Manifesto",
+            manifestoP1: "McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
+            manifestoP2: "This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.",
+            manifestoP3: "Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.",
+            manifestoP4: "We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.",
+            manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.",
+            donateBtn: 'Donate',
+            welcome: 'Welcome',
+            addTitle: 'Add item',
+            foodLabel: 'Food item name',
+            foodPlaceholder: 'e.g., Cheeseburger',
+            addBtn: 'Add to log',
+            dairyLabel: 'Contains dairy',
+            logTitle: 'Today’s log',
+            exportBtn: 'Export',
+            thItem: 'Item',
+            thDairy: 'Dairy',
+            emptyState: 'No items yet. Add your first item above.',
+            confirmTitle: 'Are you sure?',
+            cancelBtn: 'Cancel',
+            confirmClearBtn: 'Confirm',
+            accountModalTitle: 'Edit Account',
+            nameLabel: 'Name',
+            emailLabel: 'Email',
+            deleteAccountBtn: 'Delete Account',
+            saveBtn: 'Save',
+            menuTitle: 'Menu',
+            corePractices: 'Core Practices',
+            newJournal: 'New Journal Entry',
+            settings: 'Application Settings',
+            account: 'Account',
+            logout: 'Log Out',
+            loginTitle: 'Login / Sign Up',
+            passwordLabel: 'Password',
+            usernameLabel: 'Username',
+            rePasswordLabel: 'Re-type Password',
+        },
+        de: {
+            loginBtn: 'Anmelden',
+            signupBtn: 'Registrieren',
+            logoutBtn: 'Abmelden',
+            installBtn: 'Installieren',
+            googleSignin: 'Mit Google anmelden',
+            manifestoTitle: 'McFettys Manifest',
+            manifestoP1: 'Bei McFettys Food Tracker geht es nicht um Kalorien, Einschränkungen oder Schuldgefühle. Wenn du Chips willst, iss sie. Keine Scham, keine Bestrafung. Schreib es einfach auf. Das Aufzeichnen ohne Urteil ist der entscheidende Akt.',
+            manifestoP2: 'Diese App ist kostenlos. Keine Abonnements, keine Upsells, keine Lifestyle-Pakete. Wir lehnen die Idee ab, dass uns Essen und Gesundheit zurückverkauft werden sollten. Essen sollte kein Geschäftsmodell sein.',
+            manifestoP3: 'Stattdessen hilft Ihnen McFatty’s, innezuhalten, auf Ihren Körper zu hören und Ihre Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht Ihnen das einfache Protokollieren, Muster zu erkennen und Ihre Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt für Ihre Entscheidungen verwurzelt sein.',
+            manifestoP4: 'Wir sind gegen Kreisläufe von Schuld, Scham und unmöglichen Versprechungen. Wir werden den als Selbstfürsorge getarnten Konsum nicht feiern. Wir glauben, die radikale Wahl ist, zu verlangsamen, auf sich selbst zu hören und zu Ihren eigenen Bedingungen zu essen.',
+            manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von Ihrer Schuld profitieren.',
+            donateBtn: 'Spenden',
+            welcome: 'Willkommen',
+            addTitle: 'Element hinzufügen',
+            foodLabel: 'Name des Lebensmittels',
+            foodPlaceholder: 'z.B. Käseburger',
+            addBtn: 'Zum Protokoll hinzufügen',
+            dairyLabel: 'Enthält Milchprodukte',
+            logTitle: 'Heutiges Protokoll',
+            exportBtn: 'Exportieren',
+            thItem: 'Element',
+            thDairy: 'Milchprodukte',
+            emptyState: 'Noch keine Einträge. Fügen Sie oben Ihren ersten Eintrag hinzu.',
+            confirmTitle: 'Sind Sie sicher?',
+            cancelBtn: 'Abbrechen',
+            confirmClearBtn: 'Bestätigen',
+            accountModalTitle: 'Konto bearbeiten',
+            nameLabel: 'Name',
+            emailLabel: 'Email',
+            deleteAccountBtn: 'Konto löschen',
+            saveBtn: 'Speichern',
+            menuTitle: 'Menü',
+            corePractices: 'Kernpraktiken',
+            newJournal: 'Neuer Journaleintrag',
+            settings: 'Anwendungseinstellungen',
+            account: 'Konto',
+            logout: 'Abmelden',
+            loginTitle: 'Anmelden / Registrieren',
+            passwordLabel: 'Passwort',
+            usernameLabel: 'Benutzername',
+            rePasswordLabel: 'Passwort erneut eingeben',
+        }
+    };
 
+    const setLanguage = (lang) => {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            el.textContent = translations[lang][key];
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            el.placeholder = translations[lang][key];
+        });
+    };
+    
     // --- Firestore and CSV Functions ---
     
     const addEntry = () => {
@@ -493,7 +594,7 @@
     langToggle.addEventListener('click', () => {
         lang = lang === 'en' ? 'de' : 'en';
         switchEl.classList.toggle('active');
-        // Add your translation logic here
+        setLanguage(lang);
     });
 
     // Sidebar Menu
@@ -511,6 +612,9 @@
         sidebar.classList.remove('open');
         scrim.classList.remove('show');
     });
+    
+    // Initial Load
+    setLanguage('en');
 
   </script>
 </body>
