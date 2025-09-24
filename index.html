@@ -162,7 +162,7 @@
                 <span>EN</span><div id="switch" class="switch" aria-hidden="true"></div><span>DE</span>
             </div>
             <div class="header-actions">
-                <div class="auth-actions">
+                <div id="auth-actions" class="auth-actions">
                     <button id="login-btn" class="btn btn-secondary" type="button">Login</button>
                     <button id="signup-btn" class="btn btn-primary" type="button">Sign Up</button>
                 </div>
@@ -253,4 +253,141 @@
             <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thDairy">Dairy</th><th></th></tr></thead>
             <tbody id="log-body"></tbody>
           </table>
-          <div id="empty-state" class="label" style="display:none" data-i1…
+          <div id="empty-state" class="label" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
+        </section>
+    </div>
+
+    <footer class="footer" data-i18n="footerText">Designed and created by Burrow · 2025</footer>
+  </div>
+
+  <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
+    <div class="modal">
+      <h3 id="confirm-title">Are you sure?</h3>
+      <p id="confirm-desc"></p>
+      <div class="modal-actions">
+        <button id="cancel-action" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
+        <button id="confirm-action" class="btn btn-danger" data-i18n="confirmClearBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title">
+    <div class="modal">
+      <h3 id="account-title" data-i18n="accountModalTitle">Edit Account</h3>
+      <div class="stack-16" style="text-align: left;">
+          <label for="account-name" class="label" data-i18n="nameLabel">Name</label>
+          <input id="account-name" class="input" type="text" placeholder="e.g., Mike">
+          <label for="account-email" class="label" data-i18n="emailLabel">Email</label>
+          <input id="account-email" class="input" type="email" disabled>
+      </div>
+      <div class="modal-actions">
+        <button id="delete-account" class="btn btn-danger" data-i18n="deleteAccountBtn">Delete Account</button>
+        <button id="cancel-account" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
+        <button id="save-account" class="btn btn-primary" data-i18n="saveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC1qN3ksU0uYhXRXYNmYlmGX0iyUa-BJFQ",
+      authDomain: "mcfattys-food-tracker.firebaseapp.com",
+      projectId: "mcfattys-food-tracker",
+      storageBucket: "mcfattys-food-tracker.appspot.com",
+      messagingSenderId: "831603858264",
+      appId: "1:831603858264:web:58506c01975e9a1991e32d",
+      measurementId: "G-KQX4BQ71VK"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    let logCollection;
+    let unsubscribe;
+    let lang = 'en';
+
+    // Elements
+    const nameInput = document.getElementById('food-name');
+    const dairyCheckbox = document.getElementById('contains-dairy');
+    const addBtn = document.getElementById('add-button');
+    const tbody = document.getElementById('log-body');
+    const emptyState = document.getElementById('empty-state');
+    const toastEl = document.getElementById('install-banner');
+    const sidebar = document.getElementById('sidebar');
+    const scrim = document.getElementById('scrim');
+    const welcomeSection = document.getElementById('welcome-section');
+    const welcomeMessage = document.getElementById('welcome-message');
+    const landingPage = document.getElementById('landing-page');
+    const appContent = document.getElementById('app-content');
+    const donateBtn = document.getElementById('donate-button');
+    const langToggle = document.getElementById('lang-toggle');
+    const switchEl = document.getElementById('switch');
+    const googleSigninBtn = document.getElementById('google-signin');
+    const menuOpenBtn = document.getElementById('menu-open');
+    const menuCloseBtn = document.getElementById('menu-close');
+
+    // Auth Elements
+    const authSection = document.getElementById('auth-section');
+    const loginBtn = document.getElementById('login-btn');
+    const signupBtn = document.getElementById('signup-btn');
+    const authSubmit = document.getElementById('auth-submit');
+    const authActions = document.getElementById('auth-actions');
+    const signupFields = document.getElementById('signup-fields');
+    const authTitle = document.getElementById('auth-title');
+    const authToggle = document.getElementById('auth-toggle');
+
+    // --- Event Listeners ---
+
+    // Toggle between Login and Sign Up modes
+    const setAuthMode = (isLogin) => {
+        authTitle.textContent = isLogin ? 'Login' : 'Sign Up';
+        authSubmit.textContent = isLogin ? 'Login' : 'Sign Up';
+        authToggle.textContent = isLogin ? 'Need an account? Sign Up' : 'Have an account? Login';
+        signupFields.style.display = isLogin ? 'none' : 'block';
+    };
+
+    loginBtn.addEventListener('click', () => {
+        authSection.style.display = 'block';
+        setAuthMode(true);
+    });
+
+    signupBtn.addEventListener('click', () => {
+        authSection.style.display = 'block';
+        setAuthMode(false);
+    });
+
+    authToggle.addEventListener('click', () => {
+        const isLogin = authSubmit.textContent === 'Login';
+        setAuthMode(!isLogin);
+    });
+    
+    // Language Toggle
+    langToggle.addEventListener('click', () => {
+        lang = lang === 'en' ? 'de' : 'en';
+        switchEl.classList.toggle('active');
+        // Add your translation logic here
+    });
+
+    // Sidebar Menu
+    menuOpenBtn.addEventListener('click', () => {
+        sidebar.classList.add('open');
+        scrim.classList.add('show');
+    });
+
+    menuCloseBtn.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        scrim.classList.remove('show');
+    });
+
+    scrim.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        scrim.classList.remove('show');
+    });
+
+  </script>
+</body>
+</html>
