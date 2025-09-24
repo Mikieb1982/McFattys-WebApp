@@ -182,7 +182,40 @@
     .logo-card .logo-card-inner{width:100%;aspect-ratio:1/1;border-radius:var(--r-12);background:var(--bg-1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;padding:var(--sp-16); overflow: hidden;}
     .logo-card img{width:100%; height: 100%; object-fit: contain; display:block;}
 
-    @media (prefers-reduced-motion:reduce){.install-banner,.sidebar{transition:none}.btn:active{transform:none}}
+    @keyframes wobble {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(1.5deg); }
+      75% { transform: rotate(-1.5deg); }
+    }
+
+    .reorganize-mode .dashboard-card {
+      animation: wobble 0.2s ease-in-out infinite;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--danger);
+      color: white;
+      border: 2px solid var(--bg-0);
+      font-weight: bold;
+      font-size: 16px;
+      line-height: 1;
+      text-align: center;
+      cursor: pointer;
+      display: none;
+      z-index: 10;
+    }
+
+    .reorganize-mode .close-btn {
+      display: block;
+    }
+
+    @media (prefers-reduced-motion:reduce){.install-banner,.sidebar, .reorganize-mode .dashboard-card{transition:none; animation: none;}.btn:active{transform:none}}
 
   </style>
 </head>
@@ -297,22 +330,26 @@
 
     <div id="app-content" class="dashboard-grid" style="display: none;">
       <section id="logo-card" class="section dashboard-card logo-card" data-card-id="logo" aria-label="McFatty's logo">
+        <button class="close-btn" aria-label="Finish organizing">&times;</button>
         <div class="logo-card-inner">
           <img src="Logo.png" alt="McFatty's Food Tracker logo">
         </div>
       </section>
 
       <section id="manifesto-card" class="section dashboard-card logo-card" data-card-id="manifesto" aria-label="McFatty's Manifesto">
+        <button class="close-btn" aria-label="Finish organizing">&times;</button>
         <div class="logo-card-inner">
           <img src="manifesto.png" alt="McFatty's Manifesto logo">
         </div>
       </section>
 
       <section id="welcome-section" class="section dashboard-card span-2" data-card-id="welcome">
+        <button class="close-btn" aria-label="Finish organizing">&times;</button>
         <h2 id="welcome-message" data-i18n="welcome"></h2>
       </section>
 
       <section id="stats-section" class="section dashboard-card span-2" data-card-id="stats" aria-labelledby="quick-stats-title">
+        <button class="close-btn" aria-label="Finish organizing">&times;</button>
         <h2 id="quick-stats-title" data-i18n="quickStatsTitle">Quick stats</h2>
         <div class="quick-stats-grid">
           <div class="stat-card">
@@ -336,6 +373,7 @@
       </section>
 
       <section class="section dashboard-card span-2" aria-labelledby="addItem" id="add-item-section" data-card-id="quick-add">
+        <button class="close-btn" aria-label="Finish organizing">&times;</button>
         <h2 id="addItem" data-i18n="quickAddTitle">Quick add</h2>
         <p class="quick-add-subtext" data-i18n="quickAddHint">Log what you’re eating right now—no pressure, no judgement.</p>
         <div class="quick-add-body">
@@ -358,11 +396,13 @@
       </section>
 
       <section id="growth-section" class="section dashboard-card span-2" aria-labelledby="growth-title" data-card-id="growth">
+        <button class="close-btn" aria-label="Finish organizing">&times;</button>
         <h2 id="growth-title" data-i18n="growthTitle">Room to grow</h2>
         <p data-i18n="growthCopy">This space is ready for habits, reflections, or whatever else you need next.</p>
       </section>
 
       <section class="section dashboard-card span-2" aria-labelledby="recentLog" id="log-section" data-card-id="recent-log">
+        <button class="close-btn" aria-label="Finish organizing">&times;</button>
         <div class="section-head">
           <h2 id="recentLog" data-i18n="recentLogTitle">Recent log</h2>
           <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
@@ -494,6 +534,7 @@
     let allEntries = [];
     let activeFilter = 'all';
     let searchTerm = '';
+    let isReorganizeMode = false;
 
     // Elements
     const nameInput = document.getElementById('food-name');
@@ -652,8 +693,6 @@
       }
 
       if (active) {
-        appContent.classList.remove('is-reordering');
-        document.body.classList.remove('card-dragging');
         if (commit) {
           persistCardOrder();
         }
@@ -732,7 +771,7 @@
     }
 
     function beginCardDrag(event) {
-      if (!dragSession || dragSession.active) return;
+      if (!dragSession || dragSession.active || !isReorganizeMode) return;
 
       clearTimeout(dragSession.longPressTimer);
       dragSession.longPressTimer = null;
@@ -767,13 +806,10 @@
       card.style.left = `${cardRect.left - containerRect.left}px`;
       card.style.top = `${cardRect.top - containerRect.top}px`;
       card.style.pointerEvents = 'none';
-
-      appContent.classList.add('is-reordering');
-      document.body.classList.add('card-dragging');
     }
 
     function handleCardPointerMove(event) {
-      if (!dragSession || event.pointerId !== dragSession.pointerId) return;
+      if (!dragSession || event.pointerId !== dragSession.pointerId || !isReorganizeMode) return;
 
       dragSession.lastEvent = event;
 
@@ -823,6 +859,10 @@
         startY: event.clientY,
         longPressTimer: setTimeout(() => {
           if (!dragSession) return;
+          if (!isReorganizeMode) {
+            appContent.classList.add('reorganize-mode');
+            isReorganizeMode = true;
+          }
           const triggerEvent = dragSession.lastEvent || event;
           beginCardDrag(triggerEvent);
         }, delay),
@@ -846,6 +886,13 @@
       getDashboardCards().forEach(card => {
         if (!card.dataset.cardId) return;
         card.addEventListener('pointerdown', handleCardPointerDown);
+      });
+      document.querySelectorAll('.close-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          appContent.classList.remove('reorganize-mode');
+          isReorganizeMode = false;
+        });
       });
     }
 
@@ -1623,7 +1670,9 @@
     const manifestoCard = document.getElementById('manifesto-card');
     if (manifestoCard) {
       manifestoCard.addEventListener('click', () => {
-        manifestoModal.classList.add('show');
+        if (!isReorganizeMode) {
+          manifestoModal.classList.add('show');
+        }
       });
     }
 
