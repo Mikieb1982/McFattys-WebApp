@@ -34,8 +34,18 @@
         </div>
 
         <div id="app-content" style="display: none;">
-            <h2 id="welcome-message"></h2>
-            <p>App content will be displayed here.</p>
+            <section class="dashboard">
+                <div class="dashboard-header">
+                    <h2 id="welcome-message"></h2>
+                    <button id="log-meal-btn" class="btn btn-primary">Log a Meal</button>
+                </div>
+                <div class="recent-activity">
+                    <h3>Today's Meals</h3>
+                    <ul id="meal-list">
+                        </ul>
+                    <p id="empty-state-message" class="empty-state">No meals logged yet today. Ready to add your first?</p>
+                </div>
+            </section>
         </div>
     </main>
 
@@ -57,7 +67,6 @@
 
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-
     <script src="app.js"></script>
     <script src="script.js"></script>
 
