@@ -102,6 +102,9 @@
     .pill-no{background:rgba(217,83,79,.18);color:#f2baba}
 
     .footer{color:var(--text-1);font-size:12px;text-align:center;padding:14px 0}
+    .footer-links { display: flex; justify-content: center; gap: 16px; margin-top: 8px; }
+    .footer-links a { color: var(--text-1); text-decoration: none; }
+    .footer-links a:hover { text-decoration: underline; }
 
     /* Modal */
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:500}
@@ -110,7 +113,7 @@
     .modal h3{margin:0 0 10px;font-family:Oswald,sans-serif;font-size:20px}
     .modal p{margin:0 0 16px;color:var(--text-1); text-align: left;}
     .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:16px}
-    #manifesto-modal .modal-content, #history-modal .modal-content { max-height: 60vh; overflow-y: auto; margin-bottom: 16px; }
+    #manifesto-modal .modal-content, #history-modal .modal-content, #legal-modal .modal-content { max-height: 60vh; overflow-y: auto; margin-bottom: 16px; }
     #manifesto-modal .modal-image { 
         width: 120px; 
         height: 120px;
@@ -289,7 +292,13 @@
         </section>
     </div>
 
-    <footer class="footer" data-i18n="footerText">Designed and created by Burrow · 2025</footer>
+    <footer class="footer">
+      <span data-i18n="footerText">Designed and created by Burrow · 2025</span>
+      <div class="footer-links">
+        <a href="#" id="impressum-link" data-i18n="impressum">Legal Notice</a>
+        <a href="#" id="privacy-link" data-i18n="privacyPolicy">Privacy Policy</a>
+      </div>
+    </footer>
   </div>
 
   <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
@@ -348,6 +357,17 @@
     </div>
   </div>
   
+  <div class="modal-backdrop" id="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title">
+    <div class="modal">
+      <h3 id="legal-title"></h3>
+      <div class="modal-content" style="text-align: left;" id="legal-content">
+      </div>
+      <div class="modal-actions">
+        <button id="close-legal" class="btn btn-primary" data-i18n="closeBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
@@ -399,6 +419,12 @@
     const historyModal = document.getElementById('history-modal');
     const closeHistoryBtn = document.getElementById('close-history');
     const historyContent = document.getElementById('history-content');
+    const legalModal = document.getElementById('legal-modal');
+    const legalTitle = document.getElementById('legal-title');
+    const legalContent = document.getElementById('legal-content');
+    const closeLegalBtn = document.getElementById('close-legal');
+    const impressumLink = document.getElementById('impressum-link');
+    const privacyLink = document.getElementById('privacy-link');
 
     // Auth Elements
     const authSection = document.getElementById('auth-section');
@@ -490,6 +516,8 @@
             notAvailable: 'N/A',
             history: 'History',
             historyTitle: 'Log History',
+            impressum: 'Legal Notice',
+            privacyPolicy: 'Privacy Policy',
         },
         de: {
             loginBtn: 'Anmelden',
@@ -565,6 +593,51 @@
             notAvailable: 'k. A.',
             history: 'Verlauf',
             historyTitle: 'Protokollverlauf',
+            impressum: 'Impressum',
+            privacyPolicy: 'Datenschutzerklärung',
+        }
+    };
+
+    const legalDocs = {
+        en: {
+            impressum: `<h3>Legal Notice (Impressum)</h3>
+                        <p>Information according to § 5 TMG</p>
+                        <p>[Your Name]<br>[Your Street and House Number]<br>[Your Postal Code and City]</p>
+                        <h4>Contact</h4>
+                        <p>Email: [Your Email Address]</p>
+                        <h4>Disclaimer</h4>
+                        <p>This is a private, non-commercial project. The content of our pages has been created with the utmost care. However, we cannot guarantee the contents' accuracy, completeness or topicality. According to statutory provisions, we are furthermore responsible for our own content on these web pages. In this context, please note that we are accordingly not obliged to monitor merely the transmitted or saved information of third parties, or investigate circumstances pointing to illegal activity.</p>`,
+            privacyPolicy: `<h3>Privacy Policy</h3>
+                        <p><strong>1. General Information</strong></p>
+                        <p>The following gives a simple overview of what happens to your personal information when you use our app. Personal information is any data with which you could be personally identified.</p>
+                        <p><strong>Responsible for data collection on this app is:</strong></br>
+                        [Your Name]<br>[Your Street and House Number]<br>[Your Postal Code and City]<br>Email: [Your Email Address]</p>
+                        <p><strong>2. Data Collection on our App</strong></p>
+                        <p><strong>User Authentication:</strong> To use this app, you must create an account. We use Firebase Authentication (a service of Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Ireland) for this purpose. When you register via email and password, your email address, a password hash, and a unique user ID are stored. If you use Google Sign-In, Google provides us with your name, email address, and profile picture.</p>
+                        <p><strong>Data Storage:</strong> Your food log entries are stored in a Cloud Firestore database, which is also a service provided by Google. This data is linked to your unique user ID. We do not process this data for any other purpose than displaying it back to you within the app.</p>
+                        <p><strong>Server Log Files:</strong> The provider of the pages automatically collects and stores information that your browser automatically transmits to us in "server log files". These are: Browser type and browser version, operating system used, referrer URL, host name of the accessing computer, time of the server request, and IP address. This data will not be combined with data from other sources.</p>
+                        <p><strong>3. Your Rights</strong></p>
+                        <p>You have the right to free information about your stored personal data, its origin and recipient and the purpose of the data processing and, if necessary, a right to correction, blocking or deletion of this data at any time within the scope of the applicable legal provisions. You can contact us at any time at the address given in the legal notice if you have further questions on the subject of personal data.</p>`
+        },
+        de: {
+            impressum: `<h3>Impressum</h3>
+                        <p>Angaben gemäß § 5 TMG</p>
+                        <p>[Ihr Name]<br>[Ihre Straße und Hausnummer]<br>[Ihre PLZ und Stadt]</p>
+                        <h4>Kontakt</h4>
+                        <p>E-Mail: [Ihre E-Mail-Adresse]</p>
+                        <h4>Haftungsausschluss</h4>
+                        <p>Dies ist ein privates, nicht-kommerzielles Projekt. Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.</p>`,
+            privacyPolicy: `<h3>Datenschutzerklärung</h3>
+                        <p><strong>1. Allgemeiner Hinweis</strong></p>
+                        <p>Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie unsere App nutzen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.</p>
+                        <p><strong>Verantwortliche Stelle für die Datenerfassung in dieser App ist:</strong></br>
+                        [Ihr Name]<br>[Ihre Straße und Hausnummer]<br>[Ihre PLZ und Stadt]<br>E-Mail: [Ihre E-Mail-Adresse]</p>
+                        <p><strong>2. Datenerfassung in unserer App</strong></p>
+                        <p><strong>Nutzerauthentifizierung:</strong> Um diese App zu nutzen, müssen Sie ein Konto erstellen. Wir verwenden hierfür Firebase Authentication (ein Dienst von Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland). Bei der Registrierung per E-Mail und Passwort werden Ihre E-Mail-Adresse, ein Passwort-Hash und eine eindeutige Benutzer-ID gespeichert. Wenn Sie die Google-Anmeldung verwenden, übermittelt Google uns Ihren Namen, Ihre E-Mail-Adresse und Ihr Profilbild.</p>
+                        <p><strong>Datenspeicherung:</strong> Ihre Essensprotokolle werden in einer Cloud Firestore-Datenbank gespeichert, die ebenfalls von Google bereitgestellt wird. Diese Daten sind mit Ihrer eindeutigen Benutzer-ID verknüpft. Wir verarbeiten diese Daten zu keinem anderen Zweck, als sie Ihnen in der App wieder anzuzeigen.</p>
+                        <p><strong>Server-Log-Dateien:</strong> Der Provider der Seiten erhebt und speichert automatisch Informationen in so genannten Server-Log-Dateien, die Ihr Browser automatisch an uns übermittelt. Dies sind: Browsertyp und Browserversion, verwendetes Betriebssystem, Referrer URL, Hostname des zugreifenden Rechners, Uhrzeit der Serveranfrage und IP-Adresse. Eine Zusammenführung dieser Daten mit anderen Datenquellen wird nicht vorgenommen.</p>
+                        <p><strong>3. Ihre Rechte</strong></p>
+                        <p>Sie haben im Rahmen der geltenden gesetzlichen Bestimmungen jederzeit das Recht auf unentgeltliche Auskunft über Ihre gespeicherten personenbezogenen Daten, deren Herkunft und Empfänger und den Zweck der Datenverarbeitung und ggf. ein Recht auf Berichtigung, Sperrung oder Löschung dieser Daten. Hierzu sowie zu weiteren Fragen zum Thema personenbezogene Daten können Sie sich jederzeit unter der im Impressum angegebenen Adresse an uns wenden.</p>`
         }
     };
 
@@ -929,6 +1002,24 @@
     
     closeHistoryBtn.addEventListener('click', () => {
         historyModal.classList.remove('show');
+    });
+
+    impressumLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        legalTitle.textContent = getTranslation('impressum');
+        legalContent.innerHTML = lang === 'de' ? legalDocs.de.impressum : legalDocs.en.impressum;
+        legalModal.classList.add('show');
+    });
+
+    privacyLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        legalTitle.textContent = getTranslation('privacyPolicy');
+        legalContent.innerHTML = lang === 'de' ? legalDocs.de.privacyPolicy : legalDocs.en.privacyPolicy;
+        legalModal.classList.add('show');
+    });
+
+    closeLegalBtn.addEventListener('click', () => {
+        legalModal.classList.remove('show');
     });
 
     window.addEventListener('beforeinstallprompt', e => {
