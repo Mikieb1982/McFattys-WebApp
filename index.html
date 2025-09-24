@@ -1,72 +1,448 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>McFattys</title>
-    <link rel="stylesheet" href="style.css" />
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png">
-    <meta name="theme-color" content="#222c31">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>McFatty's Food Tracker</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0f1115">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+  <link rel="preload" href="Logo.png" as="image">
+
+  <style>
+    :root{
+      --bg-0:#0f1115; --bg-1:#171a21; --card:#1c2028;
+      --text-0:#f2f3f5; --text-1:#c9ced6; --border:#2a2f39;
+      --primary:#ffc857; --success:#57d2a9; --danger:#ff6b6b; --info:#7aa2ff;
+      --sp-4:4px; --sp-8:8px; --sp-12:12px; --sp-16:16px; --sp-20:20px; --sp-24:24px;
+      --fs-22:22px; --fs-18:18px; --fs-16:16px; --fs-14:14px; --lh:1.45;
+      --r-8:8px; --r-12:12px; --r-16:16px; --shadow-md:0 8px 20px rgba(0,0,0,.35);
+      --safe-top: env(safe-area-inset-top, 0px);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;background:var(--bg-0);color:var(--text-0);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:var(--lh)}
+    .container{max-width:860px;margin:0 auto;padding:var(--sp-12) var(--sp-16) var(--sp-24)}
+    .stack-16 > *+*{margin-top:var(--sp-16)}
+    .stack-20 > *+*{margin-top:var(--sp-20)}
+
+    /* Top bar */
+    .utility-bar{position:sticky;top:0;z-index:300;padding:calc(var(--sp-8)+var(--safe-top)) var(--sp-8) var(--sp-8);
+      margin:0 calc(-1*var(--sp-16)) var(--sp-12);
+      background:linear-gradient(180deg,rgba(23,26,33,.95),rgba(23,26,33,.75) 70%,rgba(23,26,33,0));
+      backdrop-filter:blur(4px)}
+    .utility-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 var(--sp-8)}
+    .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;border:1px solid #2d3441;background:#232834;color:var(--text-0);cursor:pointer;transition:.15s}
+    .icon-btn:active{transform:scale(.98)}
+    .icon{width:22px;height:22px;display:block}
+
+    /* Lang toggle */
+    .lang-toggle{display:inline-flex;align-items:center;gap:var(--sp-8);user-select:none;cursor:pointer}
+    .lang-toggle span{font-size:12px;font-weight:700}
+    .switch{position:relative;width:50px;height:28px;background:#232834;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow-md) inset 0 0 4px rgba(0,0,0,.3);transition:.25s}
+    .switch::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;background:var(--primary);border-radius:50%;transition:.25s}
+    .switch.active{background:#3b3f4a}
+    .switch.active::after{left:24px}
+
+    /* Buttons */
+    .btn{padding:12px 18px;border-radius:var(--r-12);font-weight:700;cursor:pointer;min-height:44px;transition:.15s;border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center}
+    .btn:active{transform:scale(.98)}
+    .btn[disabled]{opacity:.5;pointer-events:none}
+    .btn-primary{background:var(--primary);color:#1b1b1b}
+    .btn-secondary{background:#232834;color:var(--text-0);border-color:#2d3441}
+    .btn-danger{background:var(--danger);color:#fff}
+    .btn-danger:hover{background:#e25555}
+    .btn:focus,.input:focus,.switch:focus-visible,.icon-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(255,200,87,.35)}
+    .btn-google{background-color:#fff;color:#333;border:1px solid #ccc;width:100%; gap: 10px;}
+
+    /* Install button hidden unless prompted */
+    #pwa-install{padding:12px 16px;font-size:14px;line-height:1;white-space:nowrap;max-width:100%;display:none}
+    @media (max-width:620px){.utility-row{flex-wrap:wrap;gap:12px}#pwa-install{width:100%}}
+
+    /* Logo (2/3 size) */
+    .hero-logo{background:var(--bg-1);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:var(--sp-8)}
+    .hero-logo img{width:100%;max-width:320px;display:block;margin:0 auto}
+
+    /* Sections */
+    .section{background:var(--card);border:1px solid var(--border);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:18px}
+    .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:var(--fs-22);margin:0 0 var(--sp-12)}
+    .section-head{display:flex;justify-content:space-between;align-items:center}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .label{font-size:var(--fs-14);color:var(--text-1);margin-bottom:var(--sp-8);display:block}
+    .input{width:100%;background:#12151b;color:var(--text-0);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+    .checkbox{width:20px;height:20px;cursor:pointer;margin-right:var(--sp-8)}
+    .controls{display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-end}
+    .controls .grow{flex:1 1 260px}
+
+    /* Table */
+    .table{width:100%;border-collapse:separate;border-spacing:0 var(--sp-8)}
+    .table thead th{color:var(--text-1);font-size:13px;font-weight:600;text-align:left;padding-bottom:4px}
+    .table tbody tr{background:#141821;border:1px solid var(--border);border-radius:var(--r-8)}
+    .table tbody td{padding:10px}
+    .row-actions{text-align:right}
+    .pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
+    .pill-yes{background:rgba(87,210,169,.18);color:#a6efd9}
+    .pill-no{background:rgba(255,107,107,.18);color:#ffc1c1}
+
+    .footer{color:var(--text-1);font-size:12px;text-align:center;padding:14px 0}
+
+    /* Modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:500}
+    .modal-backdrop.show{display:flex}
+    .modal{background:var(--card);padding:20px;border-radius:var(--r-12);text-align:center;max-width:360px;width:90%}
+    .modal h3{margin:0 0 10px;font-family:Oswald,sans-serif;font-size:20px}
+    .modal p{margin:0 0 16px;color:var(--text-1)}
+    .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:16px}
+
+    /* Toast (centered) */
+    .install-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);opacity:0;background:var(--card);color:var(--text-0);padding:16px 22px;border:1px solid var(--border);border-radius:var(--r-16);box-shadow:var(--shadow-md);font-weight:700;font-size:14px;display:none;z-index:550;transition:opacity .2s ease,transform .2s ease}
+    .install-banner.show{display:block;opacity:1;transform:translate(-50%,-50%) scale(1)}
+
+    /* Sidebar (right) */
+    .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:450}
+    .scrim.show{display:block}
+    .sidebar{position:fixed;top:0;right:0;height:100%;width:300px;max-width:85%;background:var(--card);border-left:1px solid var(--border);box-shadow:var(--shadow-md);transform:translateX(100%);transition:transform .22s ease-out;z-index:600;display:flex;flex-direction:column}
+    .sidebar.open{transform:translateX(0)}
+    .sb-head{display:flex;align-items:center;justify-content:space-between;padding:14px 14px;border-bottom:1px solid var(--border)}
+    .sb-title{font-family:Oswald,sans-serif;font-size:18px;margin:0}
+    .sb-section-title{padding:12px 14px;color:var(--text-1);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+    .sb-list{list-style:none;margin:0;padding:0}
+    .sb-item-btn{width:100%;text-align:left;padding:12px 14px;background:none;color:var(--text-0);border:none;border-top:1px solid rgba(255,255,255,.02);cursor:pointer;display:flex;align-items:center;gap:10px}
+    .sb-item-btn:focus{outline:none;box-shadow:inset 0 0 0 2px rgba(255,200,87,.35)}
+    .sb-item-btn:hover{background:#161a22}
+    .sb-item-icon{width:18px;height:18px;opacity:.9}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+    /* New styles for header buttons */
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+    .auth-actions { display: flex; gap: 10px; }
+
+
+    @media (prefers-reduced-motion:reduce){.install-banner,.sidebar{transition:none}.btn:active{transform:none}}
+    
+    @media (min-width: 680px) {
+      .hero-logo img {
+        max-width: 240px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
+  <div id="scrim" class="scrim" tabindex="-1" aria-hidden="true"></div>
+  <aside id="sidebar" class="sidebar" aria-hidden="true" aria-labelledby="menu-title" role="dialog">
+    <div class="sb-head">
+      <h3 id="menu-title" class="sb-title" data-i18n="menuTitle">Menu</h3>
+      <button id="menu-close" class="icon-btn" aria-label="Close menu">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.7L12 12l6.3 6.3-1.3 1.3L10.7 13.3 4.4 19.6 3.1 18.3 9.4 12 3.1 5.7 4.4 4.4l6.3 6.3 6.3-6.3z"/></svg>
+      </button>
+    </div>
+    <div>
+      <div class="sb-section-title" data-i18n="corePractices">Core Practices</div>
+      <ul class="sb-list">
+        <li><button class="sb-item-btn" data-action="newEntry"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg><span data-i18n="newJournal">New Journal Entry</span></button></li>
+      </ul>
+      <div class="sb-section-title" data-i18n="settings">Application Settings</div>
+      <ul class="sb-list">
+        <li><button class="sb-item-btn" data-action="account"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/></svg><span data-i18n="account">Account</span></button></li>
+        <li><button class="sb-item-btn" data-action="logout" id="logout-btn"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 17v-3H9v-2h7V9l4 4-4 4zm-5-3H4V5h7V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2z"></path></svg><span data-i18n="logout">Log Out</span></button></li>
+      </ul>
+    </div>
+  </aside>
 
-        <header class="header">
-            <div class="logo-container">
-                <img src="Logo.png" alt="McFattys Logo" class="logo-img">
-                <span class="logo-text">McFattys</span>
-            </div>
-            <div id="auth-actions" class="auth-actions">
-                <button id="login-btn" class="btn">Login</button>
-            </div>
-            <button id="menu-open-btn" class="menu-btn" style="display: none;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-            </button>
-        </header>
+  <div id="install-banner" class="install-banner" role="status" aria-live="polite"></div>
 
-        <main>
-            <div id="landing-page">
-                <section class="hero">
-                    <h1>Welcome to McFattys</h1>
-                    <p>Your simple, mindful food tracker.</p>
-                </section>
+  <div class="container stack-20">
+    <div class="utility-bar" role="region" aria-label="App controls">
+        <div class="utility-row">
+            <div id="lang-toggle" class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language EN/DE">
+                <span>EN</span><div id="switch" class="switch" aria-hidden="true"></div><span>DE</span>
             </div>
-
-            <div id="app-content" style="display: none;">
-                <div class="log-header">
-                    <h2 id="welcome-message">Today's Log</h2>
+            <div class="header-actions">
+                <div id="auth-actions" class="auth-actions">
+                    <button id="login-btn" class="btn btn-secondary" type="button">Login</button>
+                    <button id="signup-btn" class="btn btn-primary" type="button">Sign Up</button>
                 </div>
-                <div id="log-body" class="log-body">
-                    </div>
-                <div class="log-footer">
-                    <input type="text" id="entry-input" placeholder="What did you eat?" />
-                    <button id="add-button" class="add-button">+</button>
+                <div id="user-info" style="display: none; align-items: center; gap: 10px;">
+                    <span id="user-name"></span>
+                    <button id="logout-btn-main" class="btn btn-secondary" type="button">Logout</button>
                 </div>
+                <button id="pwa-install" class="btn btn-secondary" type="button" aria-label="Install app" data-i18n="installBtn">Install</button>
+                <button id="menu-open" class="icon-btn" aria-label="Open menu">
+                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg>
+                </button>
             </div>
-        </main>
+        </div>
     </div>
 
-    <aside id="sidebar" class="sidebar">
-         <div class="sb-header">
-            <span class="sb-title">Menu</span>
-            <button id="menu-close-btn" class="menu-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    <header class="hero-logo"><img src="Logo.png" alt="McFatty's Food Tracker logo"></header>
+
+    <div id="landing-page">
+        <section id="auth-section" class="section stack-16" style="display: none;">
+            <h2 id="auth-title" data-i18n="loginTitle">Login / Sign Up</h2>
+            <div class="stack-16">
+                <div class="controls">
+                    <div class="grow">
+                        <label for="auth-email" class="label" data-i18n="emailLabel">Email</label>
+                        <input id="auth-email" class="input" type="email" autocomplete="email">
+                    </div>
+                </div>
+                <div class="controls">
+                    <div class="grow">
+                        <label for="auth-password" class="label" data-i18n="passwordLabel">Password</label>
+                        <input id="auth-password" class="input" type="password" autocomplete="current-password">
+                    </div>
+                </div>
+                <div id="signup-fields" style="display: none;" class="stack-16">
+                    <div class="controls">
+                        <div class="grow">
+                            <label for="auth-username" class="label" data-i18n="usernameLabel">Username</label>
+                            <input id="auth-username" class="input" type="text" autocomplete="username">
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <div class="grow">
+                            <label for="auth-re-password" class="label" data-i18n="rePasswordLabel">Re-type Password</label>
+                            <input id="auth-re-password" class="input" type="password" autocomplete="new-password">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="controls" style="margin-top: 16px;">
+                <button id="auth-submit" class="btn btn-primary" type="button"></button>
+                <button id="auth-toggle" class="btn btn-secondary" type="button"></button>
+            </div>
+            <div style="text-align:center; margin-top:16px; color:var(--text-1)">OR</div>
+            <button id="google-signin" class="btn btn-google" type="button">
+              <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.20455c0-.63864-.05727-1.25182-.16364-1.84091H9v3.48182h4.84364c-.20818 1.125-.84273 2.07818-1.77727 2.72182v2.25818h2.90818c1.70182-1.56636 2.68636-3.87409 2.68636-6.62182z"/><path fill="#34A853" d="M9 18c2.43 0 4.46727-.80545 5.95636-2.18182l-2.90818-2.25818c-.80545.54273-1.84091.86182-3.04818.86182-2.34545 0-4.32818-1.58364-5.03545-3.71091H.957273v2.33182C2.43818 16.1573 5.48182 18 9 18z"/><path fill="#FBBC05" d="M3.96455 10.71c-.18-.54273-.28364-1.11636-.28364-1.71s.10364-1.16727.28364-1.71V4.95818H.957273C.347727 6.17364 0 7.54773 0 9c0 1.45227.347727 2.82636.957273 4.04182L3.96455 10.71z"/><path fill="#EA4335" d="M9 3.57818c1.32182 0 2.50727.45545 3.44 1.34818l2.58182-2.58182C13.4636.891818 11.4259 0 9 0 5.48182 0 2.43818 1.84273.957273 4.95818L3.96455 7.29C4.67182 5.16364 6.65455 3.57818 9 3.57818z"/></svg>
+              <span>Sign in with Google</span>
             </button>
-        </div>
-        <div class="sb-content">
-            <ul class="sb-list">
-                <li><button id="logout-btn" class="sb-item-btn">Log Out</button></li>
-            </ul>
-        </div>
-    </aside>
-    <div id="scrim" class="scrim"></div>
+        </section>
+        <section id="about-section" class="section">
+            <h2 data-i18n="manifestoTitle">McFatty's Manifesto</h2>
+            <p data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
+            <p data-i18n="manifestoP2">This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
+            <p data-i18n="manifestoP3">Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
+            <p data-i18n="manifestoP4">We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
+            <p data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
+            <button id="donate-button" class="btn btn-primary" type="button" data-i18n="donateBtn">Donate</button>
+        </section>
+    </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <div id="app-content" style="display: none;">
+        <section id="welcome-section" class="section">
+            <h2 id="welcome-message"></h2>
+        </section>
+        <section class="section stack-16" aria-labelledby="addItem" id="add-item-section">
+          <h2 id="addItem" data-i18n="addTitle">Add item</h2>
+          <div class="controls">
+            <div class="grow">
+              <label for="food-name" class="label" data-i18n="foodLabel">Food item name</label>
+              <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" autocomplete="off">
+            </div>
+            <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
+          </div>
+          <label style="display:flex;align-items:center;margin-top:var(--sp-8);">
+            <input id="contains-dairy" type="checkbox" class="checkbox" aria-label="Contains dairy">
+            <span data-i18n="dairyLabel">Contains dairy</span>
+          </label>
+        </section>
 
-    <script src="app.js"></script>
-    <script src="script.js"></script>
+        <section class="section stack-16" aria-labelledby="todaysLog" id="log-section">
+          <div class="section-head">
+            <h2 id="todaysLog" data-i18n="logTitle">Today’s log</h2>
+            <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
+          </div>
+          <table class="table" aria-describedby="todaysLog">
+            <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thDairy">Dairy</th><th></th></tr></thead>
+            <tbody id="log-body"></tbody>
+          </table>
+          <div id="empty-state" class="label" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
+        </section>
+    </div>
+
+    <footer class="footer" data-i18n="footerText">Designed and created by Burrow · 2025</footer>
+  </div>
+
+  <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
+    <div class="modal">
+      <h3 id="confirm-title">Are you sure?</h3>
+      <p id="confirm-desc"></p>
+      <div class="modal-actions">
+        <button id="cancel-action" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
+        <button id="confirm-action" class="btn btn-danger" data-i18n="confirmClearBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title">
+    <div class="modal">
+      <h3 id="account-title" data-i18n="accountModalTitle">Edit Account</h3>
+      <div class="stack-16" style="text-align: left;">
+          <label for="account-name" class="label" data-i18n="nameLabel">Name</label>
+          <input id="account-name" class="input" type="text" placeholder="e.g., Mike">
+          <label for="account-email" class="label" data-i18n="emailLabel">Email</label>
+          <input id="account-email" class="input" type="email" disabled>
+      </div>
+      <div class="modal-actions">
+        <button id="delete-account" class="btn btn-danger" data-i18n="deleteAccountBtn">Delete Account</button>
+        <button id="cancel-account" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
+        <button id="save-account" class="btn btn-primary" data-i18n="saveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC1qN3ksU0uYhXRXYNmYlmGX0iyUa-BJFQ",
+      authDomain: "mcfattys-food-tracker.firebaseapp.com",
+      projectId: "mcfattys-food-tracker",
+      storageBucket: "mcfattys-food-tracker.appspot.com",
+      messagingSenderId: "831603858264",
+      appId: "1:831603858264:web:58506c01975e9a1991e32d",
+      measurementId: "G-KQX4BQ71VK"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    let logCollection;
+    let unsubscribe;
+    let lang = 'en';
+
+    // Elements
+    const nameInput = document.getElementById('food-name');
+    const dairyCheckbox = document.getElementById('contains-dairy');
+    const addBtn = document.getElementById('add-button');
+    const tbody = document.getElementById('log-body');
+    const emptyState = document.getElementById('empty-state');
+    const toastEl = document.getElementById('install-banner');
+    const sidebar = document.getElementById('sidebar');
+    const scrim = document.getElementById('scrim');
+    const welcomeSection = document.getElementById('welcome-section');
+    const welcomeMessage = document.getElementById('welcome-message');
+    const landingPage = document.getElementById('landing-page');
+    const appContent = document.getElementById('app-content');
+    const donateBtn = document.getElementById('donate-button');
+    const langToggle = document.getElementById('lang-toggle');
+    const switchEl = document.getElementById('switch');
+    const googleSigninBtn = document.getElementById('google-signin');
+    const menuOpenBtn = document.getElementById('menu-open');
+    const menuCloseBtn = document.getElementById('menu-close');
+    const logoutBtn = document.getElementById('logout-btn');
+    const logoutBtnMain = document.getElementById('logout-btn-main');
+    const userInfo = document.getElementById('user-info');
+    const userName = document.getElementById('user-name');
+
+    // Auth Elements
+    const authSection = document.getElementById('auth-section');
+    const loginBtn = document.getElementById('login-btn');
+    const signupBtn = document.getElementById('signup-btn');
+    const authSubmit = document.getElementById('auth-submit');
+    const authActions = document.getElementById('auth-actions');
+    const signupFields = document.getElementById('signup-fields');
+    const authTitle = document.getElementById('auth-title');
+    const authToggle = document.getElementById('auth-toggle');
+
+    // --- Auth State Observer ---
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            // User is signed in.
+            landingPage.style.display = 'none';
+            appContent.style.display = 'block';
+            authActions.style.display = 'none';
+            userInfo.style.display = 'flex';
+            userName.textContent = user.displayName;
+            
+            // Set up Firestore collection for the user
+            logCollection = db.collection('users').doc(user.uid).collection('logs');
+            // You can now use logCollection to save and retrieve data for the logged-in user
+            
+        } else {
+            // User is signed out.
+            landingPage.style.display = 'block';
+            appContent.style.display = 'none';
+            authActions.style.display = 'flex';
+            userInfo.style.display = 'none';
+        }
+    });
+
+    // --- Event Listeners ---
+
+    // Toggle between Login and Sign Up modes
+    const setAuthMode = (isLogin) => {
+        authTitle.textContent = isLogin ? 'Login' : 'Sign Up';
+        authSubmit.textContent = isLogin ? 'Login' : 'Sign Up';
+        authToggle.textContent = isLogin ? 'Need an account? Sign Up' : 'Have an account? Login';
+        signupFields.style.display = isLogin ? 'none' : 'block';
+    };
+
+    loginBtn.addEventListener('click', () => {
+        authSection.style.display = 'block';
+        setAuthMode(true);
+    });
+
+    signupBtn.addEventListener('click', () => {
+        authSection.style.display = 'block';
+        setAuthMode(false);
+    });
+
+    authToggle.addEventListener('click', () => {
+        const isLogin = authSubmit.textContent === 'Login';
+        setAuthMode(!isLogin);
+    });
+    
+    // Google Sign-in
+    googleSigninBtn.addEventListener('click', () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .catch((error) => {
+          // Handle Errors here.
+          alert(`Error: ${error.message}`);
+          console.error("Google sign-in error:", error);
+        });
+    });
+
+    // Logout
+    const signOut = () => {
+        auth.signOut().catch(error => {
+            console.error("Sign out error:", error);
+        });
+    };
+    logoutBtn.addEventListener('click', signOut);
+    logoutBtnMain.addEventListener('click', signOut);
+
+
+    // Language Toggle
+    langToggle.addEventListener('click', () => {
+        lang = lang === 'en' ? 'de' : 'en';
+        switchEl.classList.toggle('active');
+        // Add your translation logic here
+    });
+
+    // Sidebar Menu
+    menuOpenBtn.addEventListener('click', () => {
+        sidebar.classList.add('open');
+        scrim.classList.add('show');
+    });
+
+    menuCloseBtn.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        scrim.classList.remove('show');
+    });
+
+    scrim.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        scrim.classList.remove('show');
+    });
+
+  </script>
 </body>
 </html>
