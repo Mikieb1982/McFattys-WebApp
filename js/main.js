@@ -76,6 +76,8 @@ function signOut(event) {
 
   });
 
+}
+
 
 const userInfo = document.getElementById('user-info');
 const userName = document.getElementById('user-name');
