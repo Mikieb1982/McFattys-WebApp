@@ -1,1719 +1,1482 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>McFatty's Food Tracker</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
-
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#0f1115">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
-  <link rel="preload" href="Logo.png" as="image">
-
-  <style>
-    :root{
-      /* New Color Palette from Logo */
-      --primary: #f2c56d;   /* Golden Yellow */
-      --danger: #d9534f;    /* Muted Red */
-      --info: #5bc0de;      /* Teal Blue */
-      --text-0: #f7f5e6;    /* Cream White */
-      --bg-0:#1a1a1a;       /* Dark Charcoal */
-      --bg-1:#2a2a2a;       /* Lighter Charcoal */
-      --card:#333333;       /* Card Background */
-      --border:#444444;     /* Border Color */
-
-      --sp-4:4px; --sp-8:8px; --sp-12:12px; --sp-16:16px; --sp-20:20px; --sp-24:24px;
-      --fs-22:22px; --fs-18:18px; --fs-16:16px; --fs-14:14px; --lh:1.45;
-      --r-8:8px; --r-12:12px; --r-16:16px; --shadow-md:0 8px 20px rgba(0,0,0,.35);
-      --safe-top: env(safe-area-inset-top, 0px);
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;height:100%;background:var(--bg-0);color:var(--text-0);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:var(--lh)}
-    .container{max-width:860px;margin:0 auto;padding:var(--sp-12) var(--sp-16) var(--sp-24)}
-    .stack-16 > *+*{margin-top:var(--sp-16)}
-    .stack-20 > *+*{margin-top:var(--sp-20)}
-
-    /* Top bar */
-    .utility-bar{position:sticky;top:0;z-index:300;padding:calc(var(--sp-8)+var(--safe-top)) var(--sp-8) var(--sp-8);
-      margin:0 calc(-1*var(--sp-16)) var(--sp-12);
-      background:linear-gradient(180deg,rgba(26,26,26,.95),rgba(26,26,26,.75) 70%,rgba(26,26,26,0));
-      backdrop-filter:blur(4px)}
-    .utility-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 var(--sp-8)}
-    .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--bg-1);color:var(--text-0);cursor:pointer;transition:.15s}
-    .icon-btn:active{transform:scale(.98)}
-    .icon{width:22px;height:22px;display:block}
-
-    /* Lang toggle */
-    .lang-toggle{display:inline-flex;align-items:center;gap:var(--sp-8);user-select:none;cursor:pointer}
-    .lang-toggle span{font-size:12px;font-weight:700}
-    .switch{position:relative;width:50px;height:28px;background:var(--bg-1);border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow-md) inset 0 0 4px rgba(0,0,0,.3);transition:.25s}
-    .switch::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;background:var(--primary);border-radius:50%;transition:.25s}
-    .switch.active{background:#3b3f4a}
-    .switch.active::after{left:24px}
-
-    /* Buttons */
-    .btn{padding:12px 18px;border-radius:var(--r-12);font-weight:700;cursor:pointer;min-height:44px;transition:.15s;border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center}
-    .btn:active{transform:scale(.98)}
-    .btn[disabled]{opacity:.5;pointer-events:none}
-    .btn-primary{background:var(--primary);color:#1b1b1b}
-    .btn-secondary{background:var(--bg-1);color:var(--text-0);border-color:var(--border)}
-    .btn-danger{background:var(--danger);color:#fff}
-    .btn-danger:hover{background:#c9302c}
-    .btn:focus,.input:focus,.switch:focus-visible,.icon-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(242,197,109,.35)}
-    .btn-google{background-color:#fff;color:#333;border:1px solid #ccc;width:100%; gap: 10px;}
-
-    /* Install button hidden unless prompted */
-    #pwa-install{padding:12px 16px;font-size:14px;line-height:1;white-space:nowrap;max-width:100%;display:none}
-    @media (max-width:620px){.utility-row{flex-wrap:wrap;gap:12px}#pwa-install{width:100%}}
-
-    /* Logo (2/3 size) */
-    .hero-logo{background:var(--bg-1);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:var(--sp-8)}
-    .hero-logo img{width:100%;max-width:320px;display:block;margin:0 auto}
-
-    /* Sections */
-    .section{background:var(--card);border:1px solid var(--border);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:18px}
-    .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:var(--fs-22);margin:0 0 var(--sp-12)}
-    #landing-page{display:grid;gap:var(--sp-16)}
-    #app-content{display:grid;gap:var(--sp-16)}
-    .section-head{display:flex;justify-content:space-between;align-items:center}
-    .actions{display:flex;gap:10px;flex-wrap:wrap}
-    .label{font-size:var(--fs-14);color:var(--text-1);margin-bottom:var(--sp-8);display:block}
-    .input{width:100%;background:var(--bg-1);color:var(--text-0);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
-    .checkbox{width:20px;height:20px;cursor:pointer;margin-right:var(--sp-8)}
-    .controls{display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-end}
-    .controls .grow{flex:1 1 260px}
-    .manifesto-paragraph{color:var(--text-0);line-height:1.6;margin:0 0 var(--sp-16)}
-    .info-text{color:var(--text-1);font-size:13px;text-align:center;margin-top:var(--sp-12)}
-
-    /* Dashboard */
-    .dashboard-grid{display:grid;gap:var(--sp-16);position:relative;grid-template-columns:repeat(2,minmax(0,1fr))}
-    .dashboard-card{position:relative;cursor:grab;transition:transform .18s ease,box-shadow .18s ease;touch-action:none}
-    .dashboard-card:active{cursor:grabbing}
-    .dashboard-card.is-dragging{opacity:.92;cursor:grabbing;box-shadow:0 18px 40px rgba(0,0,0,.5)}
-    .dashboard-grid.is-reordering .dashboard-card{transition:transform .18s ease}
-    .dashboard-placeholder{border:1px dashed var(--border);border-radius:var(--r-12);background:rgba(255,255,255,.04);min-height:120px;margin:0}
-    .dashboard-placeholder.span-2{grid-column:1 / -1}
-    body.card-dragging{user-select:none}
-    .span-2{grid-column:1 / -1}
-    .quick-stats-grid{display:grid;gap:var(--sp-12);grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
-    .stat-card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--r-12);padding:16px;box-shadow:var(--shadow-md)}
-    .stat-label{font-size:13px;color:var(--text-1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;display:block}
-    .stat-value{font-family:Oswald,sans-serif;font-size:32px;line-height:1}
-    .stat-subtext{font-size:13px;color:var(--text-1);margin-top:4px}
-
-    .quick-add-subtext{color:var(--text-1);font-size:13px;margin:0 0 var(--sp-12);text-align:left}
-    .quick-add-body{display:grid;gap:var(--sp-12)}
-    .quick-add-actions{display:flex;gap:var(--sp-12);align-items:center;flex-wrap:wrap}
-
-    .log-controls{display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:center;margin-bottom:var(--sp-12)}
-    .log-search{flex:1 1 220px}
-    .filter-group{display:inline-flex;gap:var(--sp-8);background:var(--bg-1);padding:6px;border-radius:var(--r-12);border:1px solid var(--border)}
-    .filter-btn{border:none;background:none;color:var(--text-0);font-weight:600;padding:8px 12px;border-radius:var(--r-8);cursor:pointer;transition:.15s}
-    .filter-btn.is-active{background:var(--primary);color:#1b1b1b}
-    .filter-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(242,197,109,.35)}
-    .filter-btn:active{transform:scale(.98)}
-
-    .pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;display:inline-block}
-
-    /* Table */
-    .table{width:100%;border-collapse:separate;border-spacing:0 var(--sp-8)}
-    .table thead th{color:var(--text-1);font-size:13px;font-weight:600;text-align:left;padding-bottom:4px}
-    .table tbody tr{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--r-8)}
-    .table tbody td{padding:10px; vertical-align: middle;}
-    .row-actions{text-align:right}
-    .row-actions .btn { padding: 8px 12px; min-height: 0; }
-    .pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
-    .pill-yes{background:rgba(91,192,222,.18);color:#a6e1ec}
-    .pill-no{background:rgba(217,83,79,.18);color:#f2baba}
-
-    .footer{color:var(--text-1);font-size:12px;text-align:center;padding:14px 0}
-    .footer-links { display: flex; justify-content: center; gap: 16px; margin-top: 8px; }
-    .footer-links a { color: var(--text-1); text-decoration: none; }
-    .footer-links a:hover { text-decoration: underline; }
-
-    /* Modal */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:500}
-    .modal-backdrop.show{display:flex}
-    .modal{background:var(--card);padding:20px;border-radius:var(--r-12);text-align:center;max-width:480px;width:90%}
-    .modal h3{margin:0 0 10px;font-family:Oswald,sans-serif;font-size:20px}
-    .modal p{margin:0 0 16px;color:var(--text-1); text-align: left;}
-    .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:16px}
-    #manifesto-modal .modal-content, #history-modal .modal-content, #legal-modal .modal-content { max-height: 60vh; overflow-y: auto; margin-bottom: 16px; }
-    #manifesto-modal .modal-image {
-        width: 120px;
-        height: 120px;
-        margin: 0 auto 16px;
-        display: block;
-        border-radius: 50%;
-        background-color: #f7f5e6;
-        padding: 8px;
-    }
-
-    /* Toast (centered) */
-    .install-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.96);opacity:0;background:var(--card);color:var(--text-0);padding:16px 22px;border:1px solid var(--border);border-radius:var(--r-16);box-shadow:var(--shadow-md);font-weight:700;font-size:14px;display:none;z-index:550;transition:opacity .2s ease,transform .2s ease}
-    .install-banner.show{display:block;opacity:1;transform:translate(-50%,-50%) scale(1)}
-
-    /* Sidebar (right) */
-    .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:450}
-    .scrim.show{display:block}
-    .sidebar{position:fixed;top:0;right:0;height:100%;width:300px;max-width:85%;background:var(--card);border-left:1px solid var(--border);box-shadow:var(--shadow-md);transform:translateX(100%);transition:transform .22s ease-out;z-index:600;display:flex;flex-direction:column}
-    .sidebar.open{transform:translateX(0)}
-    .sb-head{display:flex;align-items:center;justify-content:space-between;padding:14px 14px;border-bottom:1px solid var(--border)}
-    .sb-title{font-family:Oswald,sans-serif;font-size:18px;margin:0}
-    .sb-section-title{padding:12px 14px;color:var(--text-1);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
-    .sb-list{list-style:none;margin:0;padding:0}
-    .sb-item-btn{width:100%;text-align:left;padding:12px 14px;background:none;color:var(--text-0);border:none;border-top:1px solid rgba(255,255,255,.02);cursor:pointer;display:flex;align-items:center;gap:10px}
-    .sb-item-btn:focus{outline:none;box-shadow:inset 0 0 0 2px rgba(242,197,109,.35)}
-    .sb-item-btn:hover{background:#161a22}
-    .sb-item-icon{width:18px;height:18px;opacity:.9}
-    .sb-manifesto{padding:12px 14px;border-top:1px solid rgba(255,255,255,.05);margin:0;color:var(--text-1);font-size:13px;line-height:1.6;overflow:auto;max-height:calc(100vh - 240px)}
-    .sb-manifesto .manifesto-paragraph{margin-bottom:var(--sp-12)}
-    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-
-    /* Header actions */
-    .header-actions{display:flex;align-items:center;gap:12px}
-    .auth-actions{display:flex;gap:10px}
-    .user-info{display:none;align-items:center;gap:10px}
-    .user-info.show{display:flex}
-
-    .logo-card{display:flex;align-items:center;justify-content:center;padding:var(--sp-16)}
-    .logo-card .logo-card-inner{width:100%;aspect-ratio:1/1;border-radius:var(--r-12);background:var(--bg-1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;padding:var(--sp-16);overflow:hidden}
-    .logo-card img{width:100%;height:100%;object-fit:contain;display:block}
-
-    @keyframes wobble {
-      0%,100%{transform:rotate(0deg)}
-      25%{transform:rotate(1.5deg)}
-      75%{transform:rotate(-1.5deg)}
-    }
-
-    .reorganize-mode .dashboard-card{animation:wobble .2s ease-in-out infinite}
-
-    .close-btn{position:absolute;top:-10px;right:-10px;width:28px;height:28px;border-radius:50%;background:var(--danger);color:#fff;border:2px solid var(--bg-0);font-weight:700;font-size:16px;line-height:1;text-align:center;cursor:pointer;display:none;z-index:10}
-
-    .reorganize-mode .close-btn{display:block}
-
-    @media (prefers-reduced-motion:reduce){.install-banner,.sidebar,.reorganize-mode .dashboard-card{transition:none;animation:none}.btn:active{transform:none}}
-
-    @media (min-width: 680px) {
-      .hero-logo img { max-width: 240px; }
-    }
-
-    @media (max-width:680px){.dashboard-grid{grid-template-columns:1fr}.logo-card .logo-card-inner{max-width:220px}}
-  </style>
-</head>
-<body>
-  <div id="scrim" class="scrim" tabindex="-1" aria-hidden="true"></div>
-  <aside id="sidebar" class="sidebar" aria-hidden="true" aria-labelledby="menu-title" role="dialog">
-    <div class="sb-head">
-      <h3 id="menu-title" class="sb-title" data-i18n="menuTitle">Menu</h3>
-      <button id="menu-close" class="icon-btn" aria-label="Close menu">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.7L12 12l6.3 6.3-1.3 1.3L10.7 13.3 4.4 19.6 3.1 18.3 9.4 12 3.1 5.7 4.4 4.4l6.3 6.3 6.3-6.3z"/></svg>
-      </button>
-    </div>
-    <div>
-      <div class="sb-section-title" data-i18n="corePractices">Core Practices</div>
-      <ul class="sb-list">
-        <li><button class="sb-item-btn" data-action="newEntry"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg><span data-i18n="newJournal">New Journal Entry</span></button></li>
-        <li><button class="sb-item-btn" data-action="manifesto"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M20 6v14H6v2h14c1.1 0 2-.9 2-2V6h-2zm-4-4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h6v2zm-6 4h4v-2H9v2zm8-8H9V5h8v2z"/></svg><span data-i18n="manifesto">McFatty's Manifesto</span></button></li>
-        <li><button class="sb-item-btn" data-action="history"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7v2a9 9 0 0 0 9-9 9 9 0 0 0-9-9zm-1 5v5l4.25 2.52.75-1.23-3.5-2.07V8z"></path></svg><span data-i18n="history">History</span></button></li>
-      </ul>
-      <div class="sb-section-title" data-i18n="settings">Application Settings</div>
-      <ul class="sb-list">
-        <li><button class="sb-item-btn" data-action="account"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/></svg><span data-i18n="account">Account</span></button></li>
-        <li><button class="sb-item-btn" data-action="logout" id="logout-btn"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 17v-3H9v-2h7V9l4 4-4 4zm-5-3H4V5h7V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2z"></path></svg><span data-i18n="logout">Log Out</span></button></li>
-      </ul>
-      <div id="sidebar-manifesto" class="sb-manifesto" hidden>
-        <p class="manifesto-paragraph" data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP2">This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP3">Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP4">We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
-      </div>
-    </div>
-  </aside>
-
-  <div id="install-banner" class="install-banner" role="status" aria-live="polite"></div>
-
-  <div class="container stack-20">
-    <div class="utility-bar" role="region" aria-label="App controls">
-      <div class="utility-row">
-        <div id="lang-toggle" class="lang-toggle" role="button" tabindex="0" aria-label="Toggle language EN/DE">
-          <span>EN</span><div id="switch" class="switch" aria-hidden="true"></div><span>DE</span>
-        </div>
-        <div class="header-actions">
-          <div id="auth-actions" class="auth-actions">
-            <button id="login-btn" class="btn btn-secondary" type="button" data-i18n="loginBtn">Login</button>
-            <button id="signup-btn" class="btn btn-primary" type="button" data-i18n="signupBtn">Sign Up</button>
-          </div>
-          <div id="user-info" class="user-info">
-            <span id="user-name"></span>
-            <button id="logout-btn-main" class="btn btn-secondary" type="button" data-i18n="logoutBtn">Logout</button>
-          </div>
-          <button id="pwa-install" class="btn btn-secondary" type="button" aria-label="Install app" data-i18n="installBtn">Install</button>
-          <button id="menu-open" class="icon-btn" aria-label="Open menu">
-            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"></path></svg>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <header class="hero-logo"><img src="Logo.png" alt="McFatty's Food Tracker logo"></header>
-
-    <div id="landing-page">
-      <section id="auth-section" class="section stack-16" style="display: none;">
-        <h2 id="auth-title" data-i18n="loginTitle">Login / Sign Up</h2>
-        <div class="stack-16">
-          <div class="controls">
-            <div class="grow">
-              <label for="auth-email" class="label" data-i18n="emailLabel">Email</label>
-              <input id="auth-email" class="input" type="email" autocomplete="email">
-            </div>
-          </div>
-          <div class="controls">
-            <div class="grow">
-              <label for="auth-password" class="label" data-i18n="passwordLabel">Password</label>
-              <input id="auth-password" class="input" type="password" autocomplete="current-password">
-            </div>
-          </div>
-          <div id="signup-fields" style="display: none;" class="stack-16">
-            <div class="controls">
-              <div class="grow">
-                <label for="auth-username" class="label" data-i18n="usernameLabel">Username</label>
-                <input id="auth-username" class="input" type="text" autocomplete="username">
-              </div>
-            </div>
-            <div class="controls">
-              <div class="grow">
-                <label for="auth-re-password" class="label" data-i18n="rePasswordLabel">Re-type Password</label>
-                <input id="auth-re-password" class="input" type="password" autocomplete="new-password">
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="controls" style="margin-top: 16px;">
-          <button id="auth-submit" class="btn btn-primary" type="button"></button>
-          <button id="auth-toggle" class="btn btn-secondary" type="button"></button>
-        </div>
-        <div style="text-align:center; margin-top:16px; color:var(--text-1)">OR</div>
-        <button id="google-signin" class="btn btn-google" type="button">
-          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.20455c0-.63864-.05727-1.25182-.16364-1.84091H9v3.48182h4.84364c-.20818 1.125-.84273 2.07818-1.77727 2.72182v2.25818h2.90818c1.70182-1.56636 2.68636-3.87409 2.68636-6.62182z"/><path fill="#34A853" d="M9 18c2.43 0 4.46727-.80545 5.95636-2.18182l-2.90818-2.25818c-.80545.54273-1.84091.86182-3.04818.86182-2.34545 0-4.32818-1.58364-5.03545-3.71091H.957273v2.33182C2.43818 16.1573 5.48182 18 9 18z"/><path fill="#FBBC05" d="M3.96455 10.71c-.18-.54273-.28364-1.11636-.28364-1.71s.10364-1.16727.28364-1.71V4.95818H.957273C.347727 6.17364 0 7.54773 0 9c0 1.45227.347727 2.82636.957273 4.04182L3.96455 10.71z"/><path fill="#EA4335" d="M9 3.57818c1.32182 0 2.50727.45545 3.44 1.34818l2.58182-2.58182C13.4636.891818 11.4259 0 9 0 5.48182 0 2.43818 1.84273.957273 4.95818L3.96455 7.29C4.67182 5.16364 6.65455 3.57818 9 3.57818z"/></svg>
-          <span data-i18n="googleSignin">Sign in with Google</span>
-        </button>
-      </section>
-
-      <section id="about-section" class="section">
-        <h2 data-i18n="manifestoTitle">McFatty's Manifesto</h2>
-        <p class="manifesto-paragraph" data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP2">This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP3">Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP4">We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
-        <button id="donate-button" class="btn btn-primary" type="button" data-i18n="donateBtn">Donate</button>
-      </section>
-    </div>
-
-    <div id="app-content" class="dashboard-grid" style="display: none;">
-      <section id="logo-card" class="section dashboard-card logo-card" data-card-id="logo" aria-label="McFatty's logo">
-        <button class="close-btn" type="button" aria-label="Finish organizing">&times;</button>
-        <div class="logo-card-inner">
-          <img src="Logo.png" alt="McFatty's Food Tracker logo">
-        </div>
-      </section>
-
-      <section id="welcome-section" class="section dashboard-card" data-card-id="welcome">
-        <button class="close-btn" type="button" aria-label="Finish organizing">&times;</button>
-        <h2 id="welcome-message" data-i18n="welcome"></h2>
-      </section>
-
-      <section id="stats-section" class="section dashboard-card span-2" data-card-id="stats" aria-labelledby="quick-stats-title">
-        <button class="close-btn" type="button" aria-label="Finish organizing">&times;</button>
-        <h2 id="quick-stats-title" data-i18n="quickStatsTitle">Quick stats</h2>
-        <div class="quick-stats-grid">
-          <div class="stat-card">
-            <span class="stat-label" data-i18n="statEntriesToday">Entries today</span>
-            <div id="stat-total" class="stat-value">0</div>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label" data-i18n="statDairyToday">Dairy items</span>
-            <div id="stat-dairy" class="stat-value">0</div>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label" data-i18n="statOutsideMeals">Outside of mealtimes</span>
-            <div id="stat-outside" class="stat-value">0</div>
-          </div>
-          <div class="stat-card">
-            <span class="stat-label" data-i18n="statLastEntry">Last entry</span>
-            <div id="stat-last" class="stat-value" aria-live="polite">—</div>
-            <div id="stat-last-subtext" class="stat-subtext"></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section dashboard-card" aria-labelledby="addItem" id="add-item-section" data-card-id="quick-add">
-        <button class="close-btn" type="button" aria-label="Finish organizing">&times;</button>
-        <h2 id="addItem" data-i18n="quickAddTitle">Quick add</h2>
-        <p class="quick-add-subtext" data-i18n="quickAddHint">Log what you’re eating right now—no pressure, no judgement.</p>
-        <div class="quick-add-body">
-          <div>
-            <label for="food-name" class="label" data-i18n="foodLabel">Food item name</label>
-            <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" data-i18n-placeholder="foodPlaceholder">
-          </div>
-          <div class="quick-add-actions">
-            <label style="display:flex;align-items:center;gap:var(--sp-8);margin:0;">
-              <input id="contains-dairy" type="checkbox" class="checkbox" aria-label="Contains dairy">
-              <span data-i18n="dairyLabel">Contains dairy</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:var(--sp-8);margin:0;">
-              <input id="outside-meals" type="checkbox" class="checkbox" aria-label="Outside of mealtimes">
-              <span data-i18n="outsideMealsLabel">Outside of mealtimes</span>
-            </label>
-            <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="growth-section" class="section dashboard-card" aria-labelledby="growth-title" data-card-id="growth">
-        <button class="close-btn" type="button" aria-label="Finish organizing">&times;</button>
-        <h2 id="growth-title" data-i18n="growthTitle">Room to grow</h2>
-        <p data-i18n="growthCopy">This space is ready for habits, reflections, or whatever else you need next.</p>
-      </section>
-
-      <section class="section dashboard-card span-2" aria-labelledby="recentLog" id="log-section" data-card-id="recent-log">
-        <button class="close-btn" type="button" aria-label="Finish organizing">&times;</button>
-        <div class="section-head">
-          <h2 id="recentLog" data-i18n="recentLogTitle">Recent log</h2>
-          <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
-        </div>
-        <div class="log-controls" role="search">
-          <div class="log-search">
-            <label class="sr-only" for="log-search" data-i18n="logSearchLabel">Search log</label>
-            <input id="log-search" class="input" type="search" placeholder="Search entries" data-i18n-placeholder="logSearchPlaceholder">
-          </div>
-          <div class="filter-group" role="group" aria-labelledby="log-filters-label">
-            <span id="log-filters-label" class="sr-only" data-i18n="filterGroupLabel">Filters</span>
-            <button type="button" class="filter-btn is-active" data-filter="all" data-i18n="filterAll">All</button>
-            <button type="button" class="filter-btn" data-filter="dairy" data-i18n="filterDairy">Dairy</button>
-            <button type="button" class="filter-btn" data-filter="non-dairy" data-i18n="filterNonDairy">No dairy</button>
-            <button type="button" class="filter-btn" data-filter="outside-meals" data-i18n="filterOutsideMeals">Outside of mealtimes</button>
-            <button type="button" class="filter-btn" data-filter="during-meals" data-i18n="filterMeals">At mealtimes</button>
-          </div>
-        </div>
-        <table class="table" aria-describedby="recentLog">
-          <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thTime">Time</th><th data-i18n="thDairy">Dairy</th><th data-i18n="thOutsideMeals">Outside of mealtimes</th><th></th></tr></thead>
-          <tbody id="log-body"></tbody>
-        </table>
-        <div id="empty-state" class="info-text" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
-        <div id="no-results" class="info-text" style="display:none" data-i18n="noResults">No entries match your filters yet.</div>
-      </section>
-    </div>
-
-    <footer class="footer">
-      <span data-i18n="footerText">Designed and created by Burrow · 2025</span>
-      <div class="footer-links">
-        <a href="#" id="impressum-link" data-i18n="impressum">Legal Notice</a>
-        <a href="#" id="privacy-link" data-i18n="privacyPolicy">Privacy Policy</a>
-      </div>
-    </footer>
-  </div>
-
-  <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
-    <div class="modal">
-      <h3 id="confirm-title" data-i18n="confirmTitle">Are you sure?</h3>
-      <p id="confirm-desc"></p>
-      <div class="modal-actions">
-        <button id="cancel-action" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
-        <button id="confirm-action" class="btn btn-danger" data-i18n="confirmClearBtn">Confirm</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title">
-    <div class="modal">
-      <h3 id="account-title" data-i18n="accountModalTitle">Edit Account</h3>
-      <div class="stack-16" style="text-align: left;">
-        <label for="account-name" class="label" data-i18n="nameLabel">Name</label>
-        <input id="account-name" class="input" type="text" placeholder="e.g., Mike">
-        <label for="account-email" class="label" data-i18n="emailLabel">Email</label>
-        <input id="account-email" class="input" type="email" disabled>
-      </div>
-      <div class="modal-actions">
-        <button id="delete-account" class="btn btn-danger" data-i18n="deleteAccountBtn">Delete Account</button>
-        <button id="cancel-account" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
-        <button id="save-account" class="btn btn-primary" data-i18n="saveBtn">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="history-modal" role="dialog" aria-modal="true" aria-labelledby="history-title">
-    <div class="modal">
-      <h3 id="history-title" data-i18n="historyTitle">Log History</h3>
-      <div id="history-content" class="modal-content" style="text-align: left;"></div>
-      <div class="modal-actions">
-        <button id="close-history" class="btn btn-primary" data-i18n="closeBtn">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="manifesto-modal" role="dialog" aria-modal="true" aria-labelledby="manifesto-title">
-    <div class="modal">
-      <img src="manifesto.png" alt="McFatty's Manifesto" class="modal-image">
-      <h3 id="manifesto-title" data-i18n="manifestoTitle">McFatty's Manifesto</h3>
-      <div class="modal-content">
-        <p class="manifesto-paragraph" data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP2">This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP3">Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP4">We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
-      </div>
-      <div class="modal-actions">
-        <button id="close-manifesto" class="btn btn-primary" data-i18n="closeBtn">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-title">
-    <div class="modal">
-      <h3 id="legal-title"></h3>
-      <div class="modal-content" style="text-align: left;" id="legal-content"></div>
-      <div class="modal-actions">
-        <button id="close-legal" class="btn btn-primary" data-i18n="closeBtn">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
-
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyC1qN3ksU0uYhXRXYNmYlmGX0iyUa-BJFQ",
-      authDomain: "mcfattys-food-tracker.firebaseapp.com",
-      projectId: "mcfattys-food-tracker",
-      storageBucket: "mcfattys-food-tracker.appspot.com",
-      messagingSenderId: "831603858264",
-      appId: "1:831603858264:web:58506c01975e9a1991e32d",
-      measurementId: "G-KQX4BQ71VK"
-    };
-
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const MAX_RECENT_ROWS = 10;
-
-    let logCollection;
-    let unsubscribe;
-    let lang = 'en';
-    let deferredInstallPrompt = null;
-    let installBannerTimeout;
-    let latestSnapshot = null;
-    let isLoginMode = true;
-    let allEntries = [];
-    let activeFilter = 'all';
-    let searchTerm = '';
-
-    // Elements
-    const nameInput = document.getElementById('food-name');
-    const dairyCheckbox = document.getElementById('contains-dairy');
-    const outsideMealsCheckbox = document.getElementById('outside-meals');
-    const addBtn = document.getElementById('add-button');
-    const tbody = document.getElementById('log-body');
-    const emptyState = document.getElementById('empty-state');
-    const installBanner = document.getElementById('install-banner');
-    const sidebar = document.getElementById('sidebar');
-    const scrim = document.getElementById('scrim');
-    const welcomeMessage = document.getElementById('welcome-message');
-    const landingPage = document.getElementById('landing-page');
-    const appContent = document.getElementById('app-content');
-    const donateBtn = document.getElementById('donate-button');
-    const langToggle = document.getElementById('lang-toggle');
-    const switchEl = document.getElementById('switch');
-    const googleSigninBtn = document.getElementById('google-signin');
-    const pwaInstallBtn = document.getElementById('pwa-install');
-    const menuOpenBtn = document.getElementById('menu-open');
-    const menuCloseBtn = document.getElementById('menu-close');
-    const logoutBtn = document.getElementById('logout-btn');
-    const logoutBtnMain = document.getElementById('logout-btn-main');
-    const userInfo = document.getElementById('user-info');
-    const userName = document.getElementById('user-name');
-    const exportBtn = document.getElementById('export-button');
-    const statTotal = document.getElementById('stat-total');
-    const statDairy = document.getElementById('stat-dairy');
-    const statOutside = document.getElementById('stat-outside');
-    const statLast = document.getElementById('stat-last');
-    const statLastSubtext = document.getElementById('stat-last-subtext');
-    const logSearchInput = document.getElementById('log-search');
-    const noResultsMessage = document.getElementById('no-results');
-    const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
-
-    const DASHBOARD_ORDER_KEY = 'dashboard-card-order-v1';
-    const LONG_PRESS_DELAY_TOUCH = 280;
-    const LONG_PRESS_DELAY_POINTER = 160;
-    const DRAG_MOVE_CANCEL_THRESHOLD = 10;
-    let dragSession = null;
-    let isReorganizeMode = false;
-
-    // Modals / legal links
-    const manifestoModal = document.getElementById('manifesto-modal');
-    const closeManifestoBtn = document.getElementById('close-manifesto');
-    const historyModal = document.getElementById('history-modal');
-    const closeHistoryBtn = document.getElementById('close-history');
-    const historyContent = document.getElementById('history-content');
-    const legalModal = document.getElementById('legal-modal');
-    const legalTitle = document.getElementById('legal-title');
-    const legalContent = document.getElementById('legal-content');
-    const closeLegalBtn = document.getElementById('close-legal');
-    const impressumLink = document.getElementById('impressum-link');
-    const privacyLink = document.getElementById('privacy-link');
-
-    function getDashboardCards() {
-      if (!appContent) return [];
-      return Array.from(appContent.querySelectorAll('.dashboard-card'));
-    }
-
-    function persistCardOrder() {
-      if (!appContent) return;
-      try {
-        const order = getDashboardCards().map(card => card.dataset.cardId).filter(Boolean);
-        localStorage.setItem(DASHBOARD_ORDER_KEY, JSON.stringify(order));
-      } catch (error) {
-        console.warn('Unable to save dashboard order', error);
-      }
-    }
-
-    function applyStoredCardOrder() {
-      if (!appContent) return;
-      const cards = getDashboardCards();
-      if (!cards.length) return;
-
-      const defaultOrder = cards.map(card => card.dataset.cardId).filter(Boolean);
-      let storedOrder = [];
-
-      try {
-        const storedValue = localStorage.getItem(DASHBOARD_ORDER_KEY);
-        storedOrder = storedValue ? JSON.parse(storedValue) : [];
-      } catch (error) {
-        storedOrder = [];
-      }
-
-      if (!Array.isArray(storedOrder) || !storedOrder.length) return;
-
-      const validStored = storedOrder.filter(id => defaultOrder.includes(id));
-      const storedSet = new Set(validStored);
-      const queue = [...validStored];
-      const finalOrder = [];
-
-      defaultOrder.forEach(id => {
-        if (!id) return;
-        if (!storedSet.has(id)) {
-          if (!finalOrder.includes(id)) {
-            finalOrder.push(id);
-          }
-        } else {
-          const nextStored = queue.shift();
-          if (nextStored && !finalOrder.includes(nextStored)) {
-            finalOrder.push(nextStored);
-          }
-        }
-      });
-
-      queue.forEach(id => {
-        if (id && !finalOrder.includes(id)) {
-          finalOrder.push(id);
-        }
-      });
-
-      defaultOrder.forEach(id => {
-        if (id && !finalOrder.includes(id)) {
-          finalOrder.push(id);
-        }
-      });
-
-      finalOrder.forEach(id => {
-        const card = appContent.querySelector(`[data-card-id="${id}"]`);
-        if (card) {
-          appContent.appendChild(card);
-        }
-      });
-    }
-
-    function detachGlobalPointerListeners() {
-      window.removeEventListener('pointermove', handleCardPointerMove);
-      window.removeEventListener('pointerup', handleCardPointerUp);
-      window.removeEventListener('pointercancel', handleCardPointerUp);
-    }
-
-    function exitReorganizeMode() {
-      if (!isReorganizeMode || !appContent) return;
-      appContent.classList.remove('reorganize-mode');
-      isReorganizeMode = false;
-    }
-
-    function endCardDrag(commit) {
-      if (!dragSession) return;
-
-      clearTimeout(dragSession.longPressTimer);
-      dragSession.longPressTimer = null;
-
-      detachGlobalPointerListeners();
-
-      const { card, placeholder, active } = dragSession;
-
-      if (active && placeholder && placeholder.parentNode) {
-        placeholder.parentNode.replaceChild(card, placeholder);
-      }
-
-      if (active && card) {
-        card.classList.remove('is-dragging');
-        card.style.position = '';
-        card.style.zIndex = '';
-        card.style.width = '';
-        card.style.height = '';
-        card.style.left = '';
-        card.style.top = '';
-        card.style.pointerEvents = '';
-        card.style.transition = '';
-      }
-
-      if (active) {
-        appContent.classList.remove('is-reordering');
-        document.body.classList.remove('card-dragging');
-        if (commit) {
-          persistCardOrder();
-        }
-      }
-
-      exitReorganizeMode();
-
-      dragSession = null;
-    }
-
-    function positionDraggedCard(event) {
-      if (!dragSession || !dragSession.card) return;
-      const card = dragSession.card;
-      const containerRect = appContent.getBoundingClientRect();
-      const cardWidth = card.offsetWidth;
-      const cardHeight = card.offsetHeight;
-      const rawX = event.clientX - containerRect.left - dragSession.offsetX;
-      const rawY = event.clientY - containerRect.top - dragSession.offsetY;
-      const maxX = Math.max(containerRect.width - cardWidth, 0);
-      const maxY = Math.max(containerRect.height - cardHeight, 0);
-      const clampedX = Math.min(Math.max(rawX, 0), maxX);
-      const clampedY = Math.min(Math.max(rawY, 0), maxY);
-      card.style.left = `${clampedX}px`;
-      card.style.top = `${clampedY}px`;
-    }
-
-    function updatePlaceholderPosition(event) {
-      if (!dragSession || !dragSession.placeholder) return false;
-
-      const { placeholder, card } = dragSession;
-      const cards = getDashboardCards().filter(el => el !== card);
-      if (!cards.length) return false;
-
-      const { clientX, clientY } = event;
-      const element = document.elementFromPoint(clientX, clientY);
-      const targetCard = element ? element.closest('.dashboard-card') : null;
-
-      if (targetCard && targetCard !== card) {
-        const rect = targetCard.getBoundingClientRect();
-        const verticalMiddle = rect.top + rect.height / 2;
-        const horizontalMiddle = rect.left + rect.width / 2;
-        const before = clientY < verticalMiddle || (Math.abs(clientY - verticalMiddle) < rect.height / 3 && clientX < horizontalMiddle);
-
-        if (before) {
-          if (placeholder.nextSibling !== targetCard) {
-            appContent.insertBefore(placeholder, targetCard);
-            return true;
-          }
-        } else if (targetCard.nextSibling !== placeholder) {
-          appContent.insertBefore(placeholder, targetCard.nextSibling);
-          return true;
-        }
-
-        return false;
-      }
-
-      const firstCard = cards[0];
-      const firstRect = firstCard.getBoundingClientRect();
-      if (clientY < firstRect.top) {
-        if (placeholder !== firstCard) {
-          appContent.insertBefore(placeholder, firstCard);
-          return true;
-        }
-        return false;
-      }
-
-      const lastCard = cards[cards.length - 1];
-      const lastRect = lastCard.getBoundingClientRect();
-      if (clientY > lastRect.bottom) {
-        if (lastCard.nextSibling !== placeholder) {
-          appContent.appendChild(placeholder);
-          return true;
-        }
-        return false;
-      }
-
-      return false;
-    }
-
-    function beginCardDrag(event) {
-      if (!dragSession || dragSession.active) return;
-
-      clearTimeout(dragSession.longPressTimer);
-      dragSession.longPressTimer = null;
-
-      const card = dragSession.card;
-      if (!card) return;
-
-      const cardRect = card.getBoundingClientRect();
-      const containerRect = appContent.getBoundingClientRect();
-
-      dragSession.active = true;
-      dragSession.offsetX = event.clientX - cardRect.left;
-      dragSession.offsetY = event.clientY - cardRect.top;
-
-      const placeholder = document.createElement('div');
-      placeholder.className = 'dashboard-placeholder';
-      if (card.classList.contains('span-2')) {
-        placeholder.classList.add('span-2');
-      }
-      placeholder.style.minHeight = `${cardRect.height}px`;
-
-      dragSession.placeholder = placeholder;
-
-      appContent.insertBefore(placeholder, card);
-      appContent.appendChild(card);
-
-      card.classList.add('is-dragging');
-      card.style.position = 'absolute';
-      card.style.zIndex = '900';
-      card.style.width = `${cardRect.width}px`;
-      card.style.height = `${cardRect.height}px`;
-      card.style.left = `${cardRect.left - containerRect.left}px`;
-      card.style.top = `${cardRect.top - containerRect.top}px`;
-      card.style.pointerEvents = 'none';
-
-      appContent.classList.add('is-reordering');
-      document.body.classList.add('card-dragging');
-    }
-
-    function handleCardPointerMove(event) {
-      if (!dragSession || event.pointerId !== dragSession.pointerId) return;
-
-      dragSession.lastEvent = event;
-
-      if (!dragSession.active) {
-        if (dragSession.longPressTimer) {
-          const dx = Math.abs(event.clientX - dragSession.startX);
-          const dy = Math.abs(event.clientY - dragSession.startY);
-          if (dx > DRAG_MOVE_CANCEL_THRESHOLD || dy > DRAG_MOVE_CANCEL_THRESHOLD) {
-            endCardDrag(false);
-          }
-        }
-        return;
-      }
-
-      event.preventDefault();
-      positionDraggedCard(event);
-      const moved = updatePlaceholderPosition(event);
-      if (moved) {
-        dragSession.hasMoved = true;
-      }
-    }
-
-    function handleCardPointerUp(event) {
-      if (!dragSession || event.pointerId !== dragSession.pointerId) return;
-      const shouldCommit = Boolean(dragSession.active);
-      endCardDrag(shouldCommit);
-    }
-
-    function handleCardPointerDown(event) {
-      if (!event.isPrimary) return;
-      if (event.pointerType === 'mouse' && event.button !== 0) return;
-      if (dragSession) return;
-      if (!appContent) return;
-      if (event.target.closest('.close-btn')) return;
-
-      const interactiveTarget = event.target.closest('button, input, textarea, select, label, a');
-      if (interactiveTarget && !isReorganizeMode) return;
-
-      const card = event.currentTarget;
-      if (!card || !card.dataset.cardId) return;
-
-      const delay = event.pointerType === 'touch' ? LONG_PRESS_DELAY_TOUCH : LONG_PRESS_DELAY_POINTER;
-
-      dragSession = {
-        card,
-        pointerId: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        longPressTimer: setTimeout(() => {
-          if (!dragSession) return;
-          if (!isReorganizeMode && appContent) {
-            appContent.classList.add('reorganize-mode');
-            isReorganizeMode = true;
-          }
-          const triggerEvent = dragSession.lastEvent || event;
-          beginCardDrag(triggerEvent);
-        }, delay),
-        hasMoved: false,
-        active: false,
-        offsetX: 0,
-        offsetY: 0,
-        placeholder: null,
-        lastEvent: event
-      };
-
-      window.addEventListener('pointermove', handleCardPointerMove, { passive: false });
-      window.addEventListener('pointerup', handleCardPointerUp);
-      window.addEventListener('pointercancel', handleCardPointerUp);
-    }
-
-    function initDashboardReordering() {
-      if (!appContent) return;
-      applyStoredCardOrder();
-      persistCardOrder();
-      getDashboardCards().forEach(card => {
-        if (!card.dataset.cardId) return;
-        card.addEventListener('pointerdown', handleCardPointerDown);
-      });
-      appContent.querySelectorAll('.close-btn').forEach(button => {
-        button.addEventListener('click', (event) => {
-          event.stopPropagation();
-          if (dragSession) {
-            endCardDrag(false);
-          } else {
-            exitReorganizeMode();
-          }
-        });
-      });
-    }
-
-    // Auth Elements
-    const authSection = document.getElementById('auth-section');
-    const loginBtn = document.getElementById('login-btn');
-    const signupBtn = document.getElementById('signup-btn');
-    const authSubmit = document.getElementById('auth-submit');
-    const authActions = document.getElementById('auth-actions');
-    const signupFields = document.getElementById('signup-fields');
-    const authTitle = document.getElementById('auth-title');
-    const authToggle = document.getElementById('auth-toggle');
-    const authEmail = document.getElementById('auth-email');
-    const authPassword = document.getElementById('auth-password');
-    const authUsername = document.getElementById('auth-username');
-    const authRePassword = document.getElementById('auth-re-password');
-
-    // --- Translations ---
-    const translations = {
-      en: {
-        loginBtn: 'Login',
-        signupBtn: 'Sign Up',
-        logoutBtn: 'Logout',
-        installBtn: 'Install',
-        googleSignin: 'Sign in with Google',
-        manifesto: "McFatty's Manifesto",
-        manifestoTitle: "McFatty's Manifesto",
-        manifestoP1: "McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
-        manifestoP2: "This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.",
-        manifestoP3: "Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.",
-        manifestoP4: "We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.",
-        manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.",
-        donateBtn: 'Donate',
-        welcome: 'Welcome',
-        quickStatsTitle: 'Quick stats',
-        statEntriesToday: 'Entries today',
-        statDairyToday: 'Dairy items',
-        statOutsideMeals: 'Outside of mealtimes',
-        statLastEntry: 'Last entry',
-        quickAddTitle: 'Quick add',
-        quickAddHint: 'Log what you’re eating right now—no pressure, no judgement.',
-        growthTitle: 'Room to grow',
-        growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
-        recentLogTitle: 'Recent log',
-        logSearchLabel: 'Search log',
-        logSearchPlaceholder: 'Search entries',
-        filterGroupLabel: 'Filters',
-        filterAll: 'All',
-        filterDairy: 'Dairy',
-        filterNonDairy: 'No dairy',
-        filterOutsideMeals: 'Outside of mealtimes',
-        filterMeals: 'At mealtimes',
-        noResults: 'No entries match your filters yet.',
-        addTitle: 'Add item',
-        foodLabel: 'Food item name',
-        foodPlaceholder: 'e.g., Cheeseburger',
-        addBtn: 'Add to log',
-        dairyLabel: 'Contains dairy',
-        outsideMealsLabel: 'Outside of mealtimes',
-        logTitle: 'Today’s log',
-        exportBtn: 'Export',
-        thItem: 'Item',
-        thTime: 'Time',
-        thDairy: 'Dairy',
-        thOutsideMeals: 'Outside of mealtimes',
-        emptyState: 'No items yet. Add your first item above.',
-        confirmTitle: 'Are you sure?',
-        cancelBtn: 'Cancel',
-        closeBtn: 'Close',
-        confirmClearBtn: 'Confirm',
-        accountModalTitle: 'Edit Account',
-        nameLabel: 'Name',
-        emailLabel: 'Email',
-        deleteAccountBtn: 'Delete Account',
-        saveBtn: 'Save',
-        menuTitle: 'Menu',
-        corePractices: 'Core Practices',
-        newJournal: 'New Journal Entry',
-        settings: 'Application Settings',
-        account: 'Account',
-        logout: 'Log Out',
-        footerText: 'Designed and created by Burrow · 2025',
-        loginTitle: 'Login',
-        signupTitle: 'Sign Up',
-        loginAction: 'Login',
-        signupAction: 'Sign Up',
-        authToggleToSignup: 'Need an account? Sign Up',
-        authToggleToLogin: 'Have an account? Login',
-        passwordLabel: 'Password',
-        usernameLabel: 'Username',
-        rePasswordLabel: 'Re-type Password',
-        installSuccess: 'App installed! Find McFatty’s on your home screen.',
-        installDismissed: 'Install dismissed.',
-        yes: 'Yes',
-        no: 'No',
-        editBtn: 'Edit',
-        removeBtn: 'Remove',
-        editEntryAria: 'Edit entry',
-        removeEntryAria: 'Remove entry',
-        authMissingFields: 'Please enter an email and password.',
-        authMissingUsername: 'Please choose a username.',
-        authPasswordMismatch: 'Passwords do not match.',
-        addError: 'Sorry, there was an error adding your entry.',
-        deleteError: 'Sorry, there was an error removing your entry.',
-        updateError: 'Sorry, there was an error updating your entry.',
-        authErrorPrefix: 'Error:',
-        csvHeaderDate: 'Date',
-        csvHeaderItem: 'Item',
-        csvHeaderDairy: 'Dairy',
-        csvHeaderOutsideMeals: 'Outside of mealtimes',
-        csvYes: 'Yes',
-        csvNo: 'No',
-        notAvailable: 'N/A',
-        history: 'History',
-        historyTitle: 'Log History',
-        impressum: 'Legal Notice',
-        privacyPolicy: 'Privacy Policy',
-      },
-      de: {
-        loginBtn: 'Anmelden',
-        signupBtn: 'Registrieren',
-        logoutBtn: 'Abmelden',
-        installBtn: 'Installieren',
-        googleSignin: 'Mit Google anmelden',
-        manifesto: 'McFettys Manifest',
-        manifestoTitle: 'McFettys Manifest',
-        manifestoP1: 'Bei McFettys Food Tracker geht es nicht um Kalorien, Einschränkungen oder Schuldgefühle. Wenn du Chips willst, iss sie. Keine Scham, keine Bestrafung. Schreib es einfach auf. Das Aufzeichnen ohne Urteil ist der entscheidende Akt.',
-        manifestoP2: 'Diese App ist kostenlos. Keine Abonnements, keine Upsells, keine Lifestyle-Pakete. Wir lehnen die Idee ab, dass uns Essen und Gesundheit zurückverkauft werden sollten. Essen sollte kein Geschäftsmodell sein.',
-        manifestoP3: 'Stattdessen hilft Ihnen McFatty’s, innezuhalten, auf Ihren Körper zu hören und Ihre Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht Ihnen das einfache Protokollieren, Muster zu erkennen und Ihre Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt für Ihre Entscheidungen verwurzelt sein.',
-        manifestoP4: 'Wir sind gegen Kreisläufe von Schuld, Scham und unmöglichen Versprechungen. Wir werden den als Selbstfürsorge getarnten Konsum nicht feiern. Wir glauben, die radikale Wahl ist, zu verlangsamen, auf sich selbst zu hören und zu Ihren eigenen Bedingungen zu essen.',
-        manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von Ihrer Schuld profitieren.',
-        donateBtn: 'Spenden',
-        welcome: 'Willkommen',
-        quickStatsTitle: 'Schnelle Statistiken',
-        statEntriesToday: 'Einträge heute',
-        statDairyToday: 'Milchprodukte',
-        statOutsideMeals: 'Außerhalb der Mahlzeiten',
-        statLastEntry: 'Letzter Eintrag',
-        quickAddTitle: 'Schnell hinzufügen',
-        quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
-        growthTitle: 'Platz für mehr',
-        growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
-        recentLogTitle: 'Aktuelles Protokoll',
-        logSearchLabel: 'Protokoll durchsuchen',
-        logSearchPlaceholder: 'Einträge durchsuchen',
-        filterGroupLabel: 'Filter',
-        filterAll: 'Alle',
-        filterDairy: 'Milch',
-        filterNonDairy: 'Ohne Milch',
-        filterOutsideMeals: 'Außerhalb der Mahlzeiten',
-        filterMeals: 'Zu den Mahlzeiten',
-        noResults: 'Keine Einträge passen zu deinen Filtern.',
-        addTitle: 'Element hinzufügen',
-        foodLabel: 'Name des Lebensmittels',
-        foodPlaceholder: 'z.B. Käseburger',
-        addBtn: 'Zum Protokoll hinzufügen',
-        dairyLabel: 'Enthält Milchprodukte',
-        outsideMealsLabel: 'Außerhalb der Mahlzeiten',
-        logTitle: 'Heutiges Protokoll',
-        exportBtn: 'Exportieren',
-        thItem: 'Element',
-        thTime: 'Uhrzeit',
-        thDairy: 'Milchprodukte',
-        thOutsideMeals: 'Außerhalb der Mahlzeiten',
-        emptyState: 'Noch keine Einträge. Fügen Sie oben Ihren ersten Eintrag hinzu.',
-        confirmTitle: 'Sind Sie sicher?',
-        cancelBtn: 'Abbrechen',
-        closeBtn: 'Schließen',
-        confirmClearBtn: 'Bestätigen',
-        accountModalTitle: 'Konto bearbeiten',
-        nameLabel: 'Name',
-        emailLabel: 'Email',
-        deleteAccountBtn: 'Konto löschen',
-        saveBtn: 'Speichern',
-        menuTitle: 'Menü',
-        corePractices: 'Kernpraktiken',
-        newJournal: 'Neuer Journaleintrag',
-        settings: 'Anwendungseinstellungen',
-        account: 'Konto',
-        logout: 'Abmelden',
-        footerText: 'Designed and created by Burrow · 2025',
-        loginTitle: 'Anmelden',
-        signupTitle: 'Registrieren',
-        loginAction: 'Anmelden',
-        signupAction: 'Registrieren',
-        authToggleToSignup: 'Noch kein Konto? Registrieren',
-        authToggleToLogin: 'Konto vorhanden? Anmelden',
-        passwordLabel: 'Passwort',
-        usernameLabel: 'Benutzername',
-        rePasswordLabel: 'Passwort erneut eingeben',
-        installSuccess: 'App installiert! McFatty’s ist jetzt auf deinem Startbildschirm.',
-        installDismissed: 'Installation abgebrochen.',
-        yes: 'Ja',
-        no: 'Nein',
-        editBtn: 'Bearbeiten',
-        removeBtn: 'Entfernen',
-        editEntryAria: 'Eintrag bearbeiten',
-        removeEntryAria: 'Eintrag entfernen',
-        authMissingFields: 'Bitte E-Mail und Passwort eingeben.',
-        authMissingUsername: 'Bitte einen Benutzernamen wählen.',
-        authPasswordMismatch: 'Passwörter stimmen nicht überein.',
-        addError: 'Beim Hinzufügen deines Eintrags ist ein Fehler aufgetreten.',
-        deleteError: 'Beim Entfernen deines Eintrags ist ein Fehler aufgetreten.',
-        updateError: 'Beim Aktualisieren deines Eintrags ist ein Fehler aufgetreten.',
-        authErrorPrefix: 'Fehler:',
-        csvHeaderDate: 'Datum',
-        csvHeaderItem: 'Element',
-        csvHeaderDairy: 'Milchprodukte',
-        csvHeaderOutsideMeals: 'Außerhalb der Mahlzeiten',
-        csvYes: 'Ja',
-        csvNo: 'Nein',
-        notAvailable: 'k. A.',
-        history: 'Verlauf',
-        historyTitle: 'Protokollverlauf',
-        impressum: 'Impressum',
-        privacyPolicy: 'Datenschutzerklärung',
-      }
-    };
-
-    const legalDocs = {
-      en: {
-        impressum: `<h3>Legal Notice (Impressum)</h3>
-          <p>Information according to § 5 TMG</p>
-          <p>[Your Name]<br>[Your Street and House Number]<br>[Your Postal Code and City]</p>
-          <h4>Contact</h4>
-          <p>Email: [Your Email Address]</p>
-          <h4>Disclaimer</h4>
-          <p>This is a private, non-commercial project. The content of our pages has been created with the utmost care. However, we cannot guarantee the contents' accuracy, completeness or topicality. According to statutory provisions, we are furthermore responsible for our own content on these web pages. In this context, please note that we are accordingly not obliged to monitor merely the transmitted or saved information of third parties, or investigate circumstances pointing to illegal activity.</p>`,
-        privacyPolicy: `<h3>Privacy Policy</h3>
-          <p><strong>1. General Information</strong></p>
-          <p>The following gives a simple overview of what happens to your personal information when you use our app. Personal information is any data with which you could be personally identified.</p>
-          <p><strong>Responsible for data collection on this app is:</strong><br/>
-          [Your Name]<br>[Your Street and House Number]<br>[Your Postal Code and City]<br>Email: [Your Email Address]</p>
-          <p><strong>2. Data Collection on our App</strong></p>
-          <p><strong>User Authentication:</strong> To use this app, you must create an account. We use Firebase Authentication (a service of Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Ireland) for this purpose. When you register via email and password, your email address, a password hash, and a unique user ID are stored. If you use Google Sign-In, Google provides us with your name, email address, and profile picture.</p>
-          <p><strong>Data Storage:</strong> Your food log entries are stored in a Cloud Firestore database, which is also a service provided by Google. This data is linked to your unique user ID. We do not process this data for any other purpose than displaying it back to you within the app.</p>
-          <p><strong>Server Log Files:</strong> The provider of the pages automatically collects and stores information that your browser automatically transmits to us in "server log files". These are: Browser type and browser version, operating system used, referrer URL, host name of the accessing computer, time of the server request, and IP address. This data will not be combined with data from other sources.</p>
-          <p><strong>3. Your Rights</strong></p>
-          <p>You have the right to free information about your stored personal data, its origin and recipient and the purpose of the data processing and, if necessary, a right to correction, blocking or deletion of this data at any time within the scope of the applicable legal provisions. You can contact us at any time at the address given in the legal notice if you have further questions on the subject of personal data.</p>`
-      },
-      de: {
-        impressum: `<h3>Impressum</h3>
-          <p>Angaben gemäß § 5 TMG</p>
-          <p>[Ihr Name]<br>[Ihre Straße und Hausnummer]<br>[Ihre PLZ und Stadt]</p>
-          <h4>Kontakt</h4>
-          <p>E-Mail: [Ihre E-Mail-Adresse]</p>
-          <h4>Haftungsausschluss</h4>
-          <p>Dies ist ein privates, nicht-kommerzielles Projekt. Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.</p>`,
-        privacyPolicy: `<h3>Datenschutzerklärung</h3>
-          <p><strong>1. Allgemeiner Hinweis</strong></p>
-          <p>Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie unsere App nutzen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.</p>
-          <p><strong>Verantwortliche Stelle für die Datenerfassung in dieser App ist:</strong><br/>
-          [Ihr Name]<br>[Ihre Straße und Hausnummer]<br>[Ihre PLZ und Stadt]<br>E-Mail: [Ihre E-Mail-Adresse]</p>
-          <p><strong>2. Datenerfassung in unserer App</strong></p>
-          <p><strong>Nutzerauthentifizierung:</strong> Um diese App zu nutzen, müssen Sie ein Konto erstellen. Wir verwenden hierfür Firebase Authentication (ein Dienst von Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland). Bei der Registrierung per E-Mail und Passwort werden Ihre E-Mail-Adresse, ein Passwort-Hash und eine eindeutige Benutzer-ID gespeichert. Wenn Sie die Google-Anmeldung verwenden, übermittelt Google uns Ihren Namen, Ihre E-Mail-Adresse und Ihr Profilbild.</p>
-          <p><strong>Datenspeicherung:</strong> Ihre Essensprotokolle werden in einer Cloud Firestore-Datenbank gespeichert, die ebenfalls von Google bereitgestellt wird. Diese Daten sind mit Ihrer eindeutigen Benutzer-ID verknüpft. Wir verarbeiten diese Daten zu keinem anderen Zweck, als sie Ihnen in der App wieder anzuzeigen.</p>
-          <p><strong>Server-Log-Dateien:</strong> Der Provider der Seiten erhebt und speichert automatisch Informationen in so genannten Server-Log-Dateien, die Ihr Browser automatisch an uns übermittelt. Dies sind: Browsertyp und Browserversion, verwendetes Betriebssystem, Referrer URL, Hostname des zugreifenden Rechners, Uhrzeit der Serveranfrage und IP-Adresse. Eine Zusammenführung dieser Daten mit anderen Datenquellen wird nicht vorgenommen.</p>
-          <p><strong>3. Ihre Rechte</strong></p>
-          <p>Sie haben im Rahmen der geltenden gesetzlichen Bestimmungen jederzeit das Recht auf unentgeltliche Auskunft über Ihre gespeicherten personenbezogenen Daten, deren Herkunft und Empfänger und den Zweck der Datenverarbeitung und ggf. ein Recht auf Berichtigung, Sperrung oder Löschung dieser Daten. Hierzu sowie zu weiteren Fragen zum Thema personenbezogene Daten können Sie sich jederzeit unter der im Impressum angegebenen Adresse an uns wenden.</p>`
-      }
-    };
-
-    const getTranslation = (key) => {
-      const dictionary = translations[lang] || translations.en;
-      return (dictionary && dictionary[key]) || translations.en[key] || '';
-    };
-
-    const updateAuthTexts = () => {
-      const titleKey = isLoginMode ? 'loginTitle' : 'signupTitle';
-      const actionKey = isLoginMode ? 'loginAction' : 'signupAction';
-      const toggleKey = isLoginMode ? 'authToggleToSignup' : 'authToggleToLogin';
-      authTitle.textContent = getTranslation(titleKey);
-      authSubmit.textContent = getTranslation(actionKey);
-      authToggle.textContent = getTranslation(toggleKey);
-    };
-
-    const showInstallBanner = (message) => {
-      if (!message) return;
-      installBanner.textContent = message;
-      installBanner.classList.add('show');
-      clearTimeout(installBannerTimeout);
-      installBannerTimeout = setTimeout(() => installBanner.classList.remove('show'), 4000);
-    };
-
-    const setLanguage = (newLang) => {
-      lang = newLang;
-      langToggle.setAttribute('aria-pressed', newLang === 'de' ? 'true' : 'false');
-      switchEl.classList.toggle('active', newLang === 'de');
-      document.documentElement.lang = newLang;
-
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        el.textContent = getTranslation(key);
-      });
-      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const key = el.getAttribute('data-i18n-placeholder');
-        el.placeholder = getTranslation(key);
-      });
-
-      const user = auth.currentUser;
-      if (user) {
-        const welcomeText = getTranslation('welcome');
-        const displayName = user.displayName || user.email || '';
-        welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : welcomeText;
-      }
-
-      updateAuthTexts();
-      if (latestSnapshot) renderEntries(latestSnapshot);
-    };
-
-    const addEntry = () => {
-      const name = nameInput.value.trim();
-      if (!name || !logCollection) return;
-
-      logCollection.add({
-        name,
-        dairy: dairyCheckbox.checked,
-        outsideMeals: outsideMealsCheckbox.checked,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => {
-        nameInput.value = '';
-        dairyCheckbox.checked = false;
-        outsideMealsCheckbox.checked = false;
-        nameInput.focus();
-      }).catch((error) => {
-        console.error('Error adding document: ', error);
-        alert(getTranslation('addError'));
-      });
-    };
-
-    const getEntryDate = (entry) => {
-      if (entry && entry.timestamp && typeof entry.timestamp.toDate === 'function') {
-        return entry.timestamp.toDate();
-      }
-      return null;
-    };
-
-    const isSameDay = (dateA, dateB) => {
-      if (!dateA || !dateB) return false;
-      return dateA.getFullYear() === dateB.getFullYear() &&
-        dateA.getMonth() === dateB.getMonth() &&
-        dateA.getDate() === dateB.getDate();
-    };
-
-    const updateStats = () => {
-      if (!statTotal || !statDairy || !statOutside || !statLast || !statLastSubtext) return;
-
-      const today = new Date();
-      const locale = lang === 'de' ? 'de-DE' : 'en-US';
-      const entriesToday = allEntries.filter(entry => {
-        const date = getEntryDate(entry);
-        return isSameDay(date, today);
-      });
-      const dairyToday = entriesToday.filter(entry => entry.dairy).length;
-      const outsideMealsToday = entriesToday.filter(entry => entry.outsideMeals).length;
-      const latestEntry = allEntries.find(entry => getEntryDate(entry));
-      const latestDate = latestEntry ? getEntryDate(latestEntry) : null;
-
-      statTotal.textContent = entriesToday.length;
-      statDairy.textContent = dairyToday;
-      statOutside.textContent = outsideMealsToday;
-
-      if (latestDate) {
-        statLast.textContent = latestDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
-        statLastSubtext.textContent = latestDate.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' });
-      } else {
-        statLast.textContent = '—';
-        statLastSubtext.textContent = '';
-      }
-    };
-
-    const renderRows = (entries) => {
-      tbody.innerHTML = '';
-
-      entries.forEach(entry => {
-        const tr = document.createElement('tr');
-
-        const nameCell = document.createElement('td');
-        nameCell.textContent = entry.name || '';
-
-        const timeCell = document.createElement('td');
-        const date = getEntryDate(entry);
-        timeCell.textContent = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : getTranslation('notAvailable');
-
-        const dairyCell = document.createElement('td');
-        const hasDairy = Boolean(entry.dairy);
-        const dairyPill = document.createElement('span');
-        dairyPill.className = `pill ${hasDairy ? 'pill-yes' : 'pill-no'}`;
-        dairyPill.textContent = hasDairy ? getTranslation('yes') : getTranslation('no');
-        dairyCell.appendChild(dairyPill);
-
-        const outsideCell = document.createElement('td');
-        const outsideValue = Boolean(entry.outsideMeals);
-        const outsidePill = document.createElement('span');
-        outsidePill.className = `pill ${outsideValue ? 'pill-yes' : 'pill-no'}`;
-        outsidePill.textContent = outsideValue ? getTranslation('yes') : getTranslation('no');
-        outsideCell.appendChild(outsidePill);
-
-        const actionsCell = document.createElement('td');
-        actionsCell.className = 'row-actions actions';
-
-        const editBtn = document.createElement('button');
-        editBtn.className = 'btn btn-secondary edit-entry';
-        editBtn.type = 'button';
-        editBtn.dataset.id = entry.id;
-        editBtn.textContent = getTranslation('editBtn');
-        editBtn.setAttribute('aria-label', `${getTranslation('editEntryAria')} ${entry.name || ''}`.trim());
-
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'btn btn-danger remove-entry';
-        removeBtn.type = 'button';
-        removeBtn.dataset.id = entry.id;
-        removeBtn.textContent = getTranslation('removeBtn');
-        removeBtn.setAttribute('aria-label', `${getTranslation('removeEntryAria')} ${entry.name || ''}`.trim());
-
-        actionsCell.appendChild(editBtn);
-        actionsCell.appendChild(removeBtn);
-
-        tr.appendChild(nameCell);
-        tr.appendChild(timeCell);
-        tr.appendChild(dairyCell);
-        tr.appendChild(outsideCell);
-        tr.appendChild(actionsCell);
-        tbody.appendChild(tr);
-      });
-    };
-
-    const resetFilters = () => {
-      activeFilter = 'all';
-      searchTerm = '';
-      if (logSearchInput) {
-        logSearchInput.value = '';
-      }
-      filterButtons.forEach(btn => btn.classList.toggle('is-active', btn.dataset.filter === 'all'));
-      toggleNoResults(false);
-    };
-
-    const toggleNoResults = (show) => {
-      if (!noResultsMessage) return;
-      noResultsMessage.style.display = show ? 'block' : 'none';
-    };
-
-    const applyFilters = () => {
-      if (!allEntries.length) {
-        tbody.innerHTML = '';
-        toggleNoResults(false);
-        return;
-      }
-
-      let filtered = [...allEntries];
-
-      if (searchTerm) {
-        filtered = filtered.filter(entry => (entry.name || '').toLowerCase().includes(searchTerm));
-      }
-
-      if (activeFilter === 'dairy') {
-        filtered = filtered.filter(entry => entry.dairy);
-      } else if (activeFilter === 'non-dairy') {
-        filtered = filtered.filter(entry => !entry.dairy);
-      } else if (activeFilter === 'outside-meals') {
-        filtered = filtered.filter(entry => entry.outsideMeals);
-      } else if (activeFilter === 'during-meals') {
-        filtered = filtered.filter(entry => !entry.outsideMeals);
-      }
-
-      if (!filtered.length) {
-        tbody.innerHTML = '';
-        toggleNoResults(true);
-        return;
-      }
-
-      toggleNoResults(false);
-      renderRows(filtered.slice(0, MAX_RECENT_ROWS));
-    };
-
-    const renderEntries = (snapshot) => {
-      latestSnapshot = snapshot;
-      allEntries = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          dairy: Boolean(data.dairy),
-          outsideMeals: Boolean(data.outsideMeals)
-        };
-      });
-
-      updateStats();
-
-      if (!allEntries.length) {
-        tbody.innerHTML = '';
-        emptyState.style.display = 'block';
-        toggleNoResults(false);
-        return;
-      }
-
-      emptyState.style.display = 'none';
-      applyFilters();
-    };
-
-    const renderHistory = (snapshot) => {
-      historyContent.innerHTML = '';
-      if (!snapshot || snapshot.empty) {
-        historyContent.innerHTML = `<p>${getTranslation('emptyState')}</p>`;
-        return;
-      }
-
-      const entriesByDate = {};
-      snapshot.forEach(doc => {
-        const entry = doc.data();
-        if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
-          const date = entry.timestamp.toDate();
-          const key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-          (entriesByDate[key] ||= []).push(entry);
-        }
-      });
-
-      let html = '';
-      Object.keys(entriesByDate).sort().reverse().forEach(key => {
-        const [y,m,d] = key.split('-').map(n=>parseInt(n,10));
-        const display = new Date(y, m-1, d).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-
-        html += `<h3>${display}</h3>`;
-        html += `<table class="table" style="margin-bottom:20px;"><thead><tr><th>${getTranslation('thItem')}</th><th>${getTranslation('thTime')}</th><th>${getTranslation('thDairy')}</th><th>${getTranslation('thOutsideMeals')}</th></tr></thead><tbody>`;
-        entriesByDate[key].sort((a,b)=>b.timestamp.seconds - a.timestamp.seconds).forEach(entry=>{
-          const time = entry.timestamp.toDate().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-          const hasDairy = Boolean(entry.dairy);
-          const dairyText = hasDairy ? getTranslation('yes') : getTranslation('no');
-          const pillClass = hasDairy ? 'pill-yes' : 'pill-no';
-          const outsideValue = Boolean(entry.outsideMeals);
-          const outsideText = outsideValue ? getTranslation('yes') : getTranslation('no');
-          const outsideClass = outsideValue ? 'pill-yes' : 'pill-no';
-          html += `<tr><td>${entry.name}</td><td>${time}</td><td><span class="pill ${pillClass}">${dairyText}</span></td><td><span class="pill ${outsideClass}">${outsideText}</span></td></tr>`;
-        });
-        html += `</tbody></table>`;
-      });
-
-      historyContent.innerHTML = html || `<p>${getTranslation('emptyState')}</p>`;
-    };
-
-    const handleLogAction = (event) => {
-      if (!logCollection) return;
-      const button = event.target.closest('button');
-      if (!button) return;
-
-      const { id } = button.dataset;
-      if (!id) return;
-
-      if (button.classList.contains('remove-entry')) {
-        logCollection.doc(id).delete().catch(error => {
-          console.error('Error removing document: ', error);
-          alert(getTranslation('deleteError'));
-        });
-        return;
-      }
-
-      if (button.classList.contains('edit-entry')) {
-        const currentName = button.closest('tr')?.querySelector('td')?.textContent || '';
-        const newName = prompt(getTranslation('editBtn'), currentName);
-        if (newName && newName.trim() && newName.trim() !== currentName) {
-          logCollection.doc(id).update({ name: newName.trim() }).catch(error => {
-            console.error('Error updating document:', error);
-            alert(getTranslation('updateError'));
-          });
-        }
-      }
-    };
-
-    const exportToCsv = () => {
-      if (!logCollection) return;
-
-      logCollection.orderBy('timestamp', 'desc').get().then(snapshot => {
-        const header = [
-          getTranslation('csvHeaderDate'),
-          getTranslation('csvHeaderItem'),
-          getTranslation('csvHeaderDairy'),
-          getTranslation('csvHeaderOutsideMeals')
-        ].join(',');
-        let csvContent = "data:text/csv;charset=utf-8," + header + "\n";
-        const locale = lang === 'de' ? 'de-DE' : 'en-US';
-
-        snapshot.forEach(doc => {
-          const entry = doc.data();
-          const date = entry.timestamp ? entry.timestamp.toDate().toLocaleDateString(locale) : getTranslation('notAvailable');
-          const safeName = `"${(entry.name || '').replace(/"/g, '""')}"`;
-          const hasDairy = Boolean(entry.dairy);
-          const outsideValue = Boolean(entry.outsideMeals);
-          const row = [
-            date,
-            safeName,
-            hasDairy ? getTranslation('csvYes') : getTranslation('csvNo'),
-            outsideValue ? getTranslation('csvYes') : getTranslation('csvNo')
-          ].join(',');
-          csvContent += row + "\n";
-        });
-
-        const link = document.createElement('a');
-        link.href = encodeURI(csvContent);
-        link.download = 'mcfattys_log.csv';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      });
-    };
-
-    const resetAuthFields = () => {
-      authEmail.value = '';
-      authPassword.value = '';
-      authUsername.value = '';
-      authRePassword.value = '';
-    };
-
-    const setAuthMode = (isLogin) => {
-      isLoginMode = isLogin;
-      signupFields.style.display = isLogin ? 'none' : 'block';
-      updateAuthTexts();
-    };
-
-    auth.onAuthStateChanged(user => {
-      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-
-      const loggedIn = !!user;
-
-      landingPage.style.display = loggedIn ? 'none' : 'grid';
-      appContent.style.display = loggedIn ? 'grid' : 'none';
-      authActions.style.display = loggedIn ? 'none' : 'flex';
-      userInfo.style.display = loggedIn ? 'flex' : 'none';
-      authSection.style.display = 'none';
-
-      if (loggedIn) {
-        resetFilters();
-        const displayName = user.displayName || user.email || '';
-        const welcomeText = getTranslation('welcome');
-        welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : welcomeText;
-        userName.textContent = displayName;
-
-        logCollection = db.collection('users').doc(user.uid).collection('logs');
-        unsubscribe = logCollection.orderBy('timestamp', 'desc').onSnapshot(renderEntries);
-      } else {
-        userName.textContent = '';
-        welcomeMessage.textContent = '';
-        latestSnapshot = null;
-        tbody.innerHTML = '';
-        emptyState.style.display = 'block';
-        logCollection = null;
-        allEntries = [];
-        resetFilters();
-        updateStats();
-        setAuthMode(true);
-        resetAuthFields();
-      }
-    });
-
-    const handleAuthSubmit = async () => {
-      const email = authEmail.value.trim();
-      const password = authPassword.value.trim();
-
-      if (!email || !password) {
-        alert(getTranslation('authMissingFields'));
-        return;
-      }
-      if (!isLoginMode) {
-        const username = authUsername.value.trim();
-        const confirmPassword = authRePassword.value.trim();
-        if (!username) {
-          alert(getTranslation('authMissingUsername'));
-          return;
-        }
-        if (password !== confirmPassword) {
-          alert(getTranslation('authPasswordMismatch'));
-          return;
-        }
-      }
-
-      authSubmit.disabled = true;
-      try {
-        if (isLoginMode) {
-          await auth.signInWithEmailAndPassword(email, password);
-        } else {
-          const username = authUsername.value.trim();
-          const { user: newUser } = await auth.createUserWithEmailAndPassword(email, password);
-          await newUser.updateProfile({ displayName: username });
-          await db.collection('users').doc(newUser.uid).set({
-            displayName: username,
-            email,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge: true });
-        }
-        authSection.style.display = 'none';
-        resetAuthFields();
-      } catch (error) {
-        alert(`${getTranslation('authErrorPrefix')} ${error.message}`);
-      } finally {
-        authSubmit.disabled = false;
-      }
-    };
-
-    // Helpers
-    const signOut = () => auth.signOut();
-    const toggleLanguage = () => setLanguage(lang === 'en' ? 'de' : 'en');
-
-    initDashboardReordering();
-
-    // Event Listeners
-    addBtn.addEventListener('click', addEntry);
-    tbody.addEventListener('click', handleLogAction);
-    exportBtn.addEventListener('click', exportToCsv);
-
-    if (logSearchInput) {
-      logSearchInput.addEventListener('input', (event) => {
-        searchTerm = event.target.value.trim().toLowerCase();
-        applyFilters();
-      });
-    }
-
-    filterButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const { filter } = button.dataset;
-        if (!filter) return;
-        activeFilter = filter;
-        filterButtons.forEach(btn => btn.classList.toggle('is-active', btn === button));
-        applyFilters();
-      });
-    });
-
-    loginBtn.addEventListener('click', () => { resetAuthFields(); authSection.style.display = 'block'; setAuthMode(true); });
-    signupBtn.addEventListener('click', () => { resetAuthFields(); authSection.style.display = 'block'; setAuthMode(false); });
-    authToggle.addEventListener('click', () => setAuthMode(!isLoginMode));
-    authSubmit.addEventListener('click', handleAuthSubmit);
-
-    googleSigninBtn.addEventListener('click', () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => {
-      alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
-      console.error('Google sign-in error:', err);
-    }));
-
-    logoutBtn.addEventListener('click', signOut);
-    logoutBtnMain.addEventListener('click', signOut);
-
-    donateBtn.addEventListener('click', () => {
-      const w = window.open('https://www.paypal.com/donate', '_blank');
-      if (w) w.opener = null;
-    });
-
-    langToggle.addEventListener('click', toggleLanguage);
-    langToggle.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        toggleLanguage();
-      }
-    });
-
-    menuOpenBtn.addEventListener('click', () => { sidebar.classList.add('open'); scrim.classList.add('show'); });
-    menuCloseBtn.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
-    scrim.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
-
-    // Sidebar actions -> modals
-    sidebar.addEventListener('click', (event) => {
-      const button = event.target.closest('.sb-item-btn');
-      if (!button) return;
-      const action = button.dataset.action;
-
-      if (action === 'manifesto') {
-        manifestoModal.classList.add('show');
-      } else if (action === 'history') {
-        if (!logCollection) return;
-        logCollection.orderBy('timestamp', 'desc').get().then(renderHistory);
-        historyModal.classList.add('show');
-      }
-      // Close sidebar after action
-      sidebar.classList.remove('open');
-      scrim.classList.remove('show');
-    });
-
-    closeManifestoBtn.addEventListener('click', () => manifestoModal.classList.remove('show'));
-    closeHistoryBtn.addEventListener('click', () => historyModal.classList.remove('show'));
-
-    impressumLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      legalTitle.textContent = getTranslation('impressum');
-      legalContent.innerHTML = lang === 'de' ? legalDocs.de.impressum : legalDocs.en.impressum;
-      legalModal.classList.add('show');
-    });
-
-    privacyLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      legalTitle.textContent = getTranslation('privacyPolicy');
-      legalContent.innerHTML = lang === 'de' ? legalDocs.de.privacyPolicy : legalDocs.en.privacyPolicy;
-      legalModal.classList.add('show');
-    });
-
-    closeLegalBtn.addEventListener('click', () => legalModal.classList.remove('show'));
-
-    // PWA install
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredInstallPrompt = e;
-      pwaInstallBtn.style.display = 'inline-flex';
-    });
-
-    pwaInstallBtn.addEventListener('click', async () => {
-      if (!deferredInstallPrompt) return;
-      deferredInstallPrompt.prompt();
-      const { outcome } = await deferredInstallPrompt.userChoice;
-      showInstallBanner(getTranslation(outcome === 'accepted' ? 'installSuccess' : 'installDismissed'));
-      deferredInstallPrompt = null;
-      pwaInstallBtn.style.display = 'none';
-    });
-
-    window.addEventListener('appinstalled', () => {
-      showInstallBanner(getTranslation('installSuccess'));
-      deferredInstallPrompt = null;
-      pwaInstallBtn.style.display = 'none';
-    });
-
-    // SW
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js').catch(err => console.error('SW registration failed:', err)));
-    }
-
-    // Boot
-    setLanguage('en');
-  </script>
-</body>
-</html>
+diff --git a/index.html b/index.html
+index 5d88c7541ccae56e2bddeaa723cea70bacb48332..039c0b69cafcadfedcda833758faa54a99cb26e7 100644
+--- a/index.html
++++ b/index.html
+@@ -57,61 +57,92 @@
+     .switch.active{background:#3b3f4a}
+     .switch.active::after{left:24px}
+ 
+     /* Buttons */
+     .btn{padding:12px 18px;border-radius:var(--r-12);font-weight:700;cursor:pointer;min-height:44px;transition:.15s;border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center}
+     .btn:active{transform:scale(.98)}
+     .btn[disabled]{opacity:.5;pointer-events:none}
+     .btn-primary{background:var(--primary);color:#1b1b1b}
+     .btn-secondary{background:var(--bg-1);color:var(--text-0);border-color:var(--border)}
+     .btn-danger{background:var(--danger);color:#fff}
+     .btn-danger:hover{background:#c9302c}
+     .btn:focus,.input:focus,.switch:focus-visible,.icon-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(242,197,109,.35)}
+     .btn-google{background-color:#fff;color:#333;border:1px solid #ccc;width:100%; gap: 10px;}
+ 
+     /* Install button hidden unless prompted */
+     #pwa-install{padding:12px 16px;font-size:14px;line-height:1;white-space:nowrap;max-width:100%;display:none}
+     @media (max-width:620px){.utility-row{flex-wrap:wrap;gap:12px}#pwa-install{width:100%}}
+ 
+     /* Logo (2/3 size) */
+     .hero-logo{background:var(--bg-1);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:var(--sp-8)}
+     .hero-logo img{width:100%;max-width:320px;display:block;margin:0 auto}
+ 
+     /* Sections */
+     .section{background:var(--card);border:1px solid var(--border);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:18px}
+     .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:var(--fs-22);margin:0 0 var(--sp-12)}
+-    #landing-page,#app-content{display:grid;gap:var(--sp-16)}
++    #landing-page{display:grid;gap:var(--sp-16)}
++    #app-content{display:grid;gap:var(--sp-16)}
+     .section-head{display:flex;justify-content:space-between;align-items:center}
+     .actions{display:flex;gap:10px;flex-wrap:wrap}
+     .label{font-size:var(--fs-14);color:var(--text-1);margin-bottom:var(--sp-8);display:block}
+     .input{width:100%;background:var(--bg-1);color:var(--text-0);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+     .checkbox{width:20px;height:20px;cursor:pointer;margin-right:var(--sp-8)}
+     .controls{display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-end}
+     .controls .grow{flex:1 1 260px}
+     .manifesto-paragraph{color:var(--text-0);line-height:1.6;margin:0 0 var(--sp-16)}
+     .info-text{color:var(--text-1);font-size:13px;text-align:center;margin-top:var(--sp-12)}
+ 
++    /* Dashboard */
++    .dashboard-grid{display:grid;gap:var(--sp-16);position:relative;grid-template-columns:repeat(2,minmax(0,1fr))}
++    .dashboard-card{position:relative;cursor:grab;transition:transform .18s ease,box-shadow .18s ease;touch-action:none}
++    .dashboard-card:active{cursor:grabbing}
++    .dashboard-card.is-dragging{opacity:.92;cursor:grabbing;box-shadow:0 18px 40px rgba(0,0,0,.5)}
++    .dashboard-grid.is-reordering .dashboard-card{transition:transform .18s ease}
++    .dashboard-placeholder{border:1px dashed var(--border);border-radius:var(--r-12);background:rgba(255,255,255,.04);min-height:120px;margin:0}
++    .dashboard-placeholder.span-2{grid-column:1 / -1}
++    body.card-dragging{user-select:none}
++    .span-2{grid-column:1 / -1}
++    .quick-stats-grid{display:grid;gap:var(--sp-12);grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
++    .stat-card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--r-12);padding:16px;box-shadow:var(--shadow-md)}
++    .stat-label{font-size:13px;color:var(--text-1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;display:block}
++    .stat-value{font-family:Oswald,sans-serif;font-size:32px;line-height:1}
++    .stat-subtext{font-size:13px;color:var(--text-1);margin-top:4px}
++
++    .quick-add-subtext{color:var(--text-1);font-size:13px;margin:0 0 var(--sp-12);text-align:left}
++    .quick-add-body{display:grid;gap:var(--sp-12)}
++    .quick-add-actions{display:flex;gap:var(--sp-12);align-items:center;flex-wrap:wrap}
++
++    .log-controls{display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:center;margin-bottom:var(--sp-12)}
++    .log-search{flex:1 1 220px}
++    .filter-group{display:inline-flex;gap:var(--sp-8);background:var(--bg-1);padding:6px;border-radius:var(--r-12);border:1px solid var(--border)}
++    .filter-btn{border:none;background:none;color:var(--text-0);font-weight:600;padding:8px 12px;border-radius:var(--r-8);cursor:pointer;transition:.15s}
++    .filter-btn.is-active{background:var(--primary);color:#1b1b1b}
++    .filter-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(242,197,109,.35)}
++    .filter-btn:active{transform:scale(.98)}
++
++    .pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;display:inline-block}
++
+     /* Table */
+     .table{width:100%;border-collapse:separate;border-spacing:0 var(--sp-8)}
+     .table thead th{color:var(--text-1);font-size:13px;font-weight:600;text-align:left;padding-bottom:4px}
+     .table tbody tr{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--r-8)}
+     .table tbody td{padding:10px; vertical-align: middle;}
+     .row-actions{text-align:right}
+     .row-actions .btn { padding: 8px 12px; min-height: 0; }
+     .pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700}
+     .pill-yes{background:rgba(91,192,222,.18);color:#a6e1ec}
+     .pill-no{background:rgba(217,83,79,.18);color:#f2baba}
+ 
+     .footer{color:var(--text-1);font-size:12px;text-align:center;padding:14px 0}
+     .footer-links { display: flex; justify-content: center; gap: 16px; margin-top: 8px; }
+     .footer-links a { color: var(--text-1); text-decoration: none; }
+     .footer-links a:hover { text-decoration: underline; }
+ 
+     /* Modal */
+     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:500}
+     .modal-backdrop.show{display:flex}
+     .modal{background:var(--card);padding:20px;border-radius:var(--r-12);text-align:center;max-width:480px;width:90%}
+     .modal h3{margin:0 0 10px;font-family:Oswald,sans-serif;font-size:20px}
+     .modal p{margin:0 0 16px;color:var(--text-1); text-align: left;}
+     .modal-actions{display:flex;gap:10px;justify-content:center;margin-top:16px}
+     #manifesto-modal .modal-content, #history-modal .modal-content, #legal-modal .modal-content { max-height: 60vh; overflow-y: auto; margin-bottom: 16px; }
+     #manifesto-modal .modal-image {
+diff --git a/index.html b/index.html
+index 5d88c7541ccae56e2bddeaa723cea70bacb48332..039c0b69cafcadfedcda833758faa54a99cb26e7 100644
+--- a/index.html
++++ b/index.html
+@@ -129,55 +160,73 @@
+     .install-banner.show{display:block;opacity:1;transform:translate(-50%,-50%) scale(1)}
+ 
+     /* Sidebar (right) */
+     .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:450}
+     .scrim.show{display:block}
+     .sidebar{position:fixed;top:0;right:0;height:100%;width:300px;max-width:85%;background:var(--card);border-left:1px solid var(--border);box-shadow:var(--shadow-md);transform:translateX(100%);transition:transform .22s ease-out;z-index:600;display:flex;flex-direction:column}
+     .sidebar.open{transform:translateX(0)}
+     .sb-head{display:flex;align-items:center;justify-content:space-between;padding:14px 14px;border-bottom:1px solid var(--border)}
+     .sb-title{font-family:Oswald,sans-serif;font-size:18px;margin:0}
+     .sb-section-title{padding:12px 14px;color:var(--text-1);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+     .sb-list{list-style:none;margin:0;padding:0}
+     .sb-item-btn{width:100%;text-align:left;padding:12px 14px;background:none;color:var(--text-0);border:none;border-top:1px solid rgba(255,255,255,.02);cursor:pointer;display:flex;align-items:center;gap:10px}
+     .sb-item-btn:focus{outline:none;box-shadow:inset 0 0 0 2px rgba(242,197,109,.35)}
+     .sb-item-btn:hover{background:#161a22}
+     .sb-item-icon{width:18px;height:18px;opacity:.9}
+     .sb-manifesto{padding:12px 14px;border-top:1px solid rgba(255,255,255,.05);margin:0;color:var(--text-1);font-size:13px;line-height:1.6;overflow:auto;max-height:calc(100vh - 240px)}
+     .sb-manifesto .manifesto-paragraph{margin-bottom:var(--sp-12)}
+     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+ 
+     /* Header actions */
+     .header-actions{display:flex;align-items:center;gap:12px}
+     .auth-actions{display:flex;gap:10px}
+     .user-info{display:none;align-items:center;gap:10px}
+     .user-info.show{display:flex}
+ 
+-    @media (prefers-reduced-motion:reduce){.install-banner,.sidebar{transition:none}.btn:active{transform:none}}
++    .logo-card{display:flex;align-items:center;justify-content:center;padding:var(--sp-16)}
++    .logo-card .logo-card-inner{width:100%;aspect-ratio:1/1;border-radius:var(--r-12);background:var(--bg-1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;padding:var(--sp-16);overflow:hidden}
++    .logo-card img{width:100%;height:100%;object-fit:contain;display:block}
++
++    @keyframes wobble {
++      0%,100%{transform:rotate(0deg)}
++      25%{transform:rotate(1.5deg)}
++      75%{transform:rotate(-1.5deg)}
++    }
++
++    .reorganize-mode .dashboard-card{animation:wobble .2s ease-in-out infinite}
++
++    .close-btn{position:absolute;top:-10px;right:-10px;width:28px;height:28px;border-radius:50%;background:var(--danger);color:#fff;border:2px solid var(--bg-0);font-weight:700;font-size:16px;line-height:1;text-align:center;cursor:pointer;display:none;z-index:10}
++
++    .reorganize-mode .close-btn{display:block}
++
++    @media (prefers-reduced-motion:reduce){.install-banner,.sidebar,.reorganize-mode .dashboard-card{transition:none;animation:none}.btn:active{transform:none}}
+ 
+     @media (min-width: 680px) {
+       .hero-logo img { max-width: 240px; }
+     }
++
++    @media (max-width:680px){.dashboard-grid{grid-template-columns:1fr}.logo-card .logo-card-inner{max-width:220px}}
+   </style>
+ </head>
+ <body>
+   <div id="scrim" class="scrim" tabindex="-1" aria-hidden="true"></div>
+   <aside id="sidebar" class="sidebar" aria-hidden="true" aria-labelledby="menu-title" role="dialog">
+     <div class="sb-head">
+       <h3 id="menu-title" class="sb-title" data-i18n="menuTitle">Menu</h3>
+       <button id="menu-close" class="icon-btn" aria-label="Close menu">
+         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.7L12 12l6.3 6.3-1.3 1.3L10.7 13.3 4.4 19.6 3.1 18.3 9.4 12 3.1 5.7 4.4 4.4l6.3 6.3 6.3-6.3z"/></svg>
+       </button>
+     </div>
+     <div>
+       <div class="sb-section-title" data-i18n="corePractices">Core Practices</div>
+       <ul class="sb-list">
+         <li><button class="sb-item-btn" data-action="newEntry"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg><span data-i18n="newJournal">New Journal Entry</span></button></li>
+         <li><button class="sb-item-btn" data-action="manifesto"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M20 6v14H6v2h14c1.1 0 2-.9 2-2V6h-2zm-4-4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h6v2zm-6 4h4v-2H9v2zm8-8H9V5h8v2z"/></svg><span data-i18n="manifesto">McFatty's Manifesto</span></button></li>
+         <li><button class="sb-item-btn" data-action="history"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7v2a9 9 0 0 0 9-9 9 9 0 0 0-9-9zm-1 5v5l4.25 2.52.75-1.23-3.5-2.07V8z"></path></svg><span data-i18n="history">History</span></button></li>
+       </ul>
+       <div class="sb-section-title" data-i18n="settings">Application Settings</div>
+       <ul class="sb-list">
+         <li><button class="sb-item-btn" data-action="account"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/></svg><span data-i18n="account">Account</span></button></li>
+         <li><button class="sb-item-btn" data-action="logout" id="logout-btn"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 17v-3H9v-2h7V9l4 4-4 4zm-5-3H4V5h7V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2z"></path></svg><span data-i18n="logout">Log Out</span></button></li>
+       </ul>
+       <div id="sidebar-manifesto" class="sb-manifesto" hidden>
+         <p class="manifesto-paragraph" data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
+diff --git a/index.html b/index.html
+index 5d88c7541ccae56e2bddeaa723cea70bacb48332..039c0b69cafcadfedcda833758faa54a99cb26e7 100644
+--- a/index.html
++++ b/index.html
+@@ -247,80 +296,142 @@
+             </div>
+           </div>
+         </div>
+         <div class="controls" style="margin-top: 16px;">
+           <button id="auth-submit" class="btn btn-primary" type="button"></button>
+           <button id="auth-toggle" class="btn btn-secondary" type="button"></button>
+         </div>
+         <div style="text-align:center; margin-top:16px; color:var(--text-1)">OR</div>
+         <button id="google-signin" class="btn btn-google" type="button">
+           <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.20455c0-.63864-.05727-1.25182-.16364-1.84091H9v3.48182h4.84364c-.20818 1.125-.84273 2.07818-1.77727 2.72182v2.25818h2.90818c1.70182-1.56636 2.68636-3.87409 2.68636-6.62182z"/><path fill="#34A853" d="M9 18c2.43 0 4.46727-.80545 5.95636-2.18182l-2.90818-2.25818c-.80545.54273-1.84091.86182-3.04818.86182-2.34545 0-4.32818-1.58364-5.03545-3.71091H.957273v2.33182C2.43818 16.1573 5.48182 18 9 18z"/><path fill="#FBBC05" d="M3.96455 10.71c-.18-.54273-.28364-1.11636-.28364-1.71s.10364-1.16727.28364-1.71V4.95818H.957273C.347727 6.17364 0 7.54773 0 9c0 1.45227.347727 2.82636.957273 4.04182L3.96455 10.71z"/><path fill="#EA4335" d="M9 3.57818c1.32182 0 2.50727.45545 3.44 1.34818l2.58182-2.58182C13.4636.891818 11.4259 0 9 0 5.48182 0 2.43818 1.84273.957273 4.95818L3.96455 7.29C4.67182 5.16364 6.65455 3.57818 9 3.57818z"/></svg>
+           <span data-i18n="googleSignin">Sign in with Google</span>
+         </button>
+       </section>
+ 
+       <section id="about-section" class="section">
+         <h2 data-i18n="manifestoTitle">McFatty's Manifesto</h2>
+         <p class="manifesto-paragraph" data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
+         <p class="manifesto-paragraph" data-i18n="manifestoP2">This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
+         <p class="manifesto-paragraph" data-i18n="manifestoP3">Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
+         <p class="manifesto-paragraph" data-i18n="manifestoP4">We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
+         <p class="manifesto-paragraph" data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
+         <button id="donate-button" class="btn btn-primary" type="button" data-i18n="donateBtn">Donate</button>
+       </section>
+     </div>
+ 
+-    <div id="app-content" style="display: none;">
+-      <section id="welcome-section" class="section">
++    <div id="app-content" class="dashboard-grid" style="display: none;">
++      <section id="logo-card" class="section dashboard-card logo-card" data-card-id="logo" aria-label="McFatty's logo">
++        <button class="close-btn" type="button" aria-label="Finish organizing">&times;</button>
++        <div class="logo-card-inner">
++          <img src="Logo.png" alt="McFatty's Food Tracker logo">
++        </div>
++      </section>
++
++      <section id="welcome-section" class="section dashboard-card" data-card-id="welcome">
++        <button class="close-btn" type="button" aria-label="Finish organizing">&times;</button>
+         <h2 id="welcome-message" data-i18n="welcome"></h2>
+       </section>
+ 
+-      <section class="section stack-16" aria-labelledby="addItem" id="add-item-section">
+-        <h2 id="addItem" data-i18n="addTitle">Add item</h2>
+-        <div class="controls">
+-          <div class="grow">
++      <section id="stats-section" class="section dashboard-card span-2" data-card-id="stats" aria-labelledby="quick-stats-title">
++        <button class="close-btn" type="button" aria-label="Finish organizing">&times;</button>
++        <h2 id="quick-stats-title" data-i18n="quickStatsTitle">Quick stats</h2>
++        <div class="quick-stats-grid">
++          <div class="stat-card">
++            <span class="stat-label" data-i18n="statEntriesToday">Entries today</span>
++            <div id="stat-total" class="stat-value">0</div>
++          </div>
++          <div class="stat-card">
++            <span class="stat-label" data-i18n="statDairyToday">Dairy items</span>
++            <div id="stat-dairy" class="stat-value">0</div>
++          </div>
++          <div class="stat-card">
++            <span class="stat-label" data-i18n="statOutsideMeals">Outside of mealtimes</span>
++            <div id="stat-outside" class="stat-value">0</div>
++          </div>
++          <div class="stat-card">
++            <span class="stat-label" data-i18n="statLastEntry">Last entry</span>
++            <div id="stat-last" class="stat-value" aria-live="polite">—</div>
++            <div id="stat-last-subtext" class="stat-subtext"></div>
++          </div>
++        </div>
++      </section>
++
++      <section class="section dashboard-card" aria-labelledby="addItem" id="add-item-section" data-card-id="quick-add">
++        <button class="close-btn" type="button" aria-label="Finish organizing">&times;</button>
++        <h2 id="addItem" data-i18n="quickAddTitle">Quick add</h2>
++        <p class="quick-add-subtext" data-i18n="quickAddHint">Log what you’re eating right now—no pressure, no judgement.</p>
++        <div class="quick-add-body">
++          <div>
+             <label for="food-name" class="label" data-i18n="foodLabel">Food item name</label>
+             <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" data-i18n-placeholder="foodPlaceholder">
+           </div>
+-          <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
++          <div class="quick-add-actions">
++            <label style="display:flex;align-items:center;gap:var(--sp-8);margin:0;">
++              <input id="contains-dairy" type="checkbox" class="checkbox" aria-label="Contains dairy">
++              <span data-i18n="dairyLabel">Contains dairy</span>
++            </label>
++            <label style="display:flex;align-items:center;gap:var(--sp-8);margin:0;">
++              <input id="outside-meals" type="checkbox" class="checkbox" aria-label="Outside of mealtimes">
++              <span data-i18n="outsideMealsLabel">Outside of mealtimes</span>
++            </label>
++            <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
++          </div>
+         </div>
+-        <label style="display:flex;align-items:center;margin-top:var(--sp-8);">
+-          <input id="contains-dairy" type="checkbox" class="checkbox" aria-label="Contains dairy">
+-          <span data-i18n="dairyLabel">Contains dairy</span>
+-        </label>
+       </section>
+ 
+-      <section class="section stack-16" aria-labelledby="todaysLog" id="log-section">
++      <section id="growth-section" class="section dashboard-card" aria-labelledby="growth-title" data-card-id="growth">
++        <button class="close-btn" type="button" aria-label="Finish organizing">&times;</button>
++        <h2 id="growth-title" data-i18n="growthTitle">Room to grow</h2>
++        <p data-i18n="growthCopy">This space is ready for habits, reflections, or whatever else you need next.</p>
++      </section>
++
++      <section class="section dashboard-card span-2" aria-labelledby="recentLog" id="log-section" data-card-id="recent-log">
++        <button class="close-btn" type="button" aria-label="Finish organizing">&times;</button>
+         <div class="section-head">
+-          <h2 id="todaysLog" data-i18n="logTitle">Today’s log</h2>
++          <h2 id="recentLog" data-i18n="recentLogTitle">Recent log</h2>
+           <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
+         </div>
+-        <table class="table" aria-describedby="todaysLog">
+-          <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thTime">Time</th><th data-i18n="thDairy">Dairy</th><th></th></tr></thead>
++        <div class="log-controls" role="search">
++          <div class="log-search">
++            <label class="sr-only" for="log-search" data-i18n="logSearchLabel">Search log</label>
++            <input id="log-search" class="input" type="search" placeholder="Search entries" data-i18n-placeholder="logSearchPlaceholder">
++          </div>
++          <div class="filter-group" role="group" aria-labelledby="log-filters-label">
++            <span id="log-filters-label" class="sr-only" data-i18n="filterGroupLabel">Filters</span>
++            <button type="button" class="filter-btn is-active" data-filter="all" data-i18n="filterAll">All</button>
++            <button type="button" class="filter-btn" data-filter="dairy" data-i18n="filterDairy">Dairy</button>
++            <button type="button" class="filter-btn" data-filter="non-dairy" data-i18n="filterNonDairy">No dairy</button>
++            <button type="button" class="filter-btn" data-filter="outside-meals" data-i18n="filterOutsideMeals">Outside of mealtimes</button>
++            <button type="button" class="filter-btn" data-filter="during-meals" data-i18n="filterMeals">At mealtimes</button>
++          </div>
++        </div>
++        <table class="table" aria-describedby="recentLog">
++          <thead><tr><th data-i18n="thItem">Item</th><th data-i18n="thTime">Time</th><th data-i18n="thDairy">Dairy</th><th data-i18n="thOutsideMeals">Outside of mealtimes</th><th></th></tr></thead>
+           <tbody id="log-body"></tbody>
+         </table>
+         <div id="empty-state" class="info-text" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
++        <div id="no-results" class="info-text" style="display:none" data-i18n="noResults">No entries match your filters yet.</div>
+       </section>
+     </div>
+ 
+     <footer class="footer">
+       <span data-i18n="footerText">Designed and created by Burrow · 2025</span>
+       <div class="footer-links">
+         <a href="#" id="impressum-link" data-i18n="impressum">Legal Notice</a>
+         <a href="#" id="privacy-link" data-i18n="privacyPolicy">Privacy Policy</a>
+       </div>
+     </footer>
+   </div>
+ 
+   <div class="modal-backdrop" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-desc">
+     <div class="modal">
+       <h3 id="confirm-title" data-i18n="confirmTitle">Are you sure?</h3>
+       <p id="confirm-desc"></p>
+       <div class="modal-actions">
+         <button id="cancel-action" class="btn btn-secondary" data-i18n="cancelBtn">Cancel</button>
+         <button id="confirm-action" class="btn btn-danger" data-i18n="confirmClearBtn">Confirm</button>
+       </div>
+     </div>
+   </div>
+ 
+   <div class="modal-backdrop" id="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title">
+     <div class="modal">
+diff --git a/index.html b/index.html
+index 5d88c7541ccae56e2bddeaa723cea70bacb48332..039c0b69cafcadfedcda833758faa54a99cb26e7 100644
+--- a/index.html
++++ b/index.html
+@@ -372,259 +483,647 @@
+       <div class="modal-content" style="text-align: left;" id="legal-content"></div>
+       <div class="modal-actions">
+         <button id="close-legal" class="btn btn-primary" data-i18n="closeBtn">Close</button>
+       </div>
+     </div>
+   </div>
+ 
+   <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-auth-compat.js"></script>
+   <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
+ 
+   <script>
+     const firebaseConfig = {
+       apiKey: "AIzaSyC1qN3ksU0uYhXRXYNmYlmGX0iyUa-BJFQ",
+       authDomain: "mcfattys-food-tracker.firebaseapp.com",
+       projectId: "mcfattys-food-tracker",
+       storageBucket: "mcfattys-food-tracker.appspot.com",
+       messagingSenderId: "831603858264",
+       appId: "1:831603858264:web:58506c01975e9a1991e32d",
+       measurementId: "G-KQX4BQ71VK"
+     };
+ 
+     const app = firebase.initializeApp(firebaseConfig);
+     const auth = firebase.auth();
+     const db = firebase.firestore();
++    const MAX_RECENT_ROWS = 10;
+ 
+     let logCollection;
+     let unsubscribe;
+     let lang = 'en';
+     let deferredInstallPrompt = null;
+     let installBannerTimeout;
+     let latestSnapshot = null;
+     let isLoginMode = true;
++    let allEntries = [];
++    let activeFilter = 'all';
++    let searchTerm = '';
+ 
+     // Elements
+     const nameInput = document.getElementById('food-name');
+     const dairyCheckbox = document.getElementById('contains-dairy');
++    const outsideMealsCheckbox = document.getElementById('outside-meals');
+     const addBtn = document.getElementById('add-button');
+     const tbody = document.getElementById('log-body');
+     const emptyState = document.getElementById('empty-state');
+     const installBanner = document.getElementById('install-banner');
+     const sidebar = document.getElementById('sidebar');
+     const scrim = document.getElementById('scrim');
+     const welcomeMessage = document.getElementById('welcome-message');
+     const landingPage = document.getElementById('landing-page');
+     const appContent = document.getElementById('app-content');
+     const donateBtn = document.getElementById('donate-button');
+     const langToggle = document.getElementById('lang-toggle');
+     const switchEl = document.getElementById('switch');
+     const googleSigninBtn = document.getElementById('google-signin');
+     const pwaInstallBtn = document.getElementById('pwa-install');
+     const menuOpenBtn = document.getElementById('menu-open');
+     const menuCloseBtn = document.getElementById('menu-close');
+     const logoutBtn = document.getElementById('logout-btn');
+     const logoutBtnMain = document.getElementById('logout-btn-main');
+     const userInfo = document.getElementById('user-info');
+     const userName = document.getElementById('user-name');
+     const exportBtn = document.getElementById('export-button');
++    const statTotal = document.getElementById('stat-total');
++    const statDairy = document.getElementById('stat-dairy');
++    const statOutside = document.getElementById('stat-outside');
++    const statLast = document.getElementById('stat-last');
++    const statLastSubtext = document.getElementById('stat-last-subtext');
++    const logSearchInput = document.getElementById('log-search');
++    const noResultsMessage = document.getElementById('no-results');
++    const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
++
++    const DASHBOARD_ORDER_KEY = 'dashboard-card-order-v1';
++    const LONG_PRESS_DELAY_TOUCH = 280;
++    const LONG_PRESS_DELAY_POINTER = 160;
++    const DRAG_MOVE_CANCEL_THRESHOLD = 10;
++    let dragSession = null;
++    let isReorganizeMode = false;
+ 
+     // Modals / legal links
+     const manifestoModal = document.getElementById('manifesto-modal');
+     const closeManifestoBtn = document.getElementById('close-manifesto');
+     const historyModal = document.getElementById('history-modal');
+     const closeHistoryBtn = document.getElementById('close-history');
+     const historyContent = document.getElementById('history-content');
+     const legalModal = document.getElementById('legal-modal');
+     const legalTitle = document.getElementById('legal-title');
+     const legalContent = document.getElementById('legal-content');
+     const closeLegalBtn = document.getElementById('close-legal');
+     const impressumLink = document.getElementById('impressum-link');
+     const privacyLink = document.getElementById('privacy-link');
+ 
++    function getDashboardCards() {
++      if (!appContent) return [];
++      return Array.from(appContent.querySelectorAll('.dashboard-card'));
++    }
++
++    function persistCardOrder() {
++      if (!appContent) return;
++      try {
++        const order = getDashboardCards().map(card => card.dataset.cardId).filter(Boolean);
++        localStorage.setItem(DASHBOARD_ORDER_KEY, JSON.stringify(order));
++      } catch (error) {
++        console.warn('Unable to save dashboard order', error);
++      }
++    }
++
++    function applyStoredCardOrder() {
++      if (!appContent) return;
++      const cards = getDashboardCards();
++      if (!cards.length) return;
++
++      const defaultOrder = cards.map(card => card.dataset.cardId).filter(Boolean);
++      let storedOrder = [];
++
++      try {
++        const storedValue = localStorage.getItem(DASHBOARD_ORDER_KEY);
++        storedOrder = storedValue ? JSON.parse(storedValue) : [];
++      } catch (error) {
++        storedOrder = [];
++      }
++
++      if (!Array.isArray(storedOrder) || !storedOrder.length) return;
++
++      const validStored = storedOrder.filter(id => defaultOrder.includes(id));
++      const storedSet = new Set(validStored);
++      const queue = [...validStored];
++      const finalOrder = [];
++
++      defaultOrder.forEach(id => {
++        if (!id) return;
++        if (!storedSet.has(id)) {
++          if (!finalOrder.includes(id)) {
++            finalOrder.push(id);
++          }
++        } else {
++          const nextStored = queue.shift();
++          if (nextStored && !finalOrder.includes(nextStored)) {
++            finalOrder.push(nextStored);
++          }
++        }
++      });
++
++      queue.forEach(id => {
++        if (id && !finalOrder.includes(id)) {
++          finalOrder.push(id);
++        }
++      });
++
++      defaultOrder.forEach(id => {
++        if (id && !finalOrder.includes(id)) {
++          finalOrder.push(id);
++        }
++      });
++
++      finalOrder.forEach(id => {
++        const card = appContent.querySelector(`[data-card-id="${id}"]`);
++        if (card) {
++          appContent.appendChild(card);
++        }
++      });
++    }
++
++    function detachGlobalPointerListeners() {
++      window.removeEventListener('pointermove', handleCardPointerMove);
++      window.removeEventListener('pointerup', handleCardPointerUp);
++      window.removeEventListener('pointercancel', handleCardPointerUp);
++    }
++
++    function exitReorganizeMode() {
++      if (!isReorganizeMode || !appContent) return;
++      appContent.classList.remove('reorganize-mode');
++      isReorganizeMode = false;
++    }
++
++    function endCardDrag(commit) {
++      if (!dragSession) return;
++
++      clearTimeout(dragSession.longPressTimer);
++      dragSession.longPressTimer = null;
++
++      detachGlobalPointerListeners();
++
++      const { card, placeholder, active } = dragSession;
++
++      if (active && placeholder && placeholder.parentNode) {
++        placeholder.parentNode.replaceChild(card, placeholder);
++      }
++
++      if (active && card) {
++        card.classList.remove('is-dragging');
++        card.style.position = '';
++        card.style.zIndex = '';
++        card.style.width = '';
++        card.style.height = '';
++        card.style.left = '';
++        card.style.top = '';
++        card.style.pointerEvents = '';
++        card.style.transition = '';
++      }
++
++      if (active) {
++        appContent.classList.remove('is-reordering');
++        document.body.classList.remove('card-dragging');
++        if (commit) {
++          persistCardOrder();
++        }
++      }
++
++      exitReorganizeMode();
++
++      dragSession = null;
++    }
++
++    function positionDraggedCard(event) {
++      if (!dragSession || !dragSession.card) return;
++      const card = dragSession.card;
++      const containerRect = appContent.getBoundingClientRect();
++      const cardWidth = card.offsetWidth;
++      const cardHeight = card.offsetHeight;
++      const rawX = event.clientX - containerRect.left - dragSession.offsetX;
++      const rawY = event.clientY - containerRect.top - dragSession.offsetY;
++      const maxX = Math.max(containerRect.width - cardWidth, 0);
++      const maxY = Math.max(containerRect.height - cardHeight, 0);
++      const clampedX = Math.min(Math.max(rawX, 0), maxX);
++      const clampedY = Math.min(Math.max(rawY, 0), maxY);
++      card.style.left = `${clampedX}px`;
++      card.style.top = `${clampedY}px`;
++    }
++
++    function updatePlaceholderPosition(event) {
++      if (!dragSession || !dragSession.placeholder) return false;
++
++      const { placeholder, card } = dragSession;
++      const cards = getDashboardCards().filter(el => el !== card);
++      if (!cards.length) return false;
++
++      const { clientX, clientY } = event;
++      const element = document.elementFromPoint(clientX, clientY);
++      const targetCard = element ? element.closest('.dashboard-card') : null;
++
++      if (targetCard && targetCard !== card) {
++        const rect = targetCard.getBoundingClientRect();
++        const verticalMiddle = rect.top + rect.height / 2;
++        const horizontalMiddle = rect.left + rect.width / 2;
++        const before = clientY < verticalMiddle || (Math.abs(clientY - verticalMiddle) < rect.height / 3 && clientX < horizontalMiddle);
++
++        if (before) {
++          if (placeholder.nextSibling !== targetCard) {
++            appContent.insertBefore(placeholder, targetCard);
++            return true;
++          }
++        } else if (targetCard.nextSibling !== placeholder) {
++          appContent.insertBefore(placeholder, targetCard.nextSibling);
++          return true;
++        }
++
++        return false;
++      }
++
++      const firstCard = cards[0];
++      const firstRect = firstCard.getBoundingClientRect();
++      if (clientY < firstRect.top) {
++        if (placeholder !== firstCard) {
++          appContent.insertBefore(placeholder, firstCard);
++          return true;
++        }
++        return false;
++      }
++
++      const lastCard = cards[cards.length - 1];
++      const lastRect = lastCard.getBoundingClientRect();
++      if (clientY > lastRect.bottom) {
++        if (lastCard.nextSibling !== placeholder) {
++          appContent.appendChild(placeholder);
++          return true;
++        }
++        return false;
++      }
++
++      return false;
++    }
++
++    function beginCardDrag(event) {
++      if (!dragSession || dragSession.active) return;
++
++      clearTimeout(dragSession.longPressTimer);
++      dragSession.longPressTimer = null;
++
++      const card = dragSession.card;
++      if (!card) return;
++
++      const cardRect = card.getBoundingClientRect();
++      const containerRect = appContent.getBoundingClientRect();
++
++      dragSession.active = true;
++      dragSession.offsetX = event.clientX - cardRect.left;
++      dragSession.offsetY = event.clientY - cardRect.top;
++
++      const placeholder = document.createElement('div');
++      placeholder.className = 'dashboard-placeholder';
++      if (card.classList.contains('span-2')) {
++        placeholder.classList.add('span-2');
++      }
++      placeholder.style.minHeight = `${cardRect.height}px`;
++
++      dragSession.placeholder = placeholder;
++
++      appContent.insertBefore(placeholder, card);
++      appContent.appendChild(card);
++
++      card.classList.add('is-dragging');
++      card.style.position = 'absolute';
++      card.style.zIndex = '900';
++      card.style.width = `${cardRect.width}px`;
++      card.style.height = `${cardRect.height}px`;
++      card.style.left = `${cardRect.left - containerRect.left}px`;
++      card.style.top = `${cardRect.top - containerRect.top}px`;
++      card.style.pointerEvents = 'none';
++
++      appContent.classList.add('is-reordering');
++      document.body.classList.add('card-dragging');
++    }
++
++    function handleCardPointerMove(event) {
++      if (!dragSession || event.pointerId !== dragSession.pointerId) return;
++
++      dragSession.lastEvent = event;
++
++      if (!dragSession.active) {
++        if (dragSession.longPressTimer) {
++          const dx = Math.abs(event.clientX - dragSession.startX);
++          const dy = Math.abs(event.clientY - dragSession.startY);
++          if (dx > DRAG_MOVE_CANCEL_THRESHOLD || dy > DRAG_MOVE_CANCEL_THRESHOLD) {
++            endCardDrag(false);
++          }
++        }
++        return;
++      }
++
++      event.preventDefault();
++      positionDraggedCard(event);
++      const moved = updatePlaceholderPosition(event);
++      if (moved) {
++        dragSession.hasMoved = true;
++      }
++    }
++
++    function handleCardPointerUp(event) {
++      if (!dragSession || event.pointerId !== dragSession.pointerId) return;
++      const shouldCommit = Boolean(dragSession.active);
++      endCardDrag(shouldCommit);
++    }
++
++    function handleCardPointerDown(event) {
++      if (!event.isPrimary) return;
++      if (event.pointerType === 'mouse' && event.button !== 0) return;
++      if (dragSession) return;
++      if (!appContent) return;
++      if (event.target.closest('.close-btn')) return;
++
++      const interactiveTarget = event.target.closest('button, input, textarea, select, label, a');
++      if (interactiveTarget && !isReorganizeMode) return;
++
++      const card = event.currentTarget;
++      if (!card || !card.dataset.cardId) return;
++
++      const delay = event.pointerType === 'touch' ? LONG_PRESS_DELAY_TOUCH : LONG_PRESS_DELAY_POINTER;
++
++      dragSession = {
++        card,
++        pointerId: event.pointerId,
++        startX: event.clientX,
++        startY: event.clientY,
++        longPressTimer: setTimeout(() => {
++          if (!dragSession) return;
++          if (!isReorganizeMode && appContent) {
++            appContent.classList.add('reorganize-mode');
++            isReorganizeMode = true;
++          }
++          const triggerEvent = dragSession.lastEvent || event;
++          beginCardDrag(triggerEvent);
++        }, delay),
++        hasMoved: false,
++        active: false,
++        offsetX: 0,
++        offsetY: 0,
++        placeholder: null,
++        lastEvent: event
++      };
++
++      window.addEventListener('pointermove', handleCardPointerMove, { passive: false });
++      window.addEventListener('pointerup', handleCardPointerUp);
++      window.addEventListener('pointercancel', handleCardPointerUp);
++    }
++
++    function initDashboardReordering() {
++      if (!appContent) return;
++      applyStoredCardOrder();
++      persistCardOrder();
++      getDashboardCards().forEach(card => {
++        if (!card.dataset.cardId) return;
++        card.addEventListener('pointerdown', handleCardPointerDown);
++      });
++      appContent.querySelectorAll('.close-btn').forEach(button => {
++        button.addEventListener('click', (event) => {
++          event.stopPropagation();
++          if (dragSession) {
++            endCardDrag(false);
++          } else {
++            exitReorganizeMode();
++          }
++        });
++      });
++    }
++
+     // Auth Elements
+     const authSection = document.getElementById('auth-section');
+     const loginBtn = document.getElementById('login-btn');
+     const signupBtn = document.getElementById('signup-btn');
+     const authSubmit = document.getElementById('auth-submit');
+     const authActions = document.getElementById('auth-actions');
+     const signupFields = document.getElementById('signup-fields');
+     const authTitle = document.getElementById('auth-title');
+     const authToggle = document.getElementById('auth-toggle');
+     const authEmail = document.getElementById('auth-email');
+     const authPassword = document.getElementById('auth-password');
+     const authUsername = document.getElementById('auth-username');
+     const authRePassword = document.getElementById('auth-re-password');
+ 
+     // --- Translations ---
+     const translations = {
+       en: {
+         loginBtn: 'Login',
+         signupBtn: 'Sign Up',
+         logoutBtn: 'Logout',
+         installBtn: 'Install',
+         googleSignin: 'Sign in with Google',
+         manifesto: "McFatty's Manifesto",
+         manifestoTitle: "McFatty's Manifesto",
+         manifestoP1: "McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
+         manifestoP2: "This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.",
+         manifestoP3: "Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.",
+         manifestoP4: "We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.",
+         manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.",
+         donateBtn: 'Donate',
+         welcome: 'Welcome',
++        quickStatsTitle: 'Quick stats',
++        statEntriesToday: 'Entries today',
++        statDairyToday: 'Dairy items',
++        statOutsideMeals: 'Outside of mealtimes',
++        statLastEntry: 'Last entry',
++        quickAddTitle: 'Quick add',
++        quickAddHint: 'Log what you’re eating right now—no pressure, no judgement.',
++        growthTitle: 'Room to grow',
++        growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
++        recentLogTitle: 'Recent log',
++        logSearchLabel: 'Search log',
++        logSearchPlaceholder: 'Search entries',
++        filterGroupLabel: 'Filters',
++        filterAll: 'All',
++        filterDairy: 'Dairy',
++        filterNonDairy: 'No dairy',
++        filterOutsideMeals: 'Outside of mealtimes',
++        filterMeals: 'At mealtimes',
++        noResults: 'No entries match your filters yet.',
+         addTitle: 'Add item',
+         foodLabel: 'Food item name',
+         foodPlaceholder: 'e.g., Cheeseburger',
+         addBtn: 'Add to log',
+         dairyLabel: 'Contains dairy',
++        outsideMealsLabel: 'Outside of mealtimes',
+         logTitle: 'Today’s log',
+         exportBtn: 'Export',
+         thItem: 'Item',
+         thTime: 'Time',
+         thDairy: 'Dairy',
++        thOutsideMeals: 'Outside of mealtimes',
+         emptyState: 'No items yet. Add your first item above.',
+         confirmTitle: 'Are you sure?',
+         cancelBtn: 'Cancel',
+         closeBtn: 'Close',
+         confirmClearBtn: 'Confirm',
+         accountModalTitle: 'Edit Account',
+         nameLabel: 'Name',
+         emailLabel: 'Email',
+         deleteAccountBtn: 'Delete Account',
+         saveBtn: 'Save',
+         menuTitle: 'Menu',
+         corePractices: 'Core Practices',
+         newJournal: 'New Journal Entry',
+         settings: 'Application Settings',
+         account: 'Account',
+         logout: 'Log Out',
+         footerText: 'Designed and created by Burrow · 2025',
+         loginTitle: 'Login',
+         signupTitle: 'Sign Up',
+         loginAction: 'Login',
+         signupAction: 'Sign Up',
+         authToggleToSignup: 'Need an account? Sign Up',
+         authToggleToLogin: 'Have an account? Login',
+         passwordLabel: 'Password',
+         usernameLabel: 'Username',
+         rePasswordLabel: 'Re-type Password',
+         installSuccess: 'App installed! Find McFatty’s on your home screen.',
+         installDismissed: 'Install dismissed.',
+         yes: 'Yes',
+         no: 'No',
+         editBtn: 'Edit',
+         removeBtn: 'Remove',
+         editEntryAria: 'Edit entry',
+         removeEntryAria: 'Remove entry',
+         authMissingFields: 'Please enter an email and password.',
+         authMissingUsername: 'Please choose a username.',
+         authPasswordMismatch: 'Passwords do not match.',
+         addError: 'Sorry, there was an error adding your entry.',
+         deleteError: 'Sorry, there was an error removing your entry.',
+         updateError: 'Sorry, there was an error updating your entry.',
+         authErrorPrefix: 'Error:',
+         csvHeaderDate: 'Date',
+         csvHeaderItem: 'Item',
+         csvHeaderDairy: 'Dairy',
++        csvHeaderOutsideMeals: 'Outside of mealtimes',
+         csvYes: 'Yes',
+         csvNo: 'No',
+         notAvailable: 'N/A',
+         history: 'History',
+         historyTitle: 'Log History',
+         impressum: 'Legal Notice',
+         privacyPolicy: 'Privacy Policy',
+       },
+       de: {
+         loginBtn: 'Anmelden',
+         signupBtn: 'Registrieren',
+         logoutBtn: 'Abmelden',
+         installBtn: 'Installieren',
+         googleSignin: 'Mit Google anmelden',
+         manifesto: 'McFettys Manifest',
+         manifestoTitle: 'McFettys Manifest',
+         manifestoP1: 'Bei McFettys Food Tracker geht es nicht um Kalorien, Einschränkungen oder Schuldgefühle. Wenn du Chips willst, iss sie. Keine Scham, keine Bestrafung. Schreib es einfach auf. Das Aufzeichnen ohne Urteil ist der entscheidende Akt.',
+         manifestoP2: 'Diese App ist kostenlos. Keine Abonnements, keine Upsells, keine Lifestyle-Pakete. Wir lehnen die Idee ab, dass uns Essen und Gesundheit zurückverkauft werden sollten. Essen sollte kein Geschäftsmodell sein.',
+         manifestoP3: 'Stattdessen hilft Ihnen McFatty’s, innezuhalten, auf Ihren Körper zu hören und Ihre Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht Ihnen das einfache Protokollieren, Muster zu erkennen und Ihre Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt für Ihre Entscheidungen verwurzelt sein.',
+         manifestoP4: 'Wir sind gegen Kreisläufe von Schuld, Scham und unmöglichen Versprechungen. Wir werden den als Selbstfürsorge getarnten Konsum nicht feiern. Wir glauben, die radikale Wahl ist, zu verlangsamen, auf sich selbst zu hören und zu Ihren eigenen Bedingungen zu essen.',
+         manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von Ihrer Schuld profitieren.',
+         donateBtn: 'Spenden',
+         welcome: 'Willkommen',
++        quickStatsTitle: 'Schnelle Statistiken',
++        statEntriesToday: 'Einträge heute',
++        statDairyToday: 'Milchprodukte',
++        statOutsideMeals: 'Außerhalb der Mahlzeiten',
++        statLastEntry: 'Letzter Eintrag',
++        quickAddTitle: 'Schnell hinzufügen',
++        quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
++        growthTitle: 'Platz für mehr',
++        growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
++        recentLogTitle: 'Aktuelles Protokoll',
++        logSearchLabel: 'Protokoll durchsuchen',
++        logSearchPlaceholder: 'Einträge durchsuchen',
++        filterGroupLabel: 'Filter',
++        filterAll: 'Alle',
++        filterDairy: 'Milch',
++        filterNonDairy: 'Ohne Milch',
++        filterOutsideMeals: 'Außerhalb der Mahlzeiten',
++        filterMeals: 'Zu den Mahlzeiten',
++        noResults: 'Keine Einträge passen zu deinen Filtern.',
+         addTitle: 'Element hinzufügen',
+         foodLabel: 'Name des Lebensmittels',
+         foodPlaceholder: 'z.B. Käseburger',
+         addBtn: 'Zum Protokoll hinzufügen',
+         dairyLabel: 'Enthält Milchprodukte',
++        outsideMealsLabel: 'Außerhalb der Mahlzeiten',
+         logTitle: 'Heutiges Protokoll',
+         exportBtn: 'Exportieren',
+         thItem: 'Element',
+         thTime: 'Uhrzeit',
+         thDairy: 'Milchprodukte',
++        thOutsideMeals: 'Außerhalb der Mahlzeiten',
+         emptyState: 'Noch keine Einträge. Fügen Sie oben Ihren ersten Eintrag hinzu.',
+         confirmTitle: 'Sind Sie sicher?',
+         cancelBtn: 'Abbrechen',
+         closeBtn: 'Schließen',
+         confirmClearBtn: 'Bestätigen',
+         accountModalTitle: 'Konto bearbeiten',
+         nameLabel: 'Name',
+         emailLabel: 'Email',
+         deleteAccountBtn: 'Konto löschen',
+         saveBtn: 'Speichern',
+         menuTitle: 'Menü',
+         corePractices: 'Kernpraktiken',
+         newJournal: 'Neuer Journaleintrag',
+         settings: 'Anwendungseinstellungen',
+         account: 'Konto',
+         logout: 'Abmelden',
+         footerText: 'Designed and created by Burrow · 2025',
+         loginTitle: 'Anmelden',
+         signupTitle: 'Registrieren',
+         loginAction: 'Anmelden',
+         signupAction: 'Registrieren',
+         authToggleToSignup: 'Noch kein Konto? Registrieren',
+         authToggleToLogin: 'Konto vorhanden? Anmelden',
+         passwordLabel: 'Passwort',
+         usernameLabel: 'Benutzername',
+         rePasswordLabel: 'Passwort erneut eingeben',
+         installSuccess: 'App installiert! McFatty’s ist jetzt auf deinem Startbildschirm.',
+         installDismissed: 'Installation abgebrochen.',
+         yes: 'Ja',
+         no: 'Nein',
+         editBtn: 'Bearbeiten',
+         removeBtn: 'Entfernen',
+         editEntryAria: 'Eintrag bearbeiten',
+         removeEntryAria: 'Eintrag entfernen',
+         authMissingFields: 'Bitte E-Mail und Passwort eingeben.',
+         authMissingUsername: 'Bitte einen Benutzernamen wählen.',
+         authPasswordMismatch: 'Passwörter stimmen nicht überein.',
+         addError: 'Beim Hinzufügen deines Eintrags ist ein Fehler aufgetreten.',
+         deleteError: 'Beim Entfernen deines Eintrags ist ein Fehler aufgetreten.',
+         updateError: 'Beim Aktualisieren deines Eintrags ist ein Fehler aufgetreten.',
+         authErrorPrefix: 'Fehler:',
+         csvHeaderDate: 'Datum',
+         csvHeaderItem: 'Element',
+         csvHeaderDairy: 'Milchprodukte',
++        csvHeaderOutsideMeals: 'Außerhalb der Mahlzeiten',
+         csvYes: 'Ja',
+         csvNo: 'Nein',
+         notAvailable: 'k. A.',
+         history: 'Verlauf',
+         historyTitle: 'Protokollverlauf',
+         impressum: 'Impressum',
+         privacyPolicy: 'Datenschutzerklärung',
+       }
+     };
+ 
+     const legalDocs = {
+       en: {
+         impressum: `<h3>Legal Notice (Impressum)</h3>
+           <p>Information according to § 5 TMG</p>
+           <p>[Your Name]<br>[Your Street and House Number]<br>[Your Postal Code and City]</p>
+           <h4>Contact</h4>
+           <p>Email: [Your Email Address]</p>
+           <h4>Disclaimer</h4>
+           <p>This is a private, non-commercial project. The content of our pages has been created with the utmost care. However, we cannot guarantee the contents' accuracy, completeness or topicality. According to statutory provisions, we are furthermore responsible for our own content on these web pages. In this context, please note that we are accordingly not obliged to monitor merely the transmitted or saved information of third parties, or investigate circumstances pointing to illegal activity.</p>`,
+         privacyPolicy: `<h3>Privacy Policy</h3>
+           <p><strong>1. General Information</strong></p>
+           <p>The following gives a simple overview of what happens to your personal information when you use our app. Personal information is any data with which you could be personally identified.</p>
+           <p><strong>Responsible for data collection on this app is:</strong><br/>
+           [Your Name]<br>[Your Street and House Number]<br>[Your Postal Code and City]<br>Email: [Your Email Address]</p>
+           <p><strong>2. Data Collection on our App</strong></p>
+diff --git a/index.html b/index.html
+index 5d88c7541ccae56e2bddeaa723cea70bacb48332..039c0b69cafcadfedcda833758faa54a99cb26e7 100644
+--- a/index.html
++++ b/index.html
+@@ -689,247 +1188,381 @@
+         el.textContent = getTranslation(key);
+       });
+       document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+         const key = el.getAttribute('data-i18n-placeholder');
+         el.placeholder = getTranslation(key);
+       });
+ 
+       const user = auth.currentUser;
+       if (user) {
+         const welcomeText = getTranslation('welcome');
+         const displayName = user.displayName || user.email || '';
+         welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : welcomeText;
+       }
+ 
+       updateAuthTexts();
+       if (latestSnapshot) renderEntries(latestSnapshot);
+     };
+ 
+     const addEntry = () => {
+       const name = nameInput.value.trim();
+       if (!name || !logCollection) return;
+ 
+       logCollection.add({
+         name,
+         dairy: dairyCheckbox.checked,
++        outsideMeals: outsideMealsCheckbox.checked,
+         timestamp: firebase.firestore.FieldValue.serverTimestamp()
+       }).then(() => {
+         nameInput.value = '';
+         dairyCheckbox.checked = false;
++        outsideMealsCheckbox.checked = false;
+         nameInput.focus();
+       }).catch((error) => {
+         console.error('Error adding document: ', error);
+         alert(getTranslation('addError'));
+       });
+     };
+ 
+-    const renderEntries = (snapshot) => {
+-      latestSnapshot = snapshot;
+-      tbody.innerHTML = '';
++    const getEntryDate = (entry) => {
++      if (entry && entry.timestamp && typeof entry.timestamp.toDate === 'function') {
++        return entry.timestamp.toDate();
++      }
++      return null;
++    };
+ 
+-      if (snapshot.empty) {
+-        emptyState.style.display = 'block';
+-        return;
++    const isSameDay = (dateA, dateB) => {
++      if (!dateA || !dateB) return false;
++      return dateA.getFullYear() === dateB.getFullYear() &&
++        dateA.getMonth() === dateB.getMonth() &&
++        dateA.getDate() === dateB.getDate();
++    };
++
++    const updateStats = () => {
++      if (!statTotal || !statDairy || !statOutside || !statLast || !statLastSubtext) return;
++
++      const today = new Date();
++      const locale = lang === 'de' ? 'de-DE' : 'en-US';
++      const entriesToday = allEntries.filter(entry => {
++        const date = getEntryDate(entry);
++        return isSameDay(date, today);
++      });
++      const dairyToday = entriesToday.filter(entry => entry.dairy).length;
++      const outsideMealsToday = entriesToday.filter(entry => entry.outsideMeals).length;
++      const latestEntry = allEntries.find(entry => getEntryDate(entry));
++      const latestDate = latestEntry ? getEntryDate(latestEntry) : null;
++
++      statTotal.textContent = entriesToday.length;
++      statDairy.textContent = dairyToday;
++      statOutside.textContent = outsideMealsToday;
++
++      if (latestDate) {
++        statLast.textContent = latestDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
++        statLastSubtext.textContent = latestDate.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' });
++      } else {
++        statLast.textContent = '—';
++        statLastSubtext.textContent = '';
+       }
+-      emptyState.style.display = 'none';
++    };
+ 
+-      snapshot.forEach(doc => {
+-        const entry = doc.data();
++    const renderRows = (entries) => {
++      tbody.innerHTML = '';
++
++      entries.forEach(entry => {
+         const tr = document.createElement('tr');
+ 
+         const nameCell = document.createElement('td');
+         nameCell.textContent = entry.name || '';
+ 
+         const timeCell = document.createElement('td');
+-        if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
+-          timeCell.textContent = entry.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+-        } else {
+-          timeCell.textContent = getTranslation('notAvailable');
+-        }
++        const date = getEntryDate(entry);
++        timeCell.textContent = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : getTranslation('notAvailable');
+ 
+         const dairyCell = document.createElement('td');
+-        const pill = document.createElement('span');
+-        pill.className = `pill ${entry.dairy ? 'pill-yes' : 'pill-no'}`;
+-        pill.textContent = entry.dairy ? getTranslation('yes') : getTranslation('no');
+-        dairyCell.appendChild(pill);
++        const hasDairy = Boolean(entry.dairy);
++        const dairyPill = document.createElement('span');
++        dairyPill.className = `pill ${hasDairy ? 'pill-yes' : 'pill-no'}`;
++        dairyPill.textContent = hasDairy ? getTranslation('yes') : getTranslation('no');
++        dairyCell.appendChild(dairyPill);
++
++        const outsideCell = document.createElement('td');
++        const outsideValue = Boolean(entry.outsideMeals);
++        const outsidePill = document.createElement('span');
++        outsidePill.className = `pill ${outsideValue ? 'pill-yes' : 'pill-no'}`;
++        outsidePill.textContent = outsideValue ? getTranslation('yes') : getTranslation('no');
++        outsideCell.appendChild(outsidePill);
+ 
+         const actionsCell = document.createElement('td');
+         actionsCell.className = 'row-actions actions';
+ 
+         const editBtn = document.createElement('button');
+         editBtn.className = 'btn btn-secondary edit-entry';
+         editBtn.type = 'button';
+-        editBtn.dataset.id = doc.id;
++        editBtn.dataset.id = entry.id;
+         editBtn.textContent = getTranslation('editBtn');
+         editBtn.setAttribute('aria-label', `${getTranslation('editEntryAria')} ${entry.name || ''}`.trim());
+ 
+         const removeBtn = document.createElement('button');
+         removeBtn.className = 'btn btn-danger remove-entry';
+         removeBtn.type = 'button';
+-        removeBtn.dataset.id = doc.id;
++        removeBtn.dataset.id = entry.id;
+         removeBtn.textContent = getTranslation('removeBtn');
+         removeBtn.setAttribute('aria-label', `${getTranslation('removeEntryAria')} ${entry.name || ''}`.trim());
+ 
+         actionsCell.appendChild(editBtn);
+         actionsCell.appendChild(removeBtn);
+ 
+         tr.appendChild(nameCell);
+         tr.appendChild(timeCell);
+         tr.appendChild(dairyCell);
++        tr.appendChild(outsideCell);
+         tr.appendChild(actionsCell);
+         tbody.appendChild(tr);
+       });
+     };
+ 
++    const resetFilters = () => {
++      activeFilter = 'all';
++      searchTerm = '';
++      if (logSearchInput) {
++        logSearchInput.value = '';
++      }
++      filterButtons.forEach(btn => btn.classList.toggle('is-active', btn.dataset.filter === 'all'));
++      toggleNoResults(false);
++    };
++
++    const toggleNoResults = (show) => {
++      if (!noResultsMessage) return;
++      noResultsMessage.style.display = show ? 'block' : 'none';
++    };
++
++    const applyFilters = () => {
++      if (!allEntries.length) {
++        tbody.innerHTML = '';
++        toggleNoResults(false);
++        return;
++      }
++
++      let filtered = [...allEntries];
++
++      if (searchTerm) {
++        filtered = filtered.filter(entry => (entry.name || '').toLowerCase().includes(searchTerm));
++      }
++
++      if (activeFilter === 'dairy') {
++        filtered = filtered.filter(entry => entry.dairy);
++      } else if (activeFilter === 'non-dairy') {
++        filtered = filtered.filter(entry => !entry.dairy);
++      } else if (activeFilter === 'outside-meals') {
++        filtered = filtered.filter(entry => entry.outsideMeals);
++      } else if (activeFilter === 'during-meals') {
++        filtered = filtered.filter(entry => !entry.outsideMeals);
++      }
++
++      if (!filtered.length) {
++        tbody.innerHTML = '';
++        toggleNoResults(true);
++        return;
++      }
++
++      toggleNoResults(false);
++      renderRows(filtered.slice(0, MAX_RECENT_ROWS));
++    };
++
++    const renderEntries = (snapshot) => {
++      latestSnapshot = snapshot;
++      allEntries = snapshot.docs.map(doc => {
++        const data = doc.data();
++        return {
++          id: doc.id,
++          ...data,
++          dairy: Boolean(data.dairy),
++          outsideMeals: Boolean(data.outsideMeals)
++        };
++      });
++
++      updateStats();
++
++      if (!allEntries.length) {
++        tbody.innerHTML = '';
++        emptyState.style.display = 'block';
++        toggleNoResults(false);
++        return;
++      }
++
++      emptyState.style.display = 'none';
++      applyFilters();
++    };
++
+     const renderHistory = (snapshot) => {
+       historyContent.innerHTML = '';
+       if (!snapshot || snapshot.empty) {
+         historyContent.innerHTML = `<p>${getTranslation('emptyState')}</p>`;
+         return;
+       }
+ 
+       const entriesByDate = {};
+       snapshot.forEach(doc => {
+         const entry = doc.data();
+         if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
+           const date = entry.timestamp.toDate();
+           const key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+           (entriesByDate[key] ||= []).push(entry);
+         }
+       });
+ 
+       let html = '';
+       Object.keys(entriesByDate).sort().reverse().forEach(key => {
+         const [y,m,d] = key.split('-').map(n=>parseInt(n,10));
+         const display = new Date(y, m-1, d).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+ 
+         html += `<h3>${display}</h3>`;
+-        html += `<table class="table" style="margin-bottom:20px;"><thead><tr><th>${getTranslation('thItem')}</th><th>${getTranslation('thTime')}</th><th>${getTranslation('thDairy')}</th></tr></thead><tbody>`;
++        html += `<table class="table" style="margin-bottom:20px;"><thead><tr><th>${getTranslation('thItem')}</th><th>${getTranslation('thTime')}</th><th>${getTranslation('thDairy')}</th><th>${getTranslation('thOutsideMeals')}</th></tr></thead><tbody>`;
+         entriesByDate[key].sort((a,b)=>b.timestamp.seconds - a.timestamp.seconds).forEach(entry=>{
+           const time = entry.timestamp.toDate().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+-          const dairyText = entry.dairy ? getTranslation('yes') : getTranslation('no');
+-          const pillClass = entry.dairy ? 'pill-yes' : 'pill-no';
+-          html += `<tr><td>${entry.name}</td><td>${time}</td><td><span class="pill ${pillClass}">${dairyText}</span></td></tr>`;
++          const hasDairy = Boolean(entry.dairy);
++          const dairyText = hasDairy ? getTranslation('yes') : getTranslation('no');
++          const pillClass = hasDairy ? 'pill-yes' : 'pill-no';
++          const outsideValue = Boolean(entry.outsideMeals);
++          const outsideText = outsideValue ? getTranslation('yes') : getTranslation('no');
++          const outsideClass = outsideValue ? 'pill-yes' : 'pill-no';
++          html += `<tr><td>${entry.name}</td><td>${time}</td><td><span class="pill ${pillClass}">${dairyText}</span></td><td><span class="pill ${outsideClass}">${outsideText}</span></td></tr>`;
+         });
+         html += `</tbody></table>`;
+       });
+ 
+       historyContent.innerHTML = html || `<p>${getTranslation('emptyState')}</p>`;
+     };
+ 
+     const handleLogAction = (event) => {
+       if (!logCollection) return;
+       const button = event.target.closest('button');
+       if (!button) return;
+ 
+       const { id } = button.dataset;
+       if (!id) return;
+ 
+       if (button.classList.contains('remove-entry')) {
+         logCollection.doc(id).delete().catch(error => {
+           console.error('Error removing document: ', error);
+           alert(getTranslation('deleteError'));
+         });
+         return;
+       }
+ 
+       if (button.classList.contains('edit-entry')) {
+         const currentName = button.closest('tr')?.querySelector('td')?.textContent || '';
+         const newName = prompt(getTranslation('editBtn'), currentName);
+         if (newName && newName.trim() && newName.trim() !== currentName) {
+           logCollection.doc(id).update({ name: newName.trim() }).catch(error => {
+             console.error('Error updating document:', error);
+             alert(getTranslation('updateError'));
+           });
+         }
+       }
+     };
+ 
+     const exportToCsv = () => {
+       if (!logCollection) return;
+ 
+       logCollection.orderBy('timestamp', 'desc').get().then(snapshot => {
+-        const header = [getTranslation('csvHeaderDate'), getTranslation('csvHeaderItem'), getTranslation('csvHeaderDairy')].join(',');
++        const header = [
++          getTranslation('csvHeaderDate'),
++          getTranslation('csvHeaderItem'),
++          getTranslation('csvHeaderDairy'),
++          getTranslation('csvHeaderOutsideMeals')
++        ].join(',');
+         let csvContent = "data:text/csv;charset=utf-8," + header + "\n";
+         const locale = lang === 'de' ? 'de-DE' : 'en-US';
+ 
+         snapshot.forEach(doc => {
+           const entry = doc.data();
+           const date = entry.timestamp ? entry.timestamp.toDate().toLocaleDateString(locale) : getTranslation('notAvailable');
+           const safeName = `"${(entry.name || '').replace(/"/g, '""')}"`;
+-          const row = [date, safeName, entry.dairy ? getTranslation('csvYes') : getTranslation('csvNo')].join(',');
++          const hasDairy = Boolean(entry.dairy);
++          const outsideValue = Boolean(entry.outsideMeals);
++          const row = [
++            date,
++            safeName,
++            hasDairy ? getTranslation('csvYes') : getTranslation('csvNo'),
++            outsideValue ? getTranslation('csvYes') : getTranslation('csvNo')
++          ].join(',');
+           csvContent += row + "\n";
+         });
+ 
+         const link = document.createElement('a');
+         link.href = encodeURI(csvContent);
+         link.download = 'mcfattys_log.csv';
+         document.body.appendChild(link);
+         link.click();
+         document.body.removeChild(link);
+       });
+     };
+ 
+     const resetAuthFields = () => {
+       authEmail.value = '';
+       authPassword.value = '';
+       authUsername.value = '';
+       authRePassword.value = '';
+     };
+ 
+     const setAuthMode = (isLogin) => {
+       isLoginMode = isLogin;
+       signupFields.style.display = isLogin ? 'none' : 'block';
+       updateAuthTexts();
+     };
+ 
+     auth.onAuthStateChanged(user => {
+       if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+ 
+       const loggedIn = !!user;
+ 
+       landingPage.style.display = loggedIn ? 'none' : 'grid';
+       appContent.style.display = loggedIn ? 'grid' : 'none';
+       authActions.style.display = loggedIn ? 'none' : 'flex';
+       userInfo.style.display = loggedIn ? 'flex' : 'none';
+       authSection.style.display = 'none';
+ 
+       if (loggedIn) {
++        resetFilters();
+         const displayName = user.displayName || user.email || '';
+         const welcomeText = getTranslation('welcome');
+         welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : welcomeText;
+         userName.textContent = displayName;
+ 
+         logCollection = db.collection('users').doc(user.uid).collection('logs');
+         unsubscribe = logCollection.orderBy('timestamp', 'desc').onSnapshot(renderEntries);
+       } else {
+         userName.textContent = '';
+         welcomeMessage.textContent = '';
+         latestSnapshot = null;
+         tbody.innerHTML = '';
+         emptyState.style.display = 'block';
+         logCollection = null;
++        allEntries = [];
++        resetFilters();
++        updateStats();
+         setAuthMode(true);
+         resetAuthFields();
+       }
+     });
+ 
+     const handleAuthSubmit = async () => {
+       const email = authEmail.value.trim();
+       const password = authPassword.value.trim();
+ 
+       if (!email || !password) {
+         alert(getTranslation('authMissingFields'));
+         return;
+       }
+       if (!isLoginMode) {
+         const username = authUsername.value.trim();
+         const confirmPassword = authRePassword.value.trim();
+         if (!username) {
+           alert(getTranslation('authMissingUsername'));
+           return;
+         }
+         if (password !== confirmPassword) {
+           alert(getTranslation('authPasswordMismatch'));
+           return;
+         }
+       }
+diff --git a/index.html b/index.html
+index 5d88c7541ccae56e2bddeaa723cea70bacb48332..039c0b69cafcadfedcda833758faa54a99cb26e7 100644
+--- a/index.html
++++ b/index.html
+@@ -939,55 +1572,74 @@
+         if (isLoginMode) {
+           await auth.signInWithEmailAndPassword(email, password);
+         } else {
+           const username = authUsername.value.trim();
+           const { user: newUser } = await auth.createUserWithEmailAndPassword(email, password);
+           await newUser.updateProfile({ displayName: username });
+           await db.collection('users').doc(newUser.uid).set({
+             displayName: username,
+             email,
+             createdAt: firebase.firestore.FieldValue.serverTimestamp()
+           }, { merge: true });
+         }
+         authSection.style.display = 'none';
+         resetAuthFields();
+       } catch (error) {
+         alert(`${getTranslation('authErrorPrefix')} ${error.message}`);
+       } finally {
+         authSubmit.disabled = false;
+       }
+     };
+ 
+     // Helpers
+     const signOut = () => auth.signOut();
+     const toggleLanguage = () => setLanguage(lang === 'en' ? 'de' : 'en');
+ 
++    initDashboardReordering();
++
+     // Event Listeners
+     addBtn.addEventListener('click', addEntry);
+     tbody.addEventListener('click', handleLogAction);
+     exportBtn.addEventListener('click', exportToCsv);
+ 
++    if (logSearchInput) {
++      logSearchInput.addEventListener('input', (event) => {
++        searchTerm = event.target.value.trim().toLowerCase();
++        applyFilters();
++      });
++    }
++
++    filterButtons.forEach(button => {
++      button.addEventListener('click', () => {
++        const { filter } = button.dataset;
++        if (!filter) return;
++        activeFilter = filter;
++        filterButtons.forEach(btn => btn.classList.toggle('is-active', btn === button));
++        applyFilters();
++      });
++    });
++
+     loginBtn.addEventListener('click', () => { resetAuthFields(); authSection.style.display = 'block'; setAuthMode(true); });
+     signupBtn.addEventListener('click', () => { resetAuthFields(); authSection.style.display = 'block'; setAuthMode(false); });
+     authToggle.addEventListener('click', () => setAuthMode(!isLoginMode));
+     authSubmit.addEventListener('click', handleAuthSubmit);
+ 
+     googleSigninBtn.addEventListener('click', () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => {
+       alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
+       console.error('Google sign-in error:', err);
+     }));
+ 
+     logoutBtn.addEventListener('click', signOut);
+     logoutBtnMain.addEventListener('click', signOut);
+ 
+     donateBtn.addEventListener('click', () => {
+       const w = window.open('https://www.paypal.com/donate', '_blank');
+       if (w) w.opener = null;
+     });
+ 
+     langToggle.addEventListener('click', toggleLanguage);
+     langToggle.addEventListener('keydown', (event) => {
+       if (event.key === 'Enter' || event.key === ' ') {
+         event.preventDefault();
+         toggleLanguage();
+       }
+     });
