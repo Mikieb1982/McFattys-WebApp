@@ -89,11 +89,18 @@
 
     /* Dashboard */
     .dashboard-grid{display:grid;gap:var(--sp-16);position:relative;grid-template-columns:repeat(2,minmax(0,1fr))}
-    .dashboard-card{position:relative;cursor:grab;transition:transform .18s ease,box-shadow .18s ease; touch-action: none;}
+    .dashboard-controls{display:flex;flex-direction:column;gap:var(--sp-8);padding:0 var(--sp-8)}
+    .dashboard-controls[hidden]{display:none !important}
+    .dashboard-reorder-btn{align-self:flex-end}
+    .reorder-hint{margin:0;font-size:13px;color:var(--text-1)}
+    .dashboard-card{position:relative;cursor:grab;transition:transform .18s ease,box-shadow .18s ease;touch-action:pan-y;display:flex;flex-direction:column;gap:var(--sp-12)}
+    .dashboard-card:not(.span-2){justify-content:center;align-items:center;text-align:center;aspect-ratio:1/1;min-height:0;}
+    .dashboard-card.span-2{text-align:left;align-items:stretch}
     .dashboard-card:active{cursor:grabbing}
     .dashboard-card.is-dragging{opacity:.92;cursor:grabbing;box-shadow:0 18px 40px rgba(0,0,0,.5)}
     .dashboard-grid.is-reordering .dashboard-card{transition:transform .18s ease}
     .dashboard-placeholder{border:1px dashed var(--border);border-radius:var(--r-12);background:rgba(255,255,255,.04);min-height:120px;margin:0}
+    .dashboard-placeholder:not(.span-2){aspect-ratio:1/1;}
     .dashboard-placeholder.span-2{grid-column:1 / -1}
     body.card-dragging{user-select:none}
     .span-2{grid-column:1 / -1}
@@ -190,6 +197,7 @@
 
     .reorganize-mode .dashboard-card {
       animation: wobble 0.2s ease-in-out infinite;
+      touch-action: none;
     }
 
     .close-btn {
@@ -239,6 +247,10 @@
       border-radius: 1px;
     }
 
+
+    @media (max-width:720px){
+      .dashboard-reorder-btn{align-self:stretch}
+    }
 
     @media (prefers-reduced-motion:reduce){.install-banner,.sidebar, .reorganize-mode .dashboard-card{transition:none; animation: none;}.btn:active{transform:none}}
 
@@ -351,6 +363,11 @@
         <p class="manifesto-paragraph" data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
         <button id="donate-button" class="btn btn-primary" type="button" data-i18n="donateBtn">Donate</button>
       </section>
+    </div>
+
+    <div id="dashboard-controls" class="dashboard-controls" hidden>
+      <button id="reorder-toggle" class="btn btn-secondary dashboard-reorder-btn" type="button" aria-pressed="false" aria-controls="app-content">Organize tiles</button>
+      <p id="reorder-hint" class="reorder-hint" data-i18n="reorderHint" hidden aria-live="polite">Drag tiles to reorder. Tap Done when you’re finished.</p>
     </div>
 
     <div id="app-content" class="dashboard-grid" style="display: none;">
@@ -601,6 +618,9 @@
     const logSearchInput = document.getElementById('log-search');
     const noResultsMessage = document.getElementById('no-results');
     const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
+    const dashboardControls = document.getElementById('dashboard-controls');
+    const reorderToggle = document.getElementById('reorder-toggle');
+    const reorderHint = document.getElementById('reorder-hint');
 
     const DASHBOARD_ORDER_KEY = 'dashboard-card-order-v1';
     const LONG_PRESS_DELAY_TOUCH = 280;
@@ -724,6 +744,11 @@
         card.style.transition = '';
       }
 
+      document.body.classList.remove('card-dragging');
+      if (appContent) {
+        appContent.classList.remove('is-reordering');
+      }
+
       if (active) {
         if (commit) {
           persistCardOrder();
@@ -831,6 +856,10 @@
       appContent.appendChild(card);
 
       card.classList.add('is-dragging');
+      document.body.classList.add('card-dragging');
+      if (appContent) {
+        appContent.classList.add('is-reordering');
+      }
       card.style.position = 'absolute';
       card.style.zIndex = '900';
       card.style.width = `${cardRect.width}px`;
@@ -870,45 +899,76 @@
       endCardDrag(shouldCommit);
     }
 
+    function startDragSession(card, event, delay) {
+      dragSession = {
+        card,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        longPressTimer: null,
+        hasMoved: false,
+        active: false,
+        offsetX: 0,
+        offsetY: 0,
+        placeholder: null,
+        lastEvent: event
+      };
+
+      const triggerDrag = () => {
+        if (!dragSession) return;
+        const referenceEvent = dragSession.lastEvent || event;
+        enterReorganizeMode();
+        beginCardDrag(referenceEvent);
+      };
+
+      if (delay > 0) {
+        dragSession.longPressTimer = setTimeout(triggerDrag, delay);
+      } else {
+        triggerDrag();
+      }
+
+      window.addEventListener('pointermove', handleCardPointerMove, { passive: false });
+      window.addEventListener('pointerup', handleCardPointerUp);
+      window.addEventListener('pointercancel', handleCardPointerUp);
+    }
+
     function handleCardPointerDown(event) {
-        if (!event.isPrimary) return;
-        if (event.pointerType === 'mouse' && event.button !== 0) return;
-        if (dragSession) return;
-        if (!appContent) return;
+      if (!event.isPrimary) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      if (dragSession) return;
+      if (!appContent) return;
 
-        const handle = event.target.closest('.drag-handle');
-        if (!handle) return; // Only start drag from the handle
+      if (event.target.closest('.close-btn')) return;
 
-        const card = handle.closest('.dashboard-card');
-        if (!card || !card.dataset.cardId) return;
+      const card = event.target.closest('.dashboard-card');
+      if (!card || !card.dataset.cardId) return;
 
-        const delay = event.pointerType === 'touch' ? LONG_PRESS_DELAY_TOUCH : LONG_PRESS_DELAY_POINTER;
+      const touchingHandle = Boolean(event.target.closest('.drag-handle'));
 
-        dragSession = {
-            card,
-            pointerId: event.pointerId,
-            startX: event.clientX,
-            startY: event.clientY,
-            longPressTimer: setTimeout(() => {
-                if (!dragSession) return;
-                if (!isReorganizeMode) {
-                    appContent.classList.add('reorganize-mode');
-                    isReorganizeMode = true;
-                }
-                const triggerEvent = dragSession.lastEvent || event;
-                beginCardDrag(triggerEvent);
-            }, delay),
-            hasMoved: false,
-            active: false,
-            offsetX: 0,
-            offsetY: 0,
-            placeholder: null,
-            lastEvent: event
-        };
+      if (!isReorganizeMode && !touchingHandle) return;
 
-        window.addEventListener('pointermove', handleCardPointerMove, { passive: false });
-        window.addEventListener('pointerup', handleCardPointerUp);
-        window.addEventListener('pointercancel', handleCardPointerUp);
+      const delay = isReorganizeMode ? 0 : (event.pointerType === 'touch' ? LONG_PRESS_DELAY_TOUCH : LONG_PRESS_DELAY_POINTER);
+      startDragSession(card, event, delay);
+    }
+
+    function toggleReorderMode() {
+      if (isReorganizeMode) {
+        exitReorganizeMode(true);
+        if (reorderToggle) {
+          reorderToggle.focus();
+        }
+      } else {
+        enterReorganizeMode();
+      }
+    }
+
+    function handleReorderKeydown(event) {
+      if (event.key === 'Escape' && isReorganizeMode) {
+        exitReorganizeMode(true);
+        if (reorderToggle) {
+          reorderToggle.focus();
+        }
+      }
     }
 
 
@@ -916,12 +976,20 @@
         if (!appContent) return;
         applyStoredCardOrder();
         persistCardOrder();
+        updateReorderTexts();
         appContent.addEventListener('pointerdown', handleCardPointerDown); // Listen on the container
+        if (reorderToggle) {
+            reorderToggle.addEventListener('click', toggleReorderMode);
+        }
+        document.addEventListener('keydown', handleReorderKeydown);
         document.querySelectorAll('.close-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                appContent.classList.remove('reorganize-mode');
-                isReorganizeMode = false;
+                e.preventDefault();
+                exitReorganizeMode(true);
+                if (reorderToggle) {
+                    reorderToggle.focus();
+                }
             });
         });
     }
@@ -968,6 +1036,9 @@
         growthTitle: 'Room to grow',
         growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
         recentLogTitle: 'Recent log',
+        organizeTiles: 'Organize tiles',
+        doneOrganizing: 'Done',
+        reorderHint: 'Drag tiles to reorder. Tap Done when you’re finished.',
         logSearchLabel: 'Search log',
         logSearchPlaceholder: 'Search entries',
         filterGroupLabel: 'Filters',
@@ -1068,6 +1139,9 @@
         growthTitle: 'Platz für mehr',
         growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
         recentLogTitle: 'Aktuelles Protokoll',
+        organizeTiles: 'Kacheln anordnen',
+        doneOrganizing: 'Fertig',
+        reorderHint: 'Ziehe die Kacheln, um sie neu anzuordnen. Tippe auf „Fertig“, wenn du zufrieden bist.',
         logSearchLabel: 'Protokoll durchsuchen',
         logSearchPlaceholder: 'Einträge durchsuchen',
         filterGroupLabel: 'Filter',
@@ -1192,6 +1266,47 @@
       return (dictionary && dictionary[key]) || translations.en[key] || '';
     };
 
+    function updateReorderTexts() {
+      if (!reorderToggle) return;
+      const labelKey = isReorganizeMode ? 'doneOrganizing' : 'organizeTiles';
+      const label = getTranslation(labelKey);
+      reorderToggle.textContent = label;
+      reorderToggle.setAttribute('aria-pressed', isReorganizeMode ? 'true' : 'false');
+      reorderToggle.setAttribute('aria-label', label);
+      if (reorderHint) {
+        reorderHint.hidden = !isReorganizeMode;
+        reorderHint.textContent = getTranslation('reorderHint');
+      }
+    }
+
+    function enterReorganizeMode() {
+      if (!appContent || isReorganizeMode) return;
+      isReorganizeMode = true;
+      appContent.classList.add('reorganize-mode');
+      updateReorderTexts();
+    }
+
+    function exitReorganizeMode(commit = true) {
+      if (dragSession) {
+        const shouldCommit = Boolean(commit && dragSession.active);
+        endCardDrag(shouldCommit);
+      }
+
+      if (!appContent || !isReorganizeMode) {
+        updateReorderTexts();
+        return;
+      }
+
+      isReorganizeMode = false;
+      appContent.classList.remove('reorganize-mode');
+      appContent.classList.remove('is-reordering');
+      updateReorderTexts();
+
+      if (commit) {
+        persistCardOrder();
+      }
+    }
+
     const updateAuthTexts = () => {
       const titleKey = isLoginMode ? 'loginTitle' : 'signupTitle';
       const actionKey = isLoginMode ? 'loginAction' : 'signupAction';
@@ -1233,6 +1348,7 @@
         welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
       }
 
+      updateReorderTexts();
       updateAuthTexts();
       if (latestSnapshot) renderEntries(latestSnapshot);
     };
@@ -1555,8 +1671,12 @@
       authActions.style.display = loggedIn ? 'none' : 'flex';
       userInfo.style.display = loggedIn ? 'flex' : 'none';
       authSection.style.display = 'none';
+      if (dashboardControls) {
+        dashboardControls.hidden = !loggedIn;
+      }
 
       if (loggedIn) {
+        updateReorderTexts();
         resetFilters();
         const displayName = user.displayName || user.email || '';
         const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
@@ -1569,6 +1689,7 @@
         logCollection = db.collection('users').doc(user.uid).collection('logs');
         unsubscribe = logCollection.orderBy('timestamp', 'desc').onSnapshot(renderEntries);
       } else {
+        exitReorganizeMode(false);
         userName.textContent = '';
         welcomeMessage.textContent = '';
         latestSnapshot = null;
