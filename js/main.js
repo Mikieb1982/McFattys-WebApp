@@ -1,8 +1,31 @@
 // app.js (ES module)
 import { renderTiles, initTileSystem } from './tiles.js';
+
+// Firebase v9+ (modular)
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getAuth, signOut as fbSignOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut as fbSignOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {
+  getFirestore,
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  getDocs,
+  query,
+  orderBy,
+  serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC1qN3ksU0uYhXRXYNmYlmGX0iyUa-BJFQ",
@@ -14,15 +37,17 @@ const firebaseConfig = {
   measurementId: "G-KQX4BQ71VK"
 };
 
-// Firebase v9 modular
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Constants
 const MAX_RECENT_ROWS = 10;
 
-let logCollection;
-let unsubscribe;
+// State
+let logCollectionRef = null;
+let unsubscribe = null;
 let lang = 'en';
 let deferredInstallPrompt = null;
 let installBannerTimeout;
@@ -32,302 +57,226 @@ let allEntries = [];
 let activeFilter = 'all';
 let searchTerm = '';
 
-document.addEventListener('DOMContentLoaded', () => {
-  const appContent = document.getElementById('app-content');
-  if (appContent) {
-    renderTiles(appContent);
-    // initTileSystem?.(appContent); // uncomment when you actually use it
-  }
+// Element refs (assigned on DOMContentLoaded)
+let appContent, nameInput, dairyCheckbox, outsideMealsCheckbox, addBtn, tbody, emptyState, installBanner;
+let sidebar, scrim, welcomeMessage, landingPage, donateBtn, langToggle, switchEl, googleSigninBtn, pwaInstallBtn;
+let menuOpenBtn, menuCloseBtn, logoutBtn, logoutBtnMain, userInfo, userName, exportBtn;
+let statTotal, statDairy, statOutside, statLast, statLastSubtext, logSearchInput, noResultsMessage, filterButtons;
+let dashboardControls, reorderToggle, reorderHint, themeToggle, themeToggleIcon, themeToggleLabel, themeColorMeta;
+let manifestoModal, closeManifestoBtn, historyModal, closeHistoryBtn, historyContent;
+let legalModal, legalTitle, legalContent, closeLegalBtn, impressumLink, privacyLink;
+let instructionsModal, closeInstructionsBtn, logoCard, manifestoCard;
+let authSection, loginBtn, signupBtn, authSubmit, authActions, signupFields, authTitle, authToggle;
+let authEmail, authPassword, authUsername, authRePassword;
 
-  // Elements
-  const nameInput = document.getElementById('food-name');
-  const dairyCheckbox = document.getElementById('contains-dairy');
-  const outsideMealsCheckbox = document.getElementById('outside-meals');
-  const addBtn = document.getElementById('add-button');
-  const tbody = document.getElementById('log-body');
-  const emptyState = document.getElementById('empty-state');
-  const installBanner = document.getElementById('install-banner');
-  const sidebar = document.getElementById('sidebar');
-  const scrim = document.getElementById('scrim');
-  const welcomeMessage = document.getElementById('welcome-message');
-  const landingPage = document.getElementById('landing-page');
-  const donateBtn = document.getElementById('donate-button');
-  const langToggle = document.getElementById('lang-toggle');
-  const switchEl = document.getElementById('switch');
-  const googleSigninBtn = document.getElementById('google-signin');
-  const pwaInstallBtn = document.getElementById('pwa-install');
-  const menuOpenBtn = document.getElementById('menu-open');
-  const menuCloseBtn = document.getElementById('menu-close');
-  const logoutBtn = document.getElementById('logout-btn');
-  const logoutBtnMain = document.getElementById('logout-btn-main');
-
-  if (logoutBtn) logoutBtn.addEventListener('click', handleSignOut);
-  if (logoutBtnMain) logoutBtnMain.addEventListener('click', handleSignOut);
-
-  function handleSignOut(e) {
-    if (e) e.preventDefault();
-    fbSignOut(auth).catch((error) => {
-      console.error('Error signing out:', error);
-    });
-  }
-
-  const userInfo = document.getElementById('user-info');
-  const userName = document.getElementById('user-name');
-  const exportBtn = document.getElementById('export-button');
-  const statTotal = document.getElementById('stat-total');
-  const statDairy = document.getElementById('stat-dairy');
-  const statOutside = document.getElementById('stat-outside');
-  const statLast = document.getElementById('stat-last');
-  const statLastSubtext = document.getElementById('stat-last-subtext');
-  const logSearchInput = document.getElementById('log-search');
-  const noResultsMessage = document.getElementById('no-results');
-  const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
-  const dashboardControls = document.getElementById('dashboard-controls');
-  const reorderToggle = document.getElementById('reorder-toggle');
-  const reorderHint = document.getElementById('reorder-hint');
-  const themeToggle = document.getElementById('theme-toggle');
-  const themeToggleIcon = document.getElementById('theme-toggle-icon');
-  const themeToggleLabel = document.getElementById('theme-toggle-label');
-  const themeColorMeta = document.getElementById('theme-color');
-
-  // Modals / legal links
-  const manifestoModal = document.getElementById('manifesto-modal');
-  const closeManifestoBtn = document.getElementById('close-manifesto');
-  const historyModal = document.getElementById('history-modal');
-  const closeHistoryBtn = document.getElementById('close-history');
-  const historyContent = document.getElementById('history-content');
-  const legalModal = document.getElementById('legal-modal');
-  const legalTitle = document.getElementById('legal-title');
-  const legalContent = document.getElementById('legal-content');
-  const closeLegalBtn = document.getElementById('close-legal');
-  const impressumLink = document.getElementById('impressum-link');
-  const privacyLink = document.getElementById('privacy-link');
-  const instructionsModal = document.getElementById('instructions-modal');
-  const closeInstructionsBtn = document.getElementById('close-instructions');
-  const logoCard = document.getElementById('logo-card');
-
-  // Auth Elements
-  const authSection = document.getElementById('auth-section');
-  const loginBtn = document.getElementById('login-btn');
-  const signupBtn = document.getElementById('signup-btn');
-  const authSubmit = document.getElementById('auth-submit');
-  const authActions = document.getElementById('auth-actions');
-  const signupFields = document.getElementById('signup-fields');
-  const authTitle = document.getElementById('auth-title');
-  const authToggle = document.getElementById('auth-toggle');
-  const authEmail = document.getElementById('auth-email');
-  const authPassword = document.getElementById('auth-password');
-  const authUsername = document.getElementById('auth-username');
-  const authRePassword = document.getElementById('auth-re-password');
-
-  // --- Translations ---
+// --- Translations ---
 const translations = {
-en: {
-loginBtn: 'Login',
-signupBtn: 'Sign Up',
-logoutBtn: 'Logout',
-installBtn: 'Install',
-googleSignin: 'Sign in with Google',
-manifesto: "McFatty's Manifesto",
-manifestoTitle: "McFatty's Manifesto",
-manifestoP1: "McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
-manifestoP2: "This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.",
-manifestoP3: "Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.",
-manifestoP4: "We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.",
-manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.",
-donateBtn: 'Donate',
-welcome: 'Welcome',
-welcomeBack: 'Welcome back',
-quickStatsTitle: 'Quick stats',
-statEntriesToday: 'Entries today',
-statDairyToday: 'Dairy items',
-statOutsideMeals: 'Outside of mealtimes',
-statLastEntry: 'Last entry',
-quickAddTitle: 'Quick add',
-quickAddHint: 'Log what you’re eating right now—no pressure, no judgement.',
-growthTitle: 'Room to grow',
-growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
-recentLogTitle: 'Recent log',
-organizeTiles: 'Organize tiles',
-doneOrganizing: 'Done',
-reorderHint: 'Drag tiles to reorder. Tap Done when you’re finished.',
-logSearchLabel: 'Search log',
-logSearchPlaceholder: 'Search entries',
-filterGroupLabel: 'Filters',
-filterAll: 'All',
-filterDairy: 'Dairy',
-filterNonDairy: 'No dairy',
-filterOutsideMeals: 'Outside of mealtimes',
-filterMeals: 'At mealtimes',
-noResults: 'No entries match your filters yet.',
-addTitle: 'Add item',
-foodLabel: 'Food item name',
-foodPlaceholder: 'e.g., Cheeseburger',
-addBtn: 'Add to log',
-dairyLabel: 'Contains dairy',
-outsideMealsLabel: 'Outside of mealtimes',
-logTitle: 'Today’s log',
-exportBtn: 'Export',
-thItem: 'Item',
-thTime: 'Time',
-thDairy: 'Dairy',
-thOutsideMeals: 'Outside of mealtimes',
-emptyState: 'No items yet. Add your first item above.',
-confirmTitle: 'Are you sure?',
-cancelBtn: 'Cancel',
-closeBtn: 'Close',
-confirmClearBtn: 'Confirm',
-accountModalTitle: 'Edit Account',
-nameLabel: 'Name',
-emailLabel: 'Email',
-deleteAccountBtn: 'Delete Account',
-saveBtn: 'Save',
-menuTitle: 'Menu',
-corePractices: 'Core Practices',
-newJournal: 'New Journal Entry',
-settings: 'Application Settings',
-account: 'Account',
-logout: 'Log Out',
-footerText: 'Designed and created by Burrow · 2025',
-loginTitle: 'Login',
-signupTitle: 'Sign Up',
-loginAction: 'Login',
-signupAction: 'Sign Up',
-authToggleToSignup: 'Need an account? Sign Up',
-authToggleToLogin: 'Have an account? Login',
-passwordLabel: 'Password',
-usernameLabel: 'Username',
-rePasswordLabel: 'Re-type Password',
-installSuccess: 'App installed! Find McFatty’s on your home screen.',
-installDismissed: 'Install dismissed.',
-yes: 'Yes',
-no: 'No',
-editBtn: 'Edit',
-removeBtn: 'Remove',
-editEntryAria: 'Edit entry',
-removeEntryAria: 'Remove entry',
-authMissingFields: 'Please enter an email and password.',
-authMissingUsername: 'Please choose a username.',
-authPasswordMismatch: 'Passwords do not match.',
-addError: 'Sorry, there was an error adding your entry.',
-deleteError: 'Sorry, there was an error removing your entry.',
-updateError: 'Sorry, there was an error updating your entry.',
-authErrorPrefix: 'Error:',
-csvHeaderDate: 'Date',
-csvHeaderItem: 'Item',
-csvHeaderDairy: 'Dairy',
-csvHeaderOutsideMeals: 'Outside of mealtimes',
-csvYes: 'Yes',
-csvNo: 'No',
-notAvailable: 'N/A',
-history: 'History',
-historyTitle: 'Log History',
-impressum: 'Legal Notice',
-privacyPolicy: 'Privacy Policy',
-},
-de: {
-loginBtn: 'Anmelden',
-signupBtn: 'Registrieren',
-logoutBtn: 'Abmelden',
-installBtn: 'Installieren',
-googleSignin: 'Mit Google anmelden',
-manifesto: 'McFettys Manifest',
-manifestoTitle: 'McFettys Manifest',
-manifestoP1: 'Bei McFettys Food Tracker geht es nicht um Kalorien, Einschränkungen oder Schuldgefühle. Wenn du Chips willst, iss sie. Keine Scham, keine Bestrafung. Schreib es einfach auf. Das Aufzeichnen ohne Urteil ist der entscheidende Akt.',
-manifestoP2: 'Diese App ist kostenlos. Keine Abonnements, keine Upsells, keine Lifestyle-Pakete. Wir lehnen die Idee ab, dass uns Essen und Gesundheit zurückverkauft werden sollten. Essen sollte kein Geschäftsmodell sein.',
-manifestoP3: 'Stattdessen hilft Ihnen McFatty’s, innezuhalten, auf Ihren Körper zu hören und Ihre Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht Ihnen das einfache Protokollieren, Muster zu erkennen und Ihre Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt für Ihre Entscheidungen verwurzelt sein.',
-manifestoP4: 'Wir sind gegen Kreisläufe von Schuld, Scham und unmöglichen Versprechungen. Wir werden den als Selbstfürsorge getarnten Konsum nicht feiern. Wir glauben, die radikale Wahl ist, zu verlangsamen, auf sich selbst zu hören und zu Ihren eigenen Bedingungen zu essen.',
-manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von Ihrer Schuld profitieren.',
-donateBtn: 'Spenden',
-welcome: 'Willkommen',
-welcomeBack: 'Willkommen zurück',
-quickStatsTitle: 'Schnelle Statistiken',
-statEntriesToday: 'Einträge heute',
-statDairyToday: 'Milchprodukte',
-statOutsideMeals: 'Außerhalb der Mahlzeiten',
-statLastEntry: 'Letzter Eintrag',
-quickAddTitle: 'Schnell hinzufügen',
-quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
-growthTitle: 'Platz für mehr',
-growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
-recentLogTitle: 'Aktuelles Protokoll',
-organizeTiles: 'Kacheln anordnen',
-doneOrganizing: 'Fertig',
-reorderHint: 'Ziehe die Kacheln, um sie neu anzuordnen. Tippe auf „Fertig“, wenn du zufrieden bist.',
-logSearchLabel: 'Protokoll durchsuchen',
-logSearchPlaceholder: 'Einträge durchsuchen',
-filterGroupLabel: 'Filter',
-filterAll: 'Alle',
-filterDairy: 'Milch',
-filterNonDairy: 'Ohne Milch',
-filterOutsideMeals: 'Außerhalb der Mahlzeiten',
-filterMeals: 'Zu den Mahlzeiten',
-noResults: 'Keine Einträge passen zu deinen Filtern.',
-addTitle: 'Element hinzufügen',
-foodLabel: 'Name des Lebensmittels',
-foodPlaceholder: 'z.B. Käseburger',
-addBtn: 'Zum Protokoll hinzufügen',
-dairyLabel: 'Enthält Milchprodukte',
-outsideMealsLabel: 'Außerhalb der Mahlzeiten',
-logTitle: 'Heutiges Protokoll',
-exportBtn: 'Exportieren',
-thItem: 'Element',
-thTime: 'Uhrzeit',
-thDairy: 'Milchprodukte',
-thOutsideMeals: 'Außerhalb der Mahlzeiten',
-emptyState: 'Noch keine Einträge. Fügen Sie oben Ihren ersten Eintrag hinzu.',
-confirmTitle: 'Sind Sie sicher?',
-cancelBtn: 'Abbrechen',
-closeBtn: 'Schließen',
-confirmClearBtn: 'Bestätigen',
-accountModalTitle: 'Konto bearbeiten',
-nameLabel: 'Name',
-emailLabel: 'Email',
-deleteAccountBtn: 'Konto löschen',
-saveBtn: 'Speichern',
-menuTitle: 'Menü',
-corePractices: 'Kernpraktiken',
-newJournal: 'Neuer Journaleintrag',
-settings: 'Anwendungseinstellungen',
-account: 'Konto',
-logout: 'Abmelden',
-footerText: 'Designed and created by Burrow · 2025',
-loginTitle: 'Anmelden',
-signupTitle: 'Registrieren',
-loginAction: 'Anmelden',
-signupAction: 'Registrieren',
-authToggleToSignup: 'Noch kein Konto? Registrieren',
-authToggleToLogin: 'Konto vorhanden? Anmelden',
-passwordLabel: 'Passwort',
-usernameLabel: 'Benutzername',
-rePasswordLabel: 'Passwort erneut eingeben',
-installSuccess: 'App installiert! McFatty’s ist jetzt auf deinem Startbildschirm.',
-installDismissed: 'Installation abgebrochen.',
-yes: 'Ja',
-no: 'Nein',
-editBtn: 'Bearbeiten',
-removeBtn: 'Entfernen',
-editEntryAria: 'Eintrag bearbeiten',
-removeEntryAria: 'Eintrag entfernen',
-authMissingFields: 'Bitte E-Mail und Passwort eingeben.',
-authMissingUsername: 'Bitte einen Benutzernamen wählen.',
-authPasswordMismatch: 'Passwörter stimmen nicht überein.',
-addError: 'Beim Hinzufügen deines Eintrags ist ein Fehler aufgetreten.',
-deleteError: 'Beim Entfernen deines Eintrags ist ein Fehler aufgetreten.',
-updateError: 'Beim Aktualisieren deines Eintrags ist ein Fehler aufgetreten.',
-authErrorPrefix: 'Fehler:',
-csvHeaderDate: 'Datum',
-csvHeaderItem: 'Element',
-csvHeaderDairy: 'Milchprodukte',
-csvHeaderOutsideMeals: 'Außerhalb der Mahlzeiten',
-csvYes: 'Ja',
-csvNo: 'Nein',
-notAvailable: 'k. A.',
-history: 'Verlauf',
-historyTitle: 'Protokollverlauf',
-impressum: 'Impressum',
-privacyPolicy: 'Datenschutzerklärung',
-}
+  en: {
+    loginBtn: 'Login',
+    signupBtn: 'Sign Up',
+    logoutBtn: 'Logout',
+    installBtn: 'Install',
+    googleSignin: 'Sign in with Google',
+    manifesto: "McFatty's Manifesto",
+    manifestoTitle: "McFatty's Manifesto",
+    manifestoP1: "McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
+    manifestoP2: "This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.",
+    manifestoP3: "Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.",
+    manifestoP4: "We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.",
+    manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.",
+    donateBtn: 'Donate',
+    welcome: 'Welcome',
+    welcomeBack: 'Welcome back',
+    quickStatsTitle: 'Quick stats',
+    statEntriesToday: 'Entries today',
+    statDairyToday: 'Dairy items',
+    statOutsideMeals: 'Outside of mealtimes',
+    statLastEntry: 'Last entry',
+    quickAddTitle: 'Quick add',
+    quickAddHint: 'Log what you’re eating right now—no pressure, no judgement.',
+    growthTitle: 'Room to grow',
+    growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
+    recentLogTitle: 'Recent log',
+    organizeTiles: 'Organize tiles',
+    doneOrganizing: 'Done',
+    reorderHint: 'Drag tiles to reorder. Tap Done when you’re finished.',
+    logSearchLabel: 'Search log',
+    logSearchPlaceholder: 'Search entries',
+    filterGroupLabel: 'Filters',
+    filterAll: 'All',
+    filterDairy: 'Dairy',
+    filterNonDairy: 'No dairy',
+    filterOutsideMeals: 'Outside of mealtimes',
+    filterMeals: 'At mealtimes',
+    noResults: 'No entries match your filters yet.',
+    addTitle: 'Add item',
+    foodLabel: 'Food item name',
+    foodPlaceholder: 'e.g., Cheeseburger',
+    addBtn: 'Add to log',
+    dairyLabel: 'Contains dairy',
+    outsideMealsLabel: 'Outside of mealtimes',
+    logTitle: 'Today’s log',
+    exportBtn: 'Export',
+    thItem: 'Item',
+    thTime: 'Time',
+    thDairy: 'Dairy',
+    thOutsideMeals: 'Outside of mealtimes',
+    emptyState: 'No items yet. Add your first item above.',
+    confirmTitle: 'Are you sure?',
+    cancelBtn: 'Cancel',
+    closeBtn: 'Close',
+    confirmClearBtn: 'Confirm',
+    accountModalTitle: 'Edit Account',
+    nameLabel: 'Name',
+    emailLabel: 'Email',
+    deleteAccountBtn: 'Delete Account',
+    saveBtn: 'Save',
+    menuTitle: 'Menu',
+    corePractices: 'Core Practices',
+    newJournal: 'New Journal Entry',
+    settings: 'Application Settings',
+    account: 'Account',
+    logout: 'Log Out',
+    footerText: 'Designed and created by Burrow · 2025',
+    loginTitle: 'Login',
+    signupTitle: 'Sign Up',
+    loginAction: 'Login',
+    signupAction: 'Sign Up',
+    authToggleToSignup: 'Need an account? Sign Up',
+    authToggleToLogin: 'Have an account? Login',
+    passwordLabel: 'Password',
+    usernameLabel: 'Username',
+    rePasswordLabel: 'Re-type Password',
+    installSuccess: 'App installed! Find McFatty’s on your home screen.',
+    installDismissed: 'Install dismissed.',
+    yes: 'Yes',
+    no: 'No',
+    editBtn: 'Edit',
+    removeBtn: 'Remove',
+    editEntryAria: 'Edit entry',
+    removeEntryAria: 'Remove entry',
+    authMissingFields: 'Please enter an email and password.',
+    authMissingUsername: 'Please choose a username.',
+    authPasswordMismatch: 'Passwords do not match.',
+    addError: 'Sorry, there was an error adding your entry.',
+    deleteError: 'Sorry, there was an error removing your entry.',
+    updateError: 'Sorry, there was an error updating your entry.',
+    authErrorPrefix: 'Error:',
+    csvHeaderDate: 'Date',
+    csvHeaderItem: 'Item',
+    csvHeaderDairy: 'Dairy',
+    csvHeaderOutsideMeals: 'Outside of mealtimes',
+    csvYes: 'Yes',
+    csvNo: 'No',
+    notAvailable: 'N/A',
+    history: 'History',
+    historyTitle: 'Log History',
+    impressum: 'Legal Notice',
+    privacyPolicy: 'Privacy Policy',
+  },
+  de: {
+    loginBtn: 'Anmelden',
+    signupBtn: 'Registrieren',
+    logoutBtn: 'Abmelden',
+    installBtn: 'Installieren',
+    googleSignin: 'Mit Google anmelden',
+    manifesto: 'McFettys Manifest',
+    manifestoTitle: 'McFettys Manifest',
+    manifestoP1: 'Bei McFettys Food Tracker geht es nicht um Kalorien, Einschränkungen oder Schuldgefühle. Wenn du Chips willst, iss sie. Keine Scham, keine Bestrafung. Schreib es einfach auf. Das Aufzeichnen ohne Urteil ist der entscheidende Akt.',
+    manifestoP2: 'Diese App ist kostenlos. Keine Abonnements, keine Upsells, keine Lifestyle-Pakete. Wir lehnen die Idee ab, dass uns Essen und Gesundheit zurückverkauft werden sollten. Essen sollte kein Geschäftsmodell sein.',
+    manifestoP3: 'Stattdessen hilft Ihnen McFatty’s, innezuhalten, auf Ihren Körper zu hören und Ihre Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht Ihnen das einfache Protokollieren, Muster zu erkennen und Ihre Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt für Ihre Entscheidungen verwurzelt sein.',
+    manifestoP4: 'Wir sind gegen Kreisläufe von Schuld, Scham und unmöglichen Versprechungen. Wir werden den als Selbstfürsorge getarnten Konsum nicht feiern. Wir glauben, die radikale Wahl ist, zu verlangsamen, auf sich selbst zu hören und zu Ihren eigenen Bedingungen zu essen.',
+    manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von Ihrer Schuld profitieren.',
+    donateBtn: 'Spenden',
+    welcome: 'Willkommen',
+    welcomeBack: 'Willkommen zurück',
+    quickStatsTitle: 'Schnelle Statistiken',
+    statEntriesToday: 'Einträge heute',
+    statDairyToday: 'Milchprodukte',
+    statOutsideMeals: 'Außerhalb der Mahlzeiten',
+    statLastEntry: 'Letzter Eintrag',
+    quickAddTitle: 'Schnell hinzufügen',
+    quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
+    growthTitle: 'Platz für mehr',
+    growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
+    recentLogTitle: 'Aktuelles Protokoll',
+    organizeTiles: 'Kacheln anordnen',
+    doneOrganizing: 'Fertig',
+    reorderHint: 'Ziehe die Kacheln, um sie neu anzuordnen. Tippe auf „Fertig“, wenn du zufrieden bist.',
+    logSearchLabel: 'Protokoll durchsuchen',
+    logSearchPlaceholder: 'Einträge durchsuchen',
+    filterGroupLabel: 'Filter',
+    filterAll: 'Alle',
+    filterDairy: 'Milch',
+    filterNonDairy: 'Ohne Milch',
+    filterOutsideMeals: 'Außerhalb der Mahlzeiten',
+    filterMeals: 'Zu den Mahlzeiten',
+    noResults: 'Keine Einträge passen zu deinen Filtern.',
+    addTitle: 'Element hinzufügen',
+    foodLabel: 'Name des Lebensmittels',
+    foodPlaceholder: 'z.B. Käseburger',
+    addBtn: 'Zum Protokoll hinzufügen',
+    dairyLabel: 'Enthält Milchprodukte',
+    outsideMealsLabel: 'Außerhalb der Mahlzeiten',
+    logTitle: 'Heutiges Protokoll',
+    exportBtn: 'Exportieren',
+    thItem: 'Element',
+    thTime: 'Uhrzeit',
+    thDairy: 'Milchprodukte',
+    thOutsideMeals: 'Außerhalb der Mahlzeiten',
+    emptyState: 'Noch keine Einträge. Fügen Sie oben Ihren ersten Eintrag hinzu.',
+    confirmTitle: 'Sind Sie sicher?',
+    cancelBtn: 'Abbrechen',
+    closeBtn: 'Schließen',
+    confirmClearBtn: 'Bestätigen',
+    accountModalTitle: 'Konto bearbeiten',
+    nameLabel: 'Name',
+    emailLabel: 'Email',
+    deleteAccountBtn: 'Konto löschen',
+    saveBtn: 'Speichern',
+    menuTitle: 'Menü',
+    corePractices: 'Kernpraktiken',
+    newJournal: 'Neuer Journaleintrag',
+    settings: 'Anwendungseinstellungen',
+    account: 'Konto',
+    logout: 'Abmelden',
+    footerText: 'Designed and created by Burrow · 2025',
+    loginTitle: 'Anmelden',
+    signupTitle: 'Registrieren',
+    loginAction: 'Anmelden',
+    signupAction: 'Registrieren',
+    authToggleToSignup: 'Noch kein Konto? Registrieren',
+    authToggleToLogin: 'Konto vorhanden? Anmelden',
+    passwordLabel: 'Passwort',
+    usernameLabel: 'Benutzername',
+    rePasswordLabel: 'Passwort erneut eingeben',
+    installSuccess: 'App installiert! McFatty’s ist jetzt auf deinem Startbildschirm.',
+    installDismissed: 'Installation abgebrochen.',
+    yes: 'Ja',
+    no: 'Nein',
+    editBtn: 'Bearbeiten',
+    removeBtn: 'Entfernen',
+    editEntryAria: 'Eintrag bearbeiten',
+    removeEntryAria: 'Eintrag entfernen',
+    authMissingFields: 'Bitte E-Mail und Passwort eingeben.',
+    authMissingUsername: 'Bitte einen Benutzernamen wählen.',
+    authPasswordMismatch: 'Passwörter stimmen nicht überein.',
+    addError: 'Beim Hinzufügen deines Eintrags ist ein Fehler aufgetreten.',
+    deleteError: 'Beim Entfernen deines Eintrags ist ein Fehler aufgetreten.',
+    updateError: 'Beim Aktualisieren deines Eintrags ist ein Fehler aufgetreten.',
+    authErrorPrefix: 'Fehler:',
+    csvHeaderDate: 'Datum',
+    csvHeaderItem: 'Element',
+    csvHeaderDairy: 'Milchprodukte',
+    csvHeaderOutsideMeals: 'Außerhalb der Mahlzeiten',
+    csvYes: 'Ja',
+    csvNo: 'Nein',
+    notAvailable: 'k. A.',
+    history: 'Verlauf',
+    historyTitle: 'Protokollverlauf',
+    impressum: 'Impressum',
+    privacyPolicy: 'Datenschutzerklärung',
+  }
 };
 
 const legalDocs = {
@@ -359,7 +308,6 @@ const legalDocs = {
       <p>E-Mail: [Ihre E-Mail-Adresse]</p>
       <h4>Haftungsausschluss</h4>
       <p>Dies ist ein privates, nicht-kommerzielles Projekt. Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.</p>`,
-    // Make sure to complete this section as well
     privacyPolicy: `<h3>Datenschutzerklärung</h3>
       <p><strong>1. Allgemeiner Hinweis</strong></p>
       <p>Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie unsere App nutzen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.</p>
@@ -367,6 +315,752 @@ const legalDocs = {
       [Ihr Name]<br>[Ihre Straße und Hausnummer]<br>[Ihre PLZ und Stadt]<br>E-Mail: [Ihre E-Mail-Adresse]</p>
       <p><strong>2. Datenerfassung in unserer App</strong></p>
       <p><strong>Nutzerauthentifizierung:</strong> Um diese App zu nutzen, müssen Sie ein Konto erstellen. Wir verwenden hierfür Firebase Authentication (ein Dienst von Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland). Bei der Registrierung per E-Mail und Passwort werden Ihre E-Mail-Adresse, ein Passwort-Hash und eine eindeutige Benutzer-ID gespeichert. Wenn Sie die Google-Anmeldung verwenden, übermittelt Google uns Ihren Namen, Ihre E-Mail-Adresse und Ihr Profilbild.</p>
-      <p><strong>Datenspeicherung:</strong> Ihre Essensprotokolle werden in einer Cloud Firestore-Datenbank gespeichert, die ebenfalls von Google bereitgestellt wird.</p>`
+      <p><strong>Datenspeicherung:</strong> Ihre Essensprotokolle werden in einer Cloud Firestore-Datenbank gespeichert, die ebenfalls von Google bereitgestellt wird. Diese Daten sind mit Ihrer eindeutigen Benutzer-ID verknüpft. Wir verarbeiten diese Daten zu keinem anderen Zweck, als sie Ihnen in der App wieder anzuzeigen.</p>
+      <p><strong>Server-Log-Dateien:</strong> Der Provider der Seiten erhebt und speichert automatisch Informationen in so genannten Server-Log-Dateien, die Ihr Browser automatisch an uns übermittelt. Dies sind: Browsertyp und Browserversion, verwendetes Betriebssystem, Referrer URL, Hostname des zugreifenden Rechners, Uhrzeit der Serveranfrage und IP-Adresse. Eine Zusammenführung dieser Daten mit anderen Datenquellen wird nicht vorgenommen.</p>
+      <p><strong>3. Ihre Rechte</strong></p>
+      <p>Sie haben im Rahmen der geltenden gesetzlichen Bestimmungen jederzeit das Recht auf unentgeltliche Auskunft über Ihre gespeicherten personenbezogenen Daten, deren Herkunft und Empfänger und den Zweck der Datenverarbeitung und ggf. ein Recht auf Berichtigung, Sperrung oder Löschung dieser Daten. Hierzu sowie zu weiteren Fragen zum Thema personenbezogene Daten können Sie sich jederzeit unter der im Impressum angegebenen Adresse an uns wenden.</p>`
   }
 };
+
+// i18n helpers
+const getTranslation = (key) => {
+  const dictionary = translations[lang] || translations.en;
+  return (dictionary && dictionary[key]) || translations.en[key] || '';
+};
+
+// Theme
+const THEME_STORAGE_KEY = 'preferred-theme';
+const themeColors = { light: '#fdfaf3', dark: '#1a1a1a' };
+
+const getStoredTheme = () => {
+  try { return localStorage.getItem(THEME_STORAGE_KEY); } catch { return null; }
+};
+const storeTheme = (value) => {
+  try { localStorage.setItem(THEME_STORAGE_KEY, value); } catch { /* ignore */ }
+};
+const applyTheme = (theme) => {
+  const normalized = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = normalized;
+  if (themeColorMeta) {
+    const metaColor = themeColors[normalized] || themeColors.light;
+    themeColorMeta.setAttribute('content', metaColor);
+  }
+  const isDark = normalized === 'dark';
+  if (themeToggle) {
+    themeToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+    themeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+  if (themeToggleIcon) themeToggleIcon.textContent = isDark ? '☀️' : '🌙';
+  if (themeToggleLabel) themeToggleLabel.textContent = isDark ? 'Enable light mode' : 'Enable dark mode';
+};
+const initializeTheme = () => {
+  const stored = getStoredTheme();
+  if (stored === 'light' || stored === 'dark') { applyTheme(stored); return; }
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(prefersDark ? 'dark' : 'light');
+};
+const toggleTheme = () => {
+  const current = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  storeTheme(next);
+};
+
+// UI updates
+const updateAuthTexts = () => {
+  const titleKey = isLoginMode ? 'loginTitle' : 'signupTitle';
+  const actionKey = isLoginMode ? 'loginAction' : 'signupAction';
+  const toggleKey = isLoginMode ? 'authToggleToSignup' : 'authToggleToLogin';
+  if (authTitle) authTitle.textContent = getTranslation(titleKey);
+  if (authSubmit) authSubmit.textContent = getTranslation(actionKey);
+  if (authToggle) authToggle.textContent = getTranslation(toggleKey);
+};
+
+const showInstallBanner = (message) => {
+  if (!message || !installBanner) return;
+  installBanner.textContent = message;
+  installBanner.classList.add('show');
+  clearTimeout(installBannerTimeout);
+  installBannerTimeout = setTimeout(() => installBanner.classList.remove('show'), 4000);
+};
+
+const setLanguage = (newLang) => {
+  lang = newLang;
+  if (langToggle) langToggle.setAttribute('aria-pressed', newLang === 'de' ? 'true' : 'false');
+  if (switchEl) switchEl.classList.toggle('active', newLang === 'de');
+  document.documentElement.lang = newLang;
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = getTranslation(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = getTranslation(key);
+  });
+
+  const user = auth.currentUser;
+  if (user && welcomeMessage) {
+    const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
+    const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
+    const welcomeText = getTranslation(welcomeTextKey);
+    const displayName = user.displayName || user.email || '';
+    welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
+  }
+
+  if (tileSystem) tileSystem.refreshLabels();
+  updateAuthTexts();
+  if (latestSnapshot) renderEntries(latestSnapshot);
+};
+
+// Firestore helpers
+const getEntryDate = (entry) => {
+  if (entry && entry.timestamp && typeof entry.timestamp.toDate === 'function') {
+    return entry.timestamp.toDate();
+  }
+  return null;
+};
+const isSameDay = (dateA, dateB) => {
+  if (!dateA || !dateB) return false;
+  return dateA.getFullYear() === dateB.getFullYear() &&
+    dateA.getMonth() === dateB.getMonth() &&
+    dateA.getDate() === dateB.getDate();
+};
+
+// Stats + rendering
+const updateStats = () => {
+  if (!statTotal || !statDairy || !statOutside || !statLast || !statLastSubtext) return;
+  const today = new Date();
+  const locale = lang === 'de' ? 'de-DE' : 'en-US';
+  const entriesToday = allEntries.filter(entry => isSameDay(getEntryDate(entry), today));
+  const dairyToday = entriesToday.filter(entry => entry.dairy).length;
+  const outsideMealsToday = entriesToday.filter(entry => entry.outsideMeals).length;
+  const latestEntry = allEntries.find(entry => getEntryDate(entry));
+  const latestDate = latestEntry ? getEntryDate(latestEntry) : null;
+
+  statTotal.textContent = String(entriesToday.length);
+  statDairy.textContent = String(dairyToday);
+  statOutside.textContent = String(outsideMealsToday);
+
+  if (latestDate) {
+    statLast.textContent = latestDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+    statLastSubtext.textContent = latestDate.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' });
+  } else {
+    statLast.textContent = '—';
+    statLastSubtext.textContent = '';
+  }
+};
+
+const renderRows = (entries) => {
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  entries.forEach(entry => {
+    const tr = document.createElement('tr');
+
+    const nameCell = document.createElement('td');
+    nameCell.textContent = entry.name || '';
+
+    const timeCell = document.createElement('td');
+    const date = getEntryDate(entry);
+    timeCell.textContent = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : getTranslation('notAvailable');
+
+    const dairyCell = document.createElement('td');
+    const hasDairy = Boolean(entry.dairy);
+    const dairyPill = document.createElement('span');
+    dairyPill.className = `pill ${hasDairy ? 'pill-yes' : 'pill-no'}`;
+    dairyPill.textContent = hasDairy ? getTranslation('yes') : getTranslation('no');
+    dairyCell.appendChild(dairyPill);
+
+    const outsideCell = document.createElement('td');
+    const outsideValue = Boolean(entry.outsideMeals);
+    const outsidePill = document.createElement('span');
+    outsidePill.className = `pill ${outsideValue ? 'pill-yes' : 'pill-no'}`;
+    outsidePill.textContent = outsideValue ? getTranslation('yes') : getTranslation('no');
+    outsideCell.appendChild(outsidePill);
+
+    const actionsCell = document.createElement('td');
+    actionsCell.className = 'row-actions actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-secondary edit-entry';
+    editBtn.type = 'button';
+    editBtn.dataset.id = entry.id;
+    editBtn.textContent = getTranslation('editBtn');
+    editBtn.setAttribute('aria-label', `${getTranslation('editEntryAria')} ${entry.name || ''}`.trim());
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn btn-danger remove-entry';
+    removeBtn.type = 'button';
+    removeBtn.dataset.id = entry.id;
+    removeBtn.textContent = getTranslation('removeBtn');
+    removeBtn.setAttribute('aria-label', `${getTranslation('removeEntryAria')} ${entry.name || ''}`.trim());
+
+    actionsCell.appendChild(editBtn);
+    actionsCell.appendChild(removeBtn);
+
+    tr.appendChild(nameCell);
+    tr.appendChild(timeCell);
+    tr.appendChild(dairyCell);
+    tr.appendChild(outsideCell);
+    tr.appendChild(actionsCell);
+    tbody.appendChild(tr);
+  });
+};
+
+const toggleNoResults = (show) => {
+  if (!noResultsMessage) return;
+  noResultsMessage.style.display = show ? 'block' : 'none';
+};
+
+const applyFilters = () => {
+  if (!allEntries.length) {
+    if (tbody) tbody.innerHTML = '';
+    toggleNoResults(false);
+    return;
+  }
+  let filtered = [...allEntries];
+  if (searchTerm) {
+    filtered = filtered.filter(entry => (entry.name || '').toLowerCase().includes(searchTerm));
+  }
+  if (activeFilter === 'dairy') {
+    filtered = filtered.filter(entry => entry.dairy);
+  } else if (activeFilter === 'non-dairy') {
+    filtered = filtered.filter(entry => !entry.dairy);
+  } else if (activeFilter === 'outside-meals') {
+    filtered = filtered.filter(entry => entry.outsideMeals);
+  } else if (activeFilter === 'during-meals') {
+    filtered = filtered.filter(entry => !entry.outsideMeals);
+  }
+  if (!filtered.length) {
+    if (tbody) tbody.innerHTML = '';
+    toggleNoResults(true);
+    return;
+  }
+  toggleNoResults(false);
+  renderRows(filtered.slice(0, MAX_RECENT_ROWS));
+};
+
+const renderEntries = (snapshot) => {
+  latestSnapshot = snapshot;
+  allEntries = snapshot.docs.map(docSnap => {
+    const data = docSnap.data();
+    return {
+      id: docSnap.id,
+      ...data,
+      dairy: Boolean(data.dairy),
+      outsideMeals: Boolean(data.outsideMeals)
+    };
+  });
+  updateStats();
+  if (!allEntries.length) {
+    if (tbody) tbody.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
+    toggleNoResults(false);
+    return;
+  }
+  if (emptyState) emptyState.style.display = 'none';
+  applyFilters();
+};
+
+const renderHistory = (snapshot) => {
+  if (!historyContent) return;
+  historyContent.innerHTML = '';
+  if (!snapshot || snapshot.empty) {
+    historyContent.innerHTML = `<p>${getTranslation('emptyState')}</p>`;
+    return;
+  }
+  const entriesByDate = {};
+  snapshot.forEach(docSnap => {
+    const entry = docSnap.data();
+    if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
+      const date = entry.timestamp.toDate();
+      const key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+      (entriesByDate[key] ||= []).push(entry);
+    }
+  });
+
+  let html = '';
+  Object.keys(entriesByDate).sort().reverse().forEach(key => {
+    const [y,m,d] = key.split('-').map(n=>parseInt(n,10));
+    const display = new Date(y, m-1, d).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+    html += `<h3>${display}</h3>`;
+    html += `<table class="table" style="margin-bottom:20px;"><thead><tr><th>${getTranslation('thItem')}</th><th>${getTranslation('thTime')}</th><th>${getTranslation('thDairy')}</th><th>${getTranslation('thOutsideMeals')}</th></tr></thead><tbody>`;
+    entriesByDate[key].sort((a,b)=> (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)).forEach(entry=>{
+      const time = entry.timestamp.toDate().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+      const hasDairy = Boolean(entry.dairy);
+      const dairyText = hasDairy ? getTranslation('yes') : getTranslation('no');
+      const pillClass = hasDairy ? 'pill-yes' : 'pill-no';
+      const outsideValue = Boolean(entry.outsideMeals);
+      const outsideText = outsideValue ? getTranslation('yes') : getTranslation('no');
+      const outsideClass = outsideValue ? 'pill-yes' : 'pill-no';
+      const safeName = (entry.name || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      html += `<tr><td>${safeName}</td><td>${time}</td><td><span class="pill ${pillClass}">${dairyText}</span></td><td><span class="pill ${outsideClass}">${outsideText}</span></td></tr>`;
+    });
+    html += `</tbody></table>`;
+  });
+
+  historyContent.innerHTML = html || `<p>${getTranslation('emptyState')}</p>`;
+};
+
+// CRUD
+const addEntry = async () => {
+  const name = (nameInput?.value || '').trim();
+  if (!name || !logCollectionRef) return;
+  try {
+    await addDoc(logCollectionRef, {
+      name,
+      dairy: !!dairyCheckbox?.checked,
+      outsideMeals: !!outsideMealsCheckbox?.checked,
+      timestamp: serverTimestamp()
+    });
+    if (nameInput) nameInput.value = '';
+    if (dairyCheckbox) dairyCheckbox.checked = false;
+    if (outsideMealsCheckbox) outsideMealsCheckbox.checked = false;
+    nameInput?.focus();
+  } catch (error) {
+    console.error('Error adding document: ', error);
+    alert(getTranslation('addError'));
+  }
+};
+
+const handleLogAction = async (event) => {
+  if (!logCollectionRef) return;
+  const button = event.target.closest('button');
+  if (!button) return;
+  const { id } = button.dataset;
+  if (!id) return;
+
+  if (button.classList.contains('remove-entry')) {
+    try {
+      await deleteDoc(doc(logCollectionRef, id));
+    } catch (error) {
+      console.error('Error removing document: ', error);
+      alert(getTranslation('deleteError'));
+    }
+    return;
+  }
+
+  if (button.classList.contains('edit-entry')) {
+    const currentName = button.closest('tr')?.querySelector('td')?.textContent || '';
+    const newName = prompt(getTranslation('editBtn'), currentName);
+    if (newName && newName.trim() && newName.trim() !== currentName) {
+      try {
+        await updateDoc(doc(logCollectionRef, id), { name: newName.trim() });
+      } catch (error) {
+        console.error('Error updating document:', error);
+        alert(getTranslation('updateError'));
+      }
+    }
+  }
+};
+
+const exportToCsv = async () => {
+  if (!logCollectionRef) return;
+  const header = [
+    getTranslation('csvHeaderDate'),
+    getTranslation('csvHeaderItem'),
+    getTranslation('csvHeaderDairy'),
+    getTranslation('csvHeaderOutsideMeals')
+  ].join(',');
+  let csvContent = "data:text/csv;charset=utf-8," + header + "\n";
+  const locale = lang === 'de' ? 'de-DE' : 'en-US';
+
+  const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
+  const snap = await getDocs(q);
+  snap.forEach(docSnap => {
+    const entry = docSnap.data();
+    const date = entry.timestamp ? entry.timestamp.toDate().toLocaleDateString(locale) : getTranslation('notAvailable');
+    const safeName = `"${(entry.name || '').replace(/"/g, '""')}"`;
+    const hasDairy = Boolean(entry.dairy);
+    const outsideValue = Boolean(entry.outsideMeals);
+    const row = [
+      date,
+      safeName,
+      hasDairy ? getTranslation('csvYes') : getTranslation('csvNo'),
+      outsideValue ? getTranslation('csvYes') : getTranslation('csvNo')
+    ].join(',');
+    csvContent += row + "\n";
+  });
+
+  const link = document.createElement('a');
+  link.href = encodeURI(csvContent);
+  link.download = 'mcfattys_log.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// Auth helpers
+const resetAuthFields = () => {
+  if (authEmail) authEmail.value = '';
+  if (authPassword) authPassword.value = '';
+  if (authUsername) authUsername.value = '';
+  if (authRePassword) authRePassword.value = '';
+};
+const setAuthMode = (isLogin) => {
+  isLoginMode = isLogin;
+  if (signupFields) signupFields.style.display = isLogin ? 'none' : 'block';
+  updateAuthTexts();
+};
+const handleAuthSubmit = async () => {
+  const email = (authEmail?.value || '').trim();
+  const password = (authPassword?.value || '').trim();
+
+  if (!email || !password) {
+    alert(getTranslation('authMissingFields'));
+    return;
+  }
+  if (!isLoginMode) {
+    const username = (authUsername?.value || '').trim();
+    const confirmPassword = (authRePassword?.value || '').trim();
+    if (!username) {
+      alert(getTranslation('authMissingUsername'));
+      return;
+    }
+    if (password !== confirmPassword) {
+      alert(getTranslation('authPasswordMismatch'));
+      return;
+    }
+  }
+
+  if (authSubmit) authSubmit.disabled = true;
+  try {
+    if (isLoginMode) {
+      await signInWithEmailAndPassword(auth, email, password);
+    } else {
+      const username = (authUsername?.value || '').trim();
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: username });
+      // Store minimal profile doc (optional): Firestore security rules should protect this.
+      // You can add a users collection if desired.
+    }
+    if (authSection) authSection.style.display = 'none';
+    resetAuthFields();
+  } catch (error) {
+    alert(`${getTranslation('authErrorPrefix')} ${error.message}`);
+  } finally {
+    if (authSubmit) authSubmit.disabled = false;
+  }
+};
+const toggleLanguage = () => setLanguage(lang === 'en' ? 'de' : 'en');
+
+// Tile system (initialized after DOM loads)
+let tileSystem = null;
+
+// DOMContentLoaded: wire everything
+document.addEventListener('DOMContentLoaded', () => {
+  // Core containers
+  appContent = document.getElementById('app-content');
+  if (appContent) {
+    renderTiles(appContent);
+  }
+
+  // Elements
+  nameInput = document.getElementById('food-name');
+  dairyCheckbox = document.getElementById('contains-dairy');
+  outsideMealsCheckbox = document.getElementById('outside-meals');
+  addBtn = document.getElementById('add-button');
+  tbody = document.getElementById('log-body');
+  emptyState = document.getElementById('empty-state');
+  installBanner = document.getElementById('install-banner');
+  sidebar = document.getElementById('sidebar');
+  scrim = document.getElementById('scrim');
+  welcomeMessage = document.getElementById('welcome-message');
+  landingPage = document.getElementById('landing-page');
+  donateBtn = document.getElementById('donate-button');
+  langToggle = document.getElementById('lang-toggle');
+  switchEl = document.getElementById('switch');
+  googleSigninBtn = document.getElementById('google-signin');
+  pwaInstallBtn = document.getElementById('pwa-install');
+  menuOpenBtn = document.getElementById('menu-open');
+  menuCloseBtn = document.getElementById('menu-close');
+  logoutBtn = document.getElementById('logout-btn');
+  logoutBtnMain = document.getElementById('logout-btn-main');
+  userInfo = document.getElementById('user-info');
+  userName = document.getElementById('user-name');
+  exportBtn = document.getElementById('export-button');
+  statTotal = document.getElementById('stat-total');
+  statDairy = document.getElementById('stat-dairy');
+  statOutside = document.getElementById('stat-outside');
+  statLast = document.getElementById('stat-last');
+  statLastSubtext = document.getElementById('stat-last-subtext');
+  logSearchInput = document.getElementById('log-search');
+  noResultsMessage = document.getElementById('no-results');
+  filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
+  dashboardControls = document.getElementById('dashboard-controls');
+  reorderToggle = document.getElementById('reorder-toggle');
+  reorderHint = document.getElementById('reorder-hint');
+  themeToggle = document.getElementById('theme-toggle');
+  themeToggleIcon = document.getElementById('theme-toggle-icon');
+  themeToggleLabel = document.getElementById('theme-toggle-label');
+  themeColorMeta = document.getElementById('theme-color');
+
+  // Modals / legal links
+  manifestoModal = document.getElementById('manifesto-modal');
+  closeManifestoBtn = document.getElementById('close-manifesto');
+  historyModal = document.getElementById('history-modal');
+  closeHistoryBtn = document.getElementById('close-history');
+  historyContent = document.getElementById('history-content');
+  legalModal = document.getElementById('legal-modal');
+  legalTitle = document.getElementById('legal-title');
+  legalContent = document.getElementById('legal-content');
+  closeLegalBtn = document.getElementById('close-legal');
+  impressumLink = document.getElementById('impressum-link');
+  privacyLink = document.getElementById('privacy-link');
+  instructionsModal = document.getElementById('instructions-modal');
+  closeInstructionsBtn = document.getElementById('close-instructions');
+  logoCard = document.getElementById('logo-card');
+  manifestoCard = document.getElementById('manifesto-card');
+
+  // Auth Elements
+  authSection = document.getElementById('auth-section');
+  loginBtn = document.getElementById('login-btn');
+  signupBtn = document.getElementById('signup-btn');
+  authSubmit = document.getElementById('auth-submit');
+  authActions = document.getElementById('auth-actions');
+  signupFields = document.getElementById('signup-fields');
+  authTitle = document.getElementById('auth-title');
+  authToggle = document.getElementById('auth-toggle');
+  authEmail = document.getElementById('auth-email');
+  authPassword = document.getElementById('auth-password');
+  authUsername = document.getElementById('auth-username');
+  authRePassword = document.getElementById('auth-re-password');
+
+  // Init tile system
+  tileSystem = initTileSystem({
+    container: appContent,
+    reorderToggle,
+    reorderHint,
+    getTranslation
+  });
+
+  // Theme
+  initializeTheme();
+  if (themeToggle) {
+    themeToggle.addEventListener('click', toggleTheme);
+    themeToggle.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleTheme();
+      }
+    });
+  }
+
+  // Auth state
+  onAuthStateChanged(auth, (user) => {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+
+    const loggedIn = !!user;
+    if (landingPage) landingPage.style.display = loggedIn ? 'none' : 'grid';
+    if (appContent) appContent.style.display = loggedIn ? 'grid' : 'none';
+    if (authActions) authActions.style.display = loggedIn ? 'none' : 'flex';
+    if (userInfo) userInfo.style.display = loggedIn ? 'flex' : 'none';
+    if (authSection) authSection.style.display = 'none';
+    if (dashboardControls) dashboardControls.hidden = !loggedIn;
+
+    if (loggedIn) {
+      tileSystem?.refreshLabels();
+      resetFilters();
+      const displayName = user.displayName || user.email || '';
+      const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
+      const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
+      const welcomeText = getTranslation(welcomeTextKey);
+      if (welcomeMessage) {
+        welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
+      }
+      if (userName) userName.textContent = displayName;
+
+      logCollectionRef = collection(db, 'users', user.uid, 'logs');
+      const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
+      unsubscribe = onSnapshot(q, renderEntries);
+    } else {
+      tileSystem?.exitReorganizeMode(false);
+      if (userName) userName.textContent = '';
+      if (welcomeMessage) welcomeMessage.textContent = '';
+      latestSnapshot = null;
+      if (tbody) tbody.innerHTML = '';
+      if (emptyState) emptyState.style.display = 'block';
+      logCollectionRef = null;
+      allEntries = [];
+      resetFilters();
+      updateStats();
+      setAuthMode(true);
+      resetAuthFields();
+    }
+  });
+
+  // Buttons & events
+  if (addBtn) addBtn.addEventListener('click', addEntry);
+  if (tbody) tbody.addEventListener('click', handleLogAction);
+  if (exportBtn) exportBtn.addEventListener('click', exportToCsv);
+
+  if (logSearchInput) {
+    logSearchInput.addEventListener('input', (event) => {
+      searchTerm = event.target.value.trim().toLowerCase();
+      applyFilters();
+    });
+  }
+
+  if (filterButtons?.length) {
+    filterButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const { filter } = button.dataset;
+        if (!filter) return;
+        activeFilter = filter;
+        filterButtons.forEach(btn => btn.classList.toggle('is-active', btn === button));
+        applyFilters();
+      });
+    });
+  }
+
+  if (loginBtn) loginBtn.addEventListener('click', () => { resetAuthFields(); if (authSection) authSection.style.display = 'block'; setAuthMode(true); });
+  if (signupBtn) signupBtn.addEventListener('click', () => { resetAuthFields(); if (authSection) authSection.style.display = 'block'; setAuthMode(false); });
+  if (authToggle) authToggle.addEventListener('click', () => setAuthMode(!isLoginMode));
+  if (authSubmit) authSubmit.addEventListener('click', handleAuthSubmit);
+
+  if (googleSigninBtn) {
+    googleSigninBtn.addEventListener('click', () => {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider).catch(err => {
+        alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
+        console.error('Google sign-in error:', err);
+      });
+    });
+  }
+
+  if (logoutBtn) logoutBtn.addEventListener('click', (e) => { e.preventDefault(); fbSignOut(auth).catch(console.error); });
+  if (logoutBtnMain) logoutBtnMain.addEventListener('click', (e) => { e.preventDefault(); fbSignOut(auth).catch(console.error); });
+
+  if (donateBtn) {
+    donateBtn.addEventListener('click', () => {
+      const w = window.open('https://www.paypal.com/donate', '_blank');
+      if (w) w.opener = null;
+    });
+  }
+
+  if (langToggle) {
+    langToggle.addEventListener('click', toggleLanguage);
+    langToggle.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleLanguage();
+      }
+    });
+  }
+
+  if (menuOpenBtn) menuOpenBtn.addEventListener('click', () => { sidebar?.classList.add('open'); scrim?.classList.add('show'); });
+  if (menuCloseBtn) menuCloseBtn.addEventListener('click', () => { sidebar?.classList.remove('open'); scrim?.classList.remove('show'); });
+  if (scrim) scrim.addEventListener('click', () => { sidebar?.classList.remove('open'); scrim?.classList.remove('show'); });
+
+  // Sidebar actions -> modals
+  if (sidebar) {
+    sidebar.addEventListener('click', (event) => {
+      const button = event.target.closest('.sb-item-btn');
+      if (!button) return;
+      const action = button.dataset.action;
+
+      if (action === 'manifesto') {
+        manifestoModal?.classList.add('show');
+      } else if (action === 'history') {
+        if (!logCollectionRef) return;
+        const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
+        getDocs(q).then(renderHistory);
+        historyModal?.classList.add('show');
+      }
+      sidebar.classList.remove('open');
+      scrim?.classList.remove('show');
+    });
+  }
+
+  if (logoCard && instructionsModal) {
+    logoCard.addEventListener('click', () => {
+      if (!tileSystem?.isReorganizeMode()) {
+        instructionsModal.classList.add('show');
+      }
+    });
+  }
+
+  if (manifestoCard) {
+    manifestoCard.addEventListener('click', () => {
+      if (!tileSystem?.isReorganizeMode()) {
+        manifestoModal?.classList.add('show');
+      }
+    });
+  }
+
+  if (closeInstructionsBtn && instructionsModal) {
+    closeInstructionsBtn.addEventListener('click', () => instructionsModal.classList.remove('show'));
+  }
+
+  if (closeManifestoBtn) closeManifestoBtn.addEventListener('click', () => manifestoModal?.classList.remove('show'));
+  if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => historyModal?.classList.remove('show'));
+
+  if (impressumLink) {
+    impressumLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (legalTitle) legalTitle.textContent = getTranslation('impressum');
+      if (legalContent) legalContent.innerHTML = lang === 'de' ? legalDocs.de.impressum : legalDocs.en.impressum;
+      legalModal?.classList.add('show');
+    });
+  }
+
+  if (privacyLink) {
+    privacyLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (legalTitle) legalTitle.textContent = getTranslation('privacyPolicy');
+      if (legalContent) legalContent.innerHTML = lang === 'de' ? legalDocs.de.privacyPolicy : legalDocs.en.privacyPolicy;
+      legalModal?.classList.add('show');
+    });
+  }
+
+  if (closeLegalBtn) closeLegalBtn.addEventListener('click', () => legalModal?.classList.remove('show'));
+
+  // PWA install
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    if (pwaInstallBtn) pwaInstallBtn.style.display = 'inline-flex';
+  });
+
+  if (pwaInstallBtn) {
+    pwaInstallBtn.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      showInstallBanner(getTranslation(outcome === 'accepted' ? 'installSuccess' : 'installDismissed'));
+      deferredInstallPrompt = null;
+      pwaInstallBtn.style.display = 'none';
+    });
+  }
+
+  window.addEventListener('appinstalled', () => {
+    showInstallBanner(getTranslation('installSuccess'));
+    deferredInstallPrompt = null;
+    if (pwaInstallBtn) pwaInstallBtn.style.display = 'none';
+  });
+
+  // SW
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(err => console.error('SW registration failed:', err));
+    });
+  }
+
+  // Boot
+  setLanguage('en');
+});
+
+// Filters reset (needs to run inside auth change as well)
+const resetFilters = () => {
+  activeFilter = 'all';
+  searchTerm = '';
+  if (logSearchInput) logSearchInput.value = '';
+  if (filterButtons?.length) {
+    filterButtons.forEach(btn => btn.classList.toggle('is-active', btn.dataset.filter === 'all'));
+  }
+  toggleNoResults(false);
+};
+
+// Export to other modules if needed
+export { app, auth, db };
