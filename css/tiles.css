@@ -15,8 +15,19 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--r-12);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-tile);
   padding: 18px;
+  overflow: hidden;
+}
+
+.dashboard-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(180deg, var(--tile-highlight) 0%, rgba(255, 255, 255, 0) 45%);
+  mix-blend-mode: soft-light;
 }
 
 .dashboard-card:not(.span-2) {
@@ -165,11 +176,23 @@ body.card-dragging {
 }
 
 .stat-card {
+  position: relative;
   background: var(--bg-1);
   border: 1px solid var(--border);
   border-radius: var(--r-12);
   padding: 16px;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-tile);
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(180deg, var(--tile-highlight) 0%, rgba(255, 255, 255, 0) 50%);
+  mix-blend-mode: soft-light;
 }
 
 .stat-label {
