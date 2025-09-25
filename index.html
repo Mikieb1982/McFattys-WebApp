@@ -313,4 +313,557 @@
     const closeManifestoBtn = document.getElementById('close-manifesto');
     const historyModal = document.getElementById('history-modal');
     const closeHistoryBtn = document.getElementById('close-history');
-    const historyCo
+    const historyContent = document.getElementById('history-content');
+    const legalModal = document.getElementById('legal-modal');
+    const legalTitle = document.getElementById('legal-title');
+    const legalContent = document.getElementById('legal-content');
+    const closeLegalBtn = document.getElementById('close-legal');
+    const impressumLink = document.getElementById('impressum-link');
+    const privacyLink = document.getElementById('privacy-link');
+
+    function getDashboardCards() {
+      if (!appContent) return [];
+      return Array.from(appContent.querySelectorAll('.dashboard-card'));
+    }
+
+      if (!dragSession) return;
+
+      clearTimeout(dragSession.longPressTimer);
+      dragSession.longPressTimer = null;
+
+      detachGlobalPointerListeners();
+
+      const { card, placeholder, active } = dragSession;
+
+      if (active && placeholder && placeholder.parentNode) {
+        placeholder.parentNode.replaceChild(card, placeholder);
+      }
+
+      if (active && card) {
+        card.classList.remove('is-dragging');
+        card.style.position = '';
+        card.style.zIndex = '';
+        card.style.width = '';
+        card.style.height = '';
+        card.style.left = '';
+        card.style.top = '';
+        card.style.pointerEvents = '';
+        card.style.transition = '';
+      }
+
+      document.body.classList.remove('card-dragging');
+      if (appContent) {
+        appContent.classList.remove('is-reordering');
+      }
+
+      if (active) {
+        if (commit) {
+          persistCardOrder();
+        }
+      }
+
+      dragSession = null;
+    }
+
+    function positionDraggedCard(event) {
+      if (!dragSession || !dragSession.card) return;
+      const card = dragSession.card;
+      const containerRect = appContent.getBoundingClientRect();
+      const cardWidth = card.offsetWidth;
+      const cardHeight = card.offsetHeight;
+      const rawX = event.clientX - containerRect.left - dragSession.offsetX;
+      const rawY = event.clientY - containerRect.top - dragSession.offsetY;
+      const maxX = Math.max(containerRect.width - cardWidth, 0);
+      const maxY = Math.max(containerRect.height - cardHeight, 0);
+      const clampedX = Math.min(Math.max(rawX, 0), maxX);
+      const clampedY = Math.min(Math.max(rawY, 0), maxY);
+      card.style.left = `${clampedX}px`;
+      card.style.top = `${clampedY}px`;
+    }
+
+      dragSession.longPressTimer = null;
+
+      const card = dragSession.card;
+      if (!card) return;
+
+      const cardRect = card.getBoundingClientRect();
+      const containerRect = appContent.getBoundingClientRect();
+
+      dragSession.active = true;
+      dragSession.offsetX = event.clientX - cardRect.left;
+      dragSession.offsetY = event.clientY - cardRect.top;
+
+      const placeholder = document.createElement('div');
+      placeholder.className = 'dashboard-placeholder';
+      if (card.classList.contains('span-2')) {
+        placeholder.classList.add('span-2');
+      }
+      placeholder.style.minHeight = `${cardRect.height}px`;
+
+      dragSession.placeholder = placeholder;
+
+      appContent.insertBefore(placeholder, card);
+      appContent.appendChild(card);
+
+      card.classList.add('is-dragging');
+      document.body.classList.add('card-dragging');
+      if (appContent) {
+        appContent.classList.add('is-reordering');
+      }
+      card.style.position = 'absolute';
+      card.style.zIndex = '900';
+      card.style.width = `${cardRect.width}px`;
+      card.style.height = `${cardRect.height}px`;
+      card.style.left = `${cardRect.left - containerRect.left}px`;
+      card.style.top = `${cardRect.top - containerRect.top}px`;
+      card.style.pointerEvents = 'none';
+    }
+
+    function handleCardPointerMove(event) {
+      if (!dragSession || event.pointerId !== dragSession.pointerId || !isReorganizeMode) return;
+
+      dragSession.lastEvent = event;
+
+      if (!dragSession.active) {
+        if (dragSession.longPressTimer) {
+          const dx = Math.abs(event.clientX - dragSession.startX);
+          const dy = Math.abs(event.clientY - dragSession.startY);
+          if (dx > DRAG_MOVE_CANCEL_THRESHOLD || dy > DRAG_MOVE_CANCEL_THRESHOLD) {
+            endCardDrag(false);
+          }
+        }
+        return;
+      }
+
+      event.preventDefault();
+      positionDraggedCard(event);
+      const moved = updatePlaceholderPosition(event);
+      if (moved) {
+        dragSession.hasMoved = true;
+      }
+    }
+
+    function handleCardPointerUp(event) {
+      if (!dragSession || event.pointerId !== dragSession.pointerId) return;
+      const shouldCommit = Boolean(dragSession.active);
+      endCardDrag(shouldCommit);
+    }
+
+    function startDragSession(card, event, delay) {
+      dragSession = {
+        card,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        longPressTimer: null,
+        hasMoved: false,
+        active: false,
+        offsetX: 0,
+        offsetY: 0,
+        placeholder: null,
+        lastEvent: event
+      };
+
+      const triggerDrag = () => {
+        if (!dragSession) return;
+        const referenceEvent = dragSession.lastEvent || event;
+        enterReorganizeMode();
+        beginCardDrag(referenceEvent);
+      };
+
+      if (delay > 0) {
+        dragSession.longPressTimer = setTimeout(triggerDrag, delay);
+      } else {
+        triggerDrag();
+      }
+
+      window.addEventListener('pointermove', handleCardPointerMove, { passive: false });
+      window.addEventListener('pointerup', handleCardPointerUp);
+      window.addEventListener('pointercancel', handleCardPointerUp);
+    }
+
+    function handleCardPointerDown(event) {
+      if (!event.isPrimary) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      if (dragSession) return;
+      if (!appContent) return;
+
+      if (event.target.closest('.close-btn')) return;
+
+      const card = event.target.closest('.dashboard-card');
+      if (!card || !card.dataset.cardId) return;
+
+      const touchingHandle = Boolean(event.target.closest('.drag-handle'));
+
+      if (!isReorganizeMode && !touchingHandle) return;
+
+      const delay = isReorganizeMode ? 0 : (event.pointerType === 'touch' ? LONG_PRESS_DELAY_TOUCH : LONG_PRESS_DELAY_POINTER);
+      startDragSession(card, event, delay);
+    }
+
+    function toggleReorderMode() {
+      if (isReorganizeMode) {
+        exitReorganizeMode(true);
+        if (reorderToggle) {
+          reorderToggle.focus();
+        }
+      } else {
+        enterReorganizeMode();
+      }
+    }
+
+    function handleReorderKeydown(event) {
+      if (event.key === 'Escape' && isReorganizeMode) {
+        exitReorganizeMode(true);
+        if (reorderToggle) {
+          reorderToggle.focus();
+        }
+      }
+    }
+
+
+    function initDashboardReordering() {
+        if (!appContent) return;
+        applyStoredCardOrder();
+        persistCardOrder();
+        updateReorderTexts();
+        appContent.addEventListener('pointerdown', handleCardPointerDown); // Listen on the container
+        if (reorderToggle) {
+            reorderToggle.addEventListener('click', toggleReorderMode);
+        }
+        document.addEventListener('keydown', handleReorderKeydown);
+        document.querySelectorAll('.close-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                exitReorganizeMode(true);
+                if (reorderToggle) {
+                    reorderToggle.focus();
+                }
+            });
+        });
+    }
+
+    // Auth Elements
+    const authSection = document.getElementById('auth-section');
+    const loginBtn = document.getElementById('login-btn');
+    const signupBtn = document.getElementById('signup-btn');
+    const authSubmit = document.getElementById('auth-submit');
+    const authActions = document.getElementById('auth-actions');
+    const signupFields = document.getElementById('signup-fields');
+    const authTitle = document.getElementById('auth-title');
+    const authToggle = document.getElementById('auth-toggle');
+    const authEmail = document.getElementById('auth-email');
+    const authPassword = document.getElementById('auth-password');
+    const authUsername = document.getElementById('auth-username');
+    const authRePassword = document.getElementById('auth-re-password');
+
+    // --- Translations ---
+    const translations = {
+      en: {
+        loginBtn: 'Login',
+        signupBtn: 'Sign Up',
+        logoutBtn: 'Logout',
+        installBtn: 'Install',
+        googleSignin: 'Sign in with Google',
+        manifesto: "McFatty's Manifesto",
+        manifestoTitle: "McFatty's Manifesto",
+        manifestoP1: "McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
+        manifestoP2: "This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.",
+        manifestoP3: "Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.",
+        manifestoP4: "We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.",
+        manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.",
+        donateBtn: 'Donate',
+        welcome: 'Welcome',
+        welcomeBack: 'Welcome back',
+        quickStatsTitle: 'Quick stats',
+        statEntriesToday: 'Entries today',
+        statDairyToday: 'Dairy items',
+        statOutsideMeals: 'Outside of mealtimes',
+        statLastEntry: 'Last entry',
+        quickAddTitle: 'Quick add',
+        quickAddHint: 'Log what you’re eating right now—no pressure, no judgement.',
+        growthTitle: 'Room to grow',
+        growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
+        recentLogTitle: 'Recent log',
+        organizeTiles: 'Organize tiles',
+        doneOrganizing: 'Done',
+        reorderHint: 'Drag tiles to reorder. Tap Done when you’re finished.',
+        logSearchLabel: 'Search log',
+        logSearchPlaceholder: 'Search entries',
+        filterGroupLabel: 'Filters',
+        filterAll: 'All',
+        filterDairy: 'Dairy',
+        filterNonDairy: 'No dairy',
+        filterOutsideMeals: 'Outside of mealtimes',
+        filterMeals: 'At mealtimes',
+        noResults: 'No entries match your filters yet.',
+        addTitle: 'Add item',
+        foodLabel: 'Food item name',
+        foodPlaceholder: 'e.g., Cheeseburger',
+        addBtn: 'Add to log',
+        dairyLabel: 'Contains dairy',
+        outsideMealsLabel: 'Outside of mealtimes',
+        logTitle: 'Today’s log',
+        exportBtn: 'Export',
+        thItem: 'Item',
+        thTime: 'Time',
+        thDairy: 'Dairy',
+        thOutsideMeals: 'Outside of mealtimes',
+        emptyState: 'No items yet. Add your first item above.',
+        confirmTitle: 'Are you sure?',
+        cancelBtn: 'Cancel',
+        closeBtn: 'Close',
+        loginBtn: 'Anmelden',
+        signupBtn: 'Registrieren',
+        logoutBtn: 'Abmelden',
+        installBtn: 'Installieren',
+        googleSignin: 'Mit Google anmelden',
+        manifesto: 'McFettys Manifest',
+        manifestoTitle: 'McFettys Manifest',
+        manifestoP1: 'Bei McFettys Food Tracker geht es nicht um Kalorien, Einschränkungen oder Schuldgefühle. Wenn du Chips willst, iss sie. Keine Scham, keine Bestrafung. Schreib es einfach auf. Das Aufzeichnen ohne Urteil ist der entscheidende Akt.',
+        manifestoP2: 'Diese App ist kostenlos. Keine Abonnements, keine Upsells, keine Lifestyle-Pakete. Wir lehnen die Idee ab, dass uns Essen und Gesundheit zurückverkauft werden sollten. Essen sollte kein Geschäftsmodell sein.',
+        manifestoP3: 'Stattdessen hilft Ihnen McFatty’s, innezuhalten, auf Ihren Körper zu hören und Ihre Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht Ihnen das einfache Protokollieren, Muster zu erkennen und Ihre Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt für Ihre Entscheidungen verwurzelt sein.',
+        manifestoP4: 'Wir sind gegen Kreisläufe von Schuld, Scham und unmöglichen Versprechungen. Wir werden den als Selbstfürsorge getarnten Konsum nicht feiern. Wir glauben, die radikale Wahl ist, zu verlangsamen, auf sich selbst zu hören und zu Ihren eigenen Bedingungen zu essen.',
+        manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von Ihrer Schuld profitieren.',
+        donateBtn: 'Spenden',
+        welcome: 'Willkommen',
+        welcomeBack: 'Willkommen zurück',
+        quickStatsTitle: 'Schnelle Statistiken',
+        statEntriesToday: 'Einträge heute',
+        statDairyToday: 'Milchprodukte',
+        statOutsideMeals: 'Außerhalb der Mahlzeiten',
+        statLastEntry: 'Letzter Eintrag',
+        quickAddTitle: 'Schnell hinzufügen',
+        quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
+        growthTitle: 'Platz für mehr',
+        growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
+        recentLogTitle: 'Aktuelles Protokoll',
+        organizeTiles: 'Kacheln anordnen',
+        doneOrganizing: 'Fertig',
+        reorderHint: 'Ziehe die Kacheln, um sie neu anzuordnen. Tippe auf „Fertig“, wenn du zufrieden bist.',
+        logSearchLabel: 'Protokoll durchsuchen',
+        logSearchPlaceholder: 'Einträge durchsuchen',
+        filterGroupLabel: 'Filter',
+        filterAll: 'Alle',
+        filterDairy: 'Milch',
+        filterNonDairy: 'Ohne Milch',
+        filterOutsideMeals: 'Außerhalb der Mahlzeiten',
+        filterMeals: 'Zu den Mahlzeiten',
+        noResults: 'Keine Einträge passen zu deinen Filtern.',
+        addTitle: 'Element hinzufügen',
+        foodLabel: 'Name des Lebensmittels',
+        foodPlaceholder: 'z.B. Käseburger',
+        addBtn: 'Zum Protokoll hinzufügen',
+        dairyLabel: 'Enthält Milchprodukte',
+        outsideMealsLabel: 'Außerhalb der Mahlzeiten',
+        logTitle: 'Heutiges Protokoll',
+        exportBtn: 'Exportieren',
+        thItem: 'Element',
+        thTime: 'Uhrzeit',
+        thDairy: 'Milchprodukte',
+        thOutsideMeals: 'Außerhalb der Mahlzeiten',
+        emptyState: 'Noch keine Einträge. Fügen Sie oben Ihren ersten Eintrag hinzu.',
+        confirmTitle: 'Sind Sie sicher?',
+        cancelBtn: 'Abbrechen',
+        closeBtn: 'Schließen',
+          <p>Angaben gemäß § 5 TMG</p>
+          <p>[Ihr Name]<br>[Ihre Straße und Hausnummer]<br>[Ihre PLZ und Stadt]</p>
+          <h4>Kontakt</h4>
+          <p>E-Mail: [Ihre E-Mail-Adresse]</p>
+          <h4>Haftungsausschluss</h4>
+          <p>Dies ist ein privates, nicht-kommerzielles Projekt. Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.</p>`,
+        privacyPolicy: `<h3>Datenschutzerklärung</h3>
+          <p><strong>1. Allgemeiner Hinweis</strong></p>
+          <p>Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie unsere App nutzen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.</p>
+          <p><strong>Verantwortliche Stelle für die Datenerfassung in dieser App ist:</strong><br/>
+          [Ihr Name]<br>[Ihre Straße und Hausnummer]<br>[Ihre PLZ und Stadt]<br>E-Mail: [Ihre E-Mail-Adresse]</p>
+          <p><strong>2. Datenerfassung in unserer App</strong></p>
+          <p><strong>Nutzerauthentifizierung:</strong> Um diese App zu nutzen, müssen Sie ein Konto erstellen. Wir verwenden hierfür Firebase Authentication (ein Dienst von Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland). Bei der Registrierung per E-Mail und Passwort werden Ihre E-Mail-Adresse, ein Passwort-Hash und eine eindeutige Benutzer-ID gespeichert. Wenn Sie die Google-Anmeldung verwenden, übermittelt Google uns Ihren Namen, Ihre E-Mail-Adresse und Ihr Profilbild.</p>
+          <p><strong>Datenspeicherung:</strong> Ihre Essensprotokolle werden in einer Cloud Firestore-Datenbank gespeichert, die ebenfalls von Google bereitgestellt wird. Diese Daten sind mit Ihrer eindeutigen Benutzer-ID verknüpft. Wir verarbeiten diese Daten zu keinem anderen Zweck, als sie Ihnen in der App wieder anzuzeigen.</p>
+          <p><strong>Server-Log-Dateien:</strong> Der Provider der Seiten erhebt und speichert automatisch Informationen in so genannten Server-Log-Dateien, die Ihr Browser automatisch an uns übermittelt. Dies sind: Browsertyp und Browserversion, verwendetes Betriebssystem, Referrer URL, Hostname des zugreifenden Rechners, Uhrzeit der Serveranfrage und IP-Adresse. Eine Zusammenführung dieser Daten mit anderen Datenquellen wird nicht vorgenommen.</p>
+          <p><strong>3. Ihre Rechte</strong></p>
+          <p>Sie haben im Rahmen der geltenden gesetzlichen Bestimmungen jederzeit das Recht auf unentgeltliche Auskunft über Ihre gespeicherten personenbezogenen Daten, deren Herkunft und Empfänger und den Zweck der Datenverarbeitung und ggf. ein Recht auf Berichtigung, Sperrung oder Löschung dieser Daten. Hierzu sowie zu weiteren Fragen zum Thema personenbezogene Daten können Sie sich jederzeit unter der im Impressum angegebenen Adresse an uns wenden.</p>`
+      }
+    };
+
+    const getTranslation = (key) => {
+      const dictionary = translations[lang] || translations.en;
+      return (dictionary && dictionary[key]) || translations.en[key] || '';
+    };
+
+    function updateReorderTexts() {
+      if (!reorderToggle) return;
+      const labelKey = isReorganizeMode ? 'doneOrganizing' : 'organizeTiles';
+      const label = getTranslation(labelKey);
+      reorderToggle.textContent = label;
+      reorderToggle.setAttribute('aria-pressed', isReorganizeMode ? 'true' : 'false');
+      reorderToggle.setAttribute('aria-label', label);
+      if (reorderHint) {
+        reorderHint.hidden = !isReorganizeMode;
+        reorderHint.textContent = getTranslation('reorderHint');
+      }
+    }
+
+    function enterReorganizeMode() {
+      if (!appContent || isReorganizeMode) return;
+      isReorganizeMode = true;
+      appContent.classList.add('reorganize-mode');
+      updateReorderTexts();
+    }
+
+    function exitReorganizeMode(commit = true) {
+      if (dragSession) {
+        const shouldCommit = Boolean(commit && dragSession.active);
+        endCardDrag(shouldCommit);
+      }
+
+      if (!appContent || !isReorganizeMode) {
+        updateReorderTexts();
+        return;
+      }
+
+      isReorganizeMode = false;
+      appContent.classList.remove('reorganize-mode');
+      appContent.classList.remove('is-reordering');
+      updateReorderTexts();
+
+      if (commit) {
+        persistCardOrder();
+      }
+    }
+
+    const updateAuthTexts = () => {
+      const titleKey = isLoginMode ? 'loginTitle' : 'signupTitle';
+      const actionKey = isLoginMode ? 'loginAction' : 'signupAction';
+      const toggleKey = isLoginMode ? 'authToggleToSignup' : 'authToggleToLogin';
+      authTitle.textContent = getTranslation(titleKey);
+      authSubmit.textContent = getTranslation(actionKey);
+      authToggle.textContent = getTranslation(toggleKey);
+    };
+
+    const showInstallBanner = (message) => {
+      if (!message) return;
+      installBanner.textContent = message;
+      installBanner.classList.add('show');
+      clearTimeout(installBannerTimeout);
+      installBannerTimeout = setTimeout(() => installBanner.classList.remove('show'), 4000);
+    };
+
+    const setLanguage = (newLang) => {
+      lang = newLang;
+      langToggle.setAttribute('aria-pressed', newLang === 'de' ? 'true' : 'false');
+      switchEl.classList.toggle('active', newLang === 'de');
+      document.documentElement.lang = newLang;
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = getTranslation(key);
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        el.placeholder = getTranslation(key);
+      });
+
+      const user = auth.currentUser;
+      if (user) {
+        const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
+        const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
+        const welcomeText = getTranslation(welcomeTextKey);
+        const displayName = user.displayName || user.email || '';
+        welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
+      }
+
+      updateReorderTexts();
+      updateAuthTexts();
+      if (latestSnapshot) renderEntries(latestSnapshot);
+    };
+
+    const addEntry = () => {
+      const name = nameInput.value.trim();
+      if (!name || !logCollection) return;
+
+      logCollection.add({
+        name,
+        dairy: dairyCheckbox.checked,
+        outsideMeals: outsideMealsCheckbox.checked,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        nameInput.value = '';
+        dairyCheckbox.checked = false;
+        outsideMealsCheckbox.checked = false;
+        nameInput.focus();
+      }).catch((error) => {
+        console.error('Error adding document: ', error);
+        alert(getTranslation('addError'));
+      });
+    };
+
+    const getEntryDate = (entry) => {
+    const resetAuthFields = () => {
+      authEmail.value = '';
+      authPassword.value = '';
+      authUsername.value = '';
+      authRePassword.value = '';
+    };
+
+    const setAuthMode = (isLogin) => {
+      isLoginMode = isLogin;
+      signupFields.style.display = isLogin ? 'none' : 'block';
+      updateAuthTexts();
+    };
+
+    auth.onAuthStateChanged(user => {
+      if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+
+      const loggedIn = !!user;
+
+      landingPage.style.display = loggedIn ? 'none' : 'grid';
+      appContent.style.display = loggedIn ? 'grid' : 'none';
+      authActions.style.display = loggedIn ? 'none' : 'flex';
+      userInfo.style.display = loggedIn ? 'flex' : 'none';
+      authSection.style.display = 'none';
+      if (dashboardControls) {
+        dashboardControls.hidden = !loggedIn;
+      }
+
+      if (loggedIn) {
+        updateReorderTexts();
+        resetFilters();
+        const displayName = user.displayName || user.email || '';
+        const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
+        const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
+        const welcomeText = getTranslation(welcomeTextKey);
+        welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
+
+        userName.textContent = displayName;
+
+        logCollection = db.collection('users').doc(user.uid).collection('logs');
+        unsubscribe = logCollection.orderBy('timestamp', 'desc').onSnapshot(renderEntries);
+      } else {
+        exitReorganizeMode(false);
+        userName.textContent = '';
+        welcomeMessage.textContent = '';
+        latestSnapshot = null;
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        logCollection = null;
+        allEntries = [];
+        resetFilters();
+        updateStats();
+        setAuthMode(true);
+        resetAuthFields();
+      }
+    });
+
+    const handleAuthSubmit = async () => {
+      const email = authEmail.value.trim();
+      const password = authPassword.value.trim();
+
+      if (!email || !password) {
+        alert(getTranslation('authMissingFields'));
+        return;
+      }
+      if (!isLoginMode) {
+        const username = authUsername.value.trim();
+        const confirmPassword = authRePassword.value.trim();
