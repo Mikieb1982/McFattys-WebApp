@@ -1,961 +1,316 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
-diff --git a/index.html b/index.html
-index 1d255d9923f9b4921c26c800f164c0e44b0ae398..341c65e104d670a1aae288643cb90d753eaed39d 100644
---- a/index.html
-+++ b/index.html
-@@ -1,50 +1,51 @@
- <!DOCTYPE html>
- <html lang="en">
- <head>
-   <meta charset="utf-8" />
-   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-   <title>McFatty's Food Tracker</title>
- 
-   <link rel="preconnect" href="https://fonts.googleapis.com">
-   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
- 
-   <link rel="manifest" href="manifest.webmanifest">
-   <meta name="theme-color" content="#0f1115">
-   <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
-   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
-   <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
-   <link rel="preload" href="Logo.png" as="image">
- 
-   <style>
-     :root{
-       /* New Color Palette from Logo */
-       --primary: #f2c56d;   /* Golden Yellow */
-       --danger: #d9534f;    /* Muted Red */
-       --info: #5bc0de;      /* Teal Blue */
-       --text-0: #f7f5e6;    /* Cream White */
-+      --text-1: #b9b6a3;    /* Muted Sand */
-       --bg-0:#1a1a1a;        /* Dark Charcoal */
-       --bg-1:#2a2a2a;        /* Lighter Charcoal */
-       --card:#333333;        /* Card Background */
-       --border:#444444;      /* Border Color */
- 
-       --sp-4:4px; --sp-8:8px; --sp-12:12px; --sp-16:16px; --sp-20:20px; --sp-24:24px;
-       --fs-22:22px; --fs-18:18px; --fs-16:16px; --fs-14:14px; --lh:1.45;
-       --r-8:8px; --r-12:12px; --r-16:16px; --shadow-md:0 8px 20px rgba(0,0,0,.35);
-       --safe-top: env(safe-area-inset-top, 0px);
-     }
-     *{box-sizing:border-box}
-     html,body{margin:0;height:100%;background:var(--bg-0);color:var(--text-0);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:var(--lh)}
-     .container{max-width:860px;margin:0 auto;padding:var(--sp-12) var(--sp-16) var(--sp-24)}
-     .stack-16 > *+*{margin-top:var(--sp-16)}
-     .stack-20 > *+*{margin-top:var(--sp-20)}
- 
-     /* Top bar */
-     .utility-bar{position:sticky;top:0;z-index:300;padding:calc(var(--sp-8)+var(--safe-top)) var(--sp-8) var(--sp-8);
-       margin:0 calc(-1*var(--sp-16)) var(--sp-12);
-       background:linear-gradient(180deg,rgba(26,26,26,.95),rgba(26,26,26,.75) 70%,rgba(26,26,26,0));
-       backdrop-filter:blur(4px)}
-     .utility-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 var(--sp-8)}
-     .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--bg-1);color:var(--text-0);cursor:pointer;transition:.15s}
-     .icon-btn:active{transform:scale(.98)}
-     .icon{width:22px;height:22px;display:block}
-diff --git a/index.html b/index.html
-index 1d255d9923f9b4921c26c800f164c0e44b0ae398..341c65e104d670a1aae288643cb90d753eaed39d 100644
---- a/index.html
-+++ b/index.html
-@@ -67,55 +68,62 @@
-     .btn-danger:hover{background:#c9302c}
-     .btn:focus,.input:focus,.switch:focus-visible,.icon-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(242,197,109,.35)}
-     .btn-google{background-color:#fff;color:#333;border:1px solid #ccc;width:100%; gap: 10px;}
- 
-     /* Install button hidden unless prompted */
-     #pwa-install{padding:12px 16px;font-size:14px;line-height:1;white-space:nowrap;max-width:100%;display:none}
-     @media (max-width:620px){.utility-row{flex-wrap:wrap;gap:12px}#pwa-install{width:100%}}
- 
-     /* Sections */
-     .section{background:var(--card);border:1px solid var(--border);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:18px}
-     .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:var(--fs-22);margin:0 0 var(--sp-12)}
-     #landing-page{display:grid;gap:var(--sp-16)}
-     #app-content{display:grid;gap:var(--sp-16)}
-     .section-head{display:flex;justify-content:space-between;align-items:center}
-     .actions{display:flex;gap:10px;flex-wrap:wrap}
-     .label{font-size:var(--fs-14);color:var(--text-1);margin-bottom:var(--sp-8);display:block}
-     .input{width:100%;background:var(--bg-1);color:var(--text-0);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
-     .checkbox{width:20px;height:20px;cursor:pointer;margin-right:var(--sp-8)}
-     .controls{display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-end}
-     .controls .grow{flex:1 1 260px}
-     .manifesto-paragraph{color:var(--text-0);line-height:1.6;margin:0 0 var(--sp-16)}
-     .info-text{color:var(--text-1);font-size:13px;text-align:center;margin-top:var(--sp-12)}
- 
-     /* Dashboard */
-     .dashboard-grid{display:grid;gap:var(--sp-16);position:relative;grid-template-columns:repeat(2,minmax(0,1fr))}
--    .dashboard-card{position:relative;cursor:grab;transition:transform .18s ease,box-shadow .18s ease; touch-action: none;}
-+    .dashboard-controls{display:flex;flex-direction:column;gap:var(--sp-8);padding:0 var(--sp-8)}
-+    .dashboard-controls[hidden]{display:none !important}
-+    .dashboard-reorder-btn{align-self:flex-end}
-+    .reorder-hint{margin:0;font-size:13px;color:var(--text-1)}
-+    .dashboard-card{position:relative;cursor:grab;transition:transform .18s ease,box-shadow .18s ease;touch-action:pan-y;display:flex;flex-direction:column;gap:var(--sp-12)}
-+    .dashboard-card:not(.span-2){justify-content:center;align-items:center;text-align:center;aspect-ratio:1/1;min-height:0;}
-+    .dashboard-card.span-2{text-align:left;align-items:stretch}
-     .dashboard-card:active{cursor:grabbing}
-     .dashboard-card.is-dragging{opacity:.92;cursor:grabbing;box-shadow:0 18px 40px rgba(0,0,0,.5)}
-     .dashboard-grid.is-reordering .dashboard-card{transition:transform .18s ease}
-     .dashboard-placeholder{border:1px dashed var(--border);border-radius:var(--r-12);background:rgba(255,255,255,.04);min-height:120px;margin:0}
-+    .dashboard-placeholder:not(.span-2){aspect-ratio:1/1;}
-     .dashboard-placeholder.span-2{grid-column:1 / -1}
-     body.card-dragging{user-select:none}
-     .span-2{grid-column:1 / -1}
-     .quick-stats-grid{display:grid;gap:var(--sp-12);grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
-     .stat-card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--r-12);padding:16px;box-shadow:var(--shadow-md)}
-     .stat-label{font-size:13px;color:var(--text-1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;display:block}
-     .stat-value{font-family:Oswald,sans-serif;font-size:32px;line-height:1}
-     .stat-subtext{font-size:13px;color:var(--text-1);margin-top:4px}
- 
-     .quick-add-subtext{color:var(--text-1);font-size:13px;margin:0 0 var(--sp-12);text-align:left}
-     .quick-add-body{display:grid;gap:var(--sp-12)}
-     .quick-add-actions{display:flex;gap:var(--sp-12);align-items:center;flex-wrap:wrap}
- 
-     .log-controls{display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:center;margin-bottom:var(--sp-12)}
-     .log-search{flex:1 1 220px}
-     .filter-group{display:inline-flex;gap:var(--sp-8);background:var(--bg-1);padding:6px;border-radius:var(--r-12);border:1px solid var(--border)}
-     .filter-btn{border:none;background:none;color:var(--text-0);font-weight:600;padding:8px 12px;border-radius:var(--r-8);cursor:pointer;transition:.15s}
-     .filter-btn.is-active{background:var(--primary);color:#1b1b1b}
-     .filter-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(242,197,109,.35)}
-     .filter-btn:active{transform:scale(.98)}
- 
-     .pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;display:inline-block}
- 
-     /* Table */
-     .table{width:100%;border-collapse:separate;border-spacing:0 var(--sp-8)}
-diff --git a/index.html b/index.html
-index 1d255d9923f9b4921c26c800f164c0e44b0ae398..341c65e104d670a1aae288643cb90d753eaed39d 100644
---- a/index.html
-+++ b/index.html
-@@ -168,100 +176,107 @@
-     .sb-item-btn:focus{outline:none;box-shadow:inset 0 0 0 2px rgba(242,197,109,.35)}
-     .sb-item-btn:hover{background:#161a22}
-     .sb-item-icon{width:18px;height:18px;opacity:.9}
-     .sb-manifesto{padding:12px 14px;border-top:1px solid rgba(255,255,255,.05);margin:0;color:var(--text-1);font-size:13px;line-height:1.6;overflow:auto;max-height:calc(100vh - 240px)}
-     .sb-manifesto .manifesto-paragraph{margin-bottom:var(--sp-12)}
-     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
- 
-     /* Header actions */
-     .header-actions{display:flex;align-items:center;gap:12px}
-     .auth-actions{display:flex;gap:10px}
-     .user-info{display:none;align-items:center;gap:10px}
-     .user-info.show{display:flex}
- 
-     .logo-card{display:flex;align-items:center;justify-content:center;padding:var(--sp-16)}
-     .logo-card .logo-card-inner{width:100%;aspect-ratio:1/1;border-radius:var(--r-12);background:var(--bg-1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;padding:var(--sp-16); overflow: hidden;}
-     .logo-card img{width:100%; height: 100%; object-fit: contain; display:block;}
- 
-     @keyframes wobble {
-       0%, 100% { transform: rotate(0deg); }
-       25% { transform: rotate(1.5deg); }
-       75% { transform: rotate(-1.5deg); }
-     }
- 
-     .reorganize-mode .dashboard-card {
-       animation: wobble 0.2s ease-in-out infinite;
-+      touch-action: none;
-     }
- 
-     .close-btn {
-       position: absolute;
-       top: -10px;
-       right: -10px;
-       width: 28px;
-       height: 28px;
-       border-radius: 50%;
-       background: var(--danger);
-       color: white;
-       border: 2px solid var(--bg-0);
-       font-weight: bold;
-       font-size: 16px;
-       line-height: 1;
-       text-align: center;
-       cursor: pointer;
-       display: none;
-       z-index: 10;
-     }
- 
-     .reorganize-mode .close-btn {
-       display: block;
-     }
-     
-     .drag-handle {
-       position: absolute;
-       top: 10px;
-       right: 10px;
-       width: 24px;
-       height: 24px;
-       display: none;
-       flex-direction: column;
-       justify-content: space-around;
-       cursor: move;
-       z-index: 20;
-     }
- 
-     .reorganize-mode .drag-handle {
-       display: flex;
-     }
- 
-     .drag-handle span {
-       width: 100%;
-       height: 2px;
-       background-color: var(--text-0);
-       border-radius: 1px;
-     }
- 
- 
-+    @media (max-width:720px){
-+      .dashboard-grid{grid-template-columns:minmax(0,1fr)}
-+      .dashboard-card:not(.span-2){aspect-ratio:auto;min-height:220px}
-+      .dashboard-reorder-btn{align-self:stretch}
-+    }
-+
-     @media (prefers-reduced-motion:reduce){.install-banner,.sidebar, .reorganize-mode .dashboard-card{transition:none; animation: none;}.btn:active{transform:none}}
- 
-   </style>
- </head>
- <body>
-   <div id="scrim" class="scrim" tabindex="-1" aria-hidden="true"></div>
-   <aside id="sidebar" class="sidebar" aria-hidden="true" aria-labelledby="menu-title" role="dialog">
-     <div class="sb-head">
-       <h3 id="menu-title" class="sb-title" data-i18n="menuTitle">Menu</h3>
-       <button id="menu-close" class="icon-btn" aria-label="Close menu">
-         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.7L12 12l6.3 6.3-1.3 1.3L10.7 13.3 4.4 19.6 3.1 18.3 9.4 12 3.1 5.7 4.4 4.4l6.3 6.3 6.3-6.3z"/></svg>
-       </button>
-     </div>
-     <div>
-       <div class="sb-section-title" data-i18n="corePractices">Core Practices</div>
-       <ul class="sb-list">
-         <li><button class="sb-item-btn" data-action="newEntry"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg><span data-i18n="newJournal">New Journal Entry</span></button></li>
-         <li><button class="sb-item-btn" data-action="manifesto"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M20 6v14H6v2h14c1.1 0 2-.9 2-2V6h-2zm-4-4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h6v2zm-6 4h4v-2H9v2zm8-8H9V5h8v2z"/></svg><span data-i18n="manifesto">McFatty's Manifesto</span></button></li>
-         <li><button class="sb-item-btn" data-action="history"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7v2a9 9 0 0 0 9-9 9 9 0 0 0-9-9zm-1 5v5l4.25 2.52.75-1.23-3.5-2.07V8z"></path></svg><span data-i18n="history">History</span></button></li>
-       </ul>
-       <div class="sb-section-title" data-i18n="settings">Application Settings</div>
-       <ul class="sb-list">
-         <li><button class="sb-item-btn" data-action="account"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/></svg><span data-i18n="account">Account</span></button></li>
-         <li><button class="sb-item-btn" data-action="logout" id="logout-btn"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 17v-3H9v-2h7V9l4 4-4 4zm-5-3H4V5h7V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2z"></path></svg><span data-i18n="logout">Log Out</span></button></li>
-       </ul>
-diff --git a/index.html b/index.html
-index 1d255d9923f9b4921c26c800f164c0e44b0ae398..341c65e104d670a1aae288643cb90d753eaed39d 100644
---- a/index.html
-+++ b/index.html
-@@ -331,50 +346,55 @@
-             </div>
-           </div>
-         </div>
-         <div class="controls" style="margin-top: 16px;">
-           <button id="auth-submit" class="btn btn-primary" type="button"></button>
-           <button id="auth-toggle" class="btn btn-secondary" type="button"></button>
-         </div>
-         <div style="text-align:center; margin-top:16px; color:var(--text-1)">OR</div>
-         <button id="google-signin" class="btn btn-google" type="button">
-           <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.20455c0-.63864-.05727-1.25182-.16364-1.84091H9v3.48182h4.84364c-.20818 1.125-.84273 2.07818-1.77727 2.72182v2.25818h2.90818c1.70182-1.56636 2.68636-3.87409 2.68636-6.62182z"/><path fill="#34A853" d="M9 18c2.43 0 4.46727-.80545 5.95636-2.18182l-2.90818-2.25818c-.80545.54273-1.84091.86182-3.04818.86182-2.34545 0-4.32818-1.58364-5.03545-3.71091H.957273v2.33182C2.43818 16.1573 5.48182 18 9 18z"/><path fill="#FBBC05" d="M3.96455 10.71c-.18-.54273-.28364-1.11636-.28364-1.71s.10364-1.16727.28364-1.71V4.95818H.957273C.347727 6.17364 0 7.54773 0 9c0 1.45227.347727 2.82636.957273 4.04182L3.96455 10.71z"/><path fill="#EA4335" d="M9 3.57818c1.32182 0 2.50727.45545 3.44 1.34818l2.58182-2.58182C13.4636.891818 11.4259 0 9 0 5.48182 0 2.43818 1.84273.957273 4.95818L3.96455 7.29C4.67182 5.16364 6.65455 3.57818 9 3.57818z"/></svg>
-           <span data-i18n="googleSignin">Sign in with Google</span>
-         </button>
-       </section>
- 
-       <section id="about-section" class="section">
-         <h2 data-i18n="manifestoTitle">McFatty's Manifesto</h2>
-         <p class="manifesto-paragraph" data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
-         <p class="manifesto-paragraph" data-i18n="manifestoP2">This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
-         <p class="manifesto-paragraph" data-i18n="manifestoP3">Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
-         <p class="manifesto-paragraph" data-i18n="manifestoP4">We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
-         <p class="manifesto-paragraph" data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
-         <button id="donate-button" class="btn btn-primary" type="button" data-i18n="donateBtn">Donate</button>
-       </section>
-     </div>
- 
-+    <div id="dashboard-controls" class="dashboard-controls" hidden>
-+      <button id="reorder-toggle" class="btn btn-secondary dashboard-reorder-btn" type="button" aria-pressed="false" aria-controls="app-content">Organize tiles</button>
-+      <p id="reorder-hint" class="reorder-hint" data-i18n="reorderHint" hidden aria-live="polite">Drag tiles to reorder. Tap Done when you’re finished.</p>
-+    </div>
-+
-     <div id="app-content" class="dashboard-grid" style="display: none;">
-       <section id="logo-card" class="section dashboard-card logo-card" data-card-id="logo" aria-label="McFatty's logo">
-         <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-         <button class="close-btn" aria-label="Finish organizing">&times;</button>
-         <div class="logo-card-inner">
-           <img src="Logo.png" alt="McFatty's Food Tracker logo">
-         </div>
-       </section>
- 
-       <section id="manifesto-card" class="section dashboard-card logo-card" data-card-id="manifesto" aria-label="McFatty's Manifesto">
-         <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-         <button class="close-btn" aria-label="Finish organizing">&times;</button>
-         <div class="logo-card-inner">
-           <img src="manifesto.png" alt="McFatty's Manifesto logo">
-         </div>
-       </section>
- 
-       <section id="welcome-section" class="section dashboard-card" data-card-id="welcome">
-         <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-         <button class="close-btn" aria-label="Finish organizing">&times;</button>
-         <h2 id="welcome-message" data-i18n="welcome"></h2>
-       </section>
- 
-       <section id="growth-section" class="section dashboard-card" aria-labelledby="growth-title" data-card-id="growth">
-         <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-diff --git a/index.html b/index.html
-index 1d255d9923f9b4921c26c800f164c0e44b0ae398..341c65e104d670a1aae288643cb90d753eaed39d 100644
---- a/index.html
-+++ b/index.html
-@@ -579,50 +599,53 @@
-     const sidebar = document.getElementById('sidebar');
-     const scrim = document.getElementById('scrim');
-     const welcomeMessage = document.getElementById('welcome-message');
-     const landingPage = document.getElementById('landing-page');
-     const appContent = document.getElementById('app-content');
-     const donateBtn = document.getElementById('donate-button');
-     const langToggle = document.getElementById('lang-toggle');
-     const switchEl = document.getElementById('switch');
-     const googleSigninBtn = document.getElementById('google-signin');
-     const pwaInstallBtn = document.getElementById('pwa-install');
-     const menuOpenBtn = document.getElementById('menu-open');
-     const menuCloseBtn = document.getElementById('menu-close');
-     const logoutBtn = document.getElementById('logout-btn');
-     const logoutBtnMain = document.getElementById('logout-btn-main');
-     const userInfo = document.getElementById('user-info');
-     const userName = document.getElementById('user-name');
-     const exportBtn = document.getElementById('export-button');
-     const statTotal = document.getElementById('stat-total');
-     const statDairy = document.getElementById('stat-dairy');
-     const statOutside = document.getElementById('stat-outside');
-     const statLast = document.getElementById('stat-last');
-     const statLastSubtext = document.getElementById('stat-last-subtext');
-     const logSearchInput = document.getElementById('log-search');
-     const noResultsMessage = document.getElementById('no-results');
-     const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
-+    const dashboardControls = document.getElementById('dashboard-controls');
-+    const reorderToggle = document.getElementById('reorder-toggle');
-+    const reorderHint = document.getElementById('reorder-hint');
- 
-     const DASHBOARD_ORDER_KEY = 'dashboard-card-order-v1';
-     const LONG_PRESS_DELAY_TOUCH = 280;
-     const LONG_PRESS_DELAY_POINTER = 160;
-     const DRAG_MOVE_CANCEL_THRESHOLD = 10;
-     let dragSession = null;
- 
-     // Modals / legal links
-     const manifestoModal = document.getElementById('manifesto-modal');
-     const closeManifestoBtn = document.getElementById('close-manifesto');
-     const historyModal = document.getElementById('history-modal');
-     const closeHistoryBtn = document.getElementById('close-history');
-     const historyContent = document.getElementById('history-content');
-     const legalModal = document.getElementById('legal-modal');
-     const legalTitle = document.getElementById('legal-title');
-     const legalContent = document.getElementById('legal-content');
-     const closeLegalBtn = document.getElementById('close-legal');
-     const impressumLink = document.getElementById('impressum-link');
-     const privacyLink = document.getElementById('privacy-link');
- 
-     function getDashboardCards() {
-       if (!appContent) return [];
-       return Array.from(appContent.querySelectorAll('.dashboard-card'));
-     }
- 
-diff --git a/index.html b/index.html
-index 1d255d9923f9b4921c26c800f164c0e44b0ae398..341c65e104d670a1aae288643cb90d753eaed39d 100644
---- a/index.html
-+++ b/index.html
-@@ -702,50 +725,55 @@
-       if (!dragSession) return;
- 
-       clearTimeout(dragSession.longPressTimer);
-       dragSession.longPressTimer = null;
- 
-       detachGlobalPointerListeners();
- 
-       const { card, placeholder, active } = dragSession;
- 
-       if (active && placeholder && placeholder.parentNode) {
-         placeholder.parentNode.replaceChild(card, placeholder);
-       }
- 
-       if (active && card) {
-         card.classList.remove('is-dragging');
-         card.style.position = '';
-         card.style.zIndex = '';
-         card.style.width = '';
-         card.style.height = '';
-         card.style.left = '';
-         card.style.top = '';
-         card.style.pointerEvents = '';
-         card.style.transition = '';
-       }
- 
-+      document.body.classList.remove('card-dragging');
-+      if (appContent) {
-+        appContent.classList.remove('is-reordering');
-+      }
-+
-       if (active) {
-         if (commit) {
-           persistCardOrder();
-         }
-       }
- 
-       dragSession = null;
-     }
- 
-     function positionDraggedCard(event) {
-       if (!dragSession || !dragSession.card) return;
-       const card = dragSession.card;
-       const containerRect = appContent.getBoundingClientRect();
-       const cardWidth = card.offsetWidth;
-       const cardHeight = card.offsetHeight;
-       const rawX = event.clientX - containerRect.left - dragSession.offsetX;
-       const rawY = event.clientY - containerRect.top - dragSession.offsetY;
-       const maxX = Math.max(containerRect.width - cardWidth, 0);
-       const maxY = Math.max(containerRect.height - cardHeight, 0);
-       const clampedX = Math.min(Math.max(rawX, 0), maxX);
-       const clampedY = Math.min(Math.max(rawY, 0), maxY);
-       card.style.left = `${clampedX}px`;
-       card.style.top = `${clampedY}px`;
-     }
- 
-diff --git a/index.html b/index.html
-index 1d255d9923f9b4921c26c800f164c0e44b0ae398..341c65e104d670a1aae288643cb90d753eaed39d 100644
---- a/index.html
-+++ b/index.html
-@@ -809,187 +837,233 @@
-       dragSession.longPressTimer = null;
- 
-       const card = dragSession.card;
-       if (!card) return;
- 
-       const cardRect = card.getBoundingClientRect();
-       const containerRect = appContent.getBoundingClientRect();
- 
-       dragSession.active = true;
-       dragSession.offsetX = event.clientX - cardRect.left;
-       dragSession.offsetY = event.clientY - cardRect.top;
- 
-       const placeholder = document.createElement('div');
-       placeholder.className = 'dashboard-placeholder';
-       if (card.classList.contains('span-2')) {
-         placeholder.classList.add('span-2');
-       }
-       placeholder.style.minHeight = `${cardRect.height}px`;
- 
-       dragSession.placeholder = placeholder;
- 
-       appContent.insertBefore(placeholder, card);
-       appContent.appendChild(card);
- 
-       card.classList.add('is-dragging');
-+      document.body.classList.add('card-dragging');
-+      if (appContent) {
-+        appContent.classList.add('is-reordering');
-+      }
-       card.style.position = 'absolute';
-       card.style.zIndex = '900';
-       card.style.width = `${cardRect.width}px`;
-       card.style.height = `${cardRect.height}px`;
-       card.style.left = `${cardRect.left - containerRect.left}px`;
-       card.style.top = `${cardRect.top - containerRect.top}px`;
-       card.style.pointerEvents = 'none';
-     }
- 
-     function handleCardPointerMove(event) {
-       if (!dragSession || event.pointerId !== dragSession.pointerId || !isReorganizeMode) return;
- 
-       dragSession.lastEvent = event;
- 
-       if (!dragSession.active) {
-         if (dragSession.longPressTimer) {
-           const dx = Math.abs(event.clientX - dragSession.startX);
-           const dy = Math.abs(event.clientY - dragSession.startY);
-           if (dx > DRAG_MOVE_CANCEL_THRESHOLD || dy > DRAG_MOVE_CANCEL_THRESHOLD) {
-             endCardDrag(false);
-           }
-         }
-         return;
-       }
- 
-       event.preventDefault();
-       positionDraggedCard(event);
-       const moved = updatePlaceholderPosition(event);
-       if (moved) {
-         dragSession.hasMoved = true;
-       }
-     }
- 
-     function handleCardPointerUp(event) {
-       if (!dragSession || event.pointerId !== dragSession.pointerId) return;
-       const shouldCommit = Boolean(dragSession.active);
-       endCardDrag(shouldCommit);
-     }
- 
-+    function startDragSession(card, event, delay) {
-+      dragSession = {
-+        card,
-+        pointerId: event.pointerId,
-+        startX: event.clientX,
-+        startY: event.clientY,
-+        longPressTimer: null,
-+        hasMoved: false,
-+        active: false,
-+        offsetX: 0,
-+        offsetY: 0,
-+        placeholder: null,
-+        lastEvent: event
-+      };
-+
-+      const triggerDrag = () => {
-+        if (!dragSession) return;
-+        const referenceEvent = dragSession.lastEvent || event;
-+        enterReorganizeMode();
-+        beginCardDrag(referenceEvent);
-+      };
-+
-+      if (delay > 0) {
-+        dragSession.longPressTimer = setTimeout(triggerDrag, delay);
-+      } else {
-+        triggerDrag();
-+      }
-+
-+      window.addEventListener('pointermove', handleCardPointerMove, { passive: false });
-+      window.addEventListener('pointerup', handleCardPointerUp);
-+      window.addEventListener('pointercancel', handleCardPointerUp);
-+    }
-+
-     function handleCardPointerDown(event) {
--        if (!event.isPrimary) return;
--        if (event.pointerType === 'mouse' && event.button !== 0) return;
--        if (dragSession) return;
--        if (!appContent) return;
-+      if (!event.isPrimary) return;
-+      if (event.pointerType === 'mouse' && event.button !== 0) return;
-+      if (dragSession) return;
-+      if (!appContent) return;
- 
--        const handle = event.target.closest('.drag-handle');
--        if (!handle) return; // Only start drag from the handle
-+      if (event.target.closest('.close-btn')) return;
- 
--        const card = handle.closest('.dashboard-card');
--        if (!card || !card.dataset.cardId) return;
-+      const card = event.target.closest('.dashboard-card');
-+      if (!card || !card.dataset.cardId) return;
- 
--        const delay = event.pointerType === 'touch' ? LONG_PRESS_DELAY_TOUCH : LONG_PRESS_DELAY_POINTER;
-+      const touchingHandle = Boolean(event.target.closest('.drag-handle'));
- 
--        dragSession = {
--            card,
--            pointerId: event.pointerId,
--            startX: event.clientX,
--            startY: event.clientY,
--            longPressTimer: setTimeout(() => {
--                if (!dragSession) return;
--                if (!isReorganizeMode) {
--                    appContent.classList.add('reorganize-mode');
--                    isReorganizeMode = true;
--                }
--                const triggerEvent = dragSession.lastEvent || event;
--                beginCardDrag(triggerEvent);
--            }, delay),
--            hasMoved: false,
--            active: false,
--            offsetX: 0,
--            offsetY: 0,
--            placeholder: null,
--            lastEvent: event
--        };
-+      if (!isReorganizeMode && !touchingHandle) return;
- 
--        window.addEventListener('pointermove', handleCardPointerMove, { passive: false });
--        window.addEventListener('pointerup', handleCardPointerUp);
--        window.addEventListener('pointercancel', handleCardPointerUp);
-+      const delay = isReorganizeMode ? 0 : (event.pointerType === 'touch' ? LONG_PRESS_DELAY_TOUCH : LONG_PRESS_DELAY_POINTER);
-+      startDragSession(card, event, delay);
-+    }
-+
-+    function toggleReorderMode() {
-+      if (isReorganizeMode) {
-+        exitReorganizeMode(true);
-+        if (reorderToggle) {
-+          reorderToggle.focus();
-+        }
-+      } else {
-+        enterReorganizeMode();
-+      }
-+    }
-+
-+    function handleReorderKeydown(event) {
-+      if (event.key === 'Escape' && isReorganizeMode) {
-+        exitReorganizeMode(true);
-+        if (reorderToggle) {
-+          reorderToggle.focus();
-+        }
-+      }
-     }
- 
- 
-     function initDashboardReordering() {
-         if (!appContent) return;
-         applyStoredCardOrder();
-         persistCardOrder();
-+        updateReorderTexts();
-         appContent.addEventListener('pointerdown', handleCardPointerDown); // Listen on the container
-+        if (reorderToggle) {
-+            reorderToggle.addEventListener('click', toggleReorderMode);
-+        }
-+        document.addEventListener('keydown', handleReorderKeydown);
-         document.querySelectorAll('.close-btn').forEach(btn => {
-             btn.addEventListener('click', (e) => {
-                 e.stopPropagation();
--                appContent.classList.remove('reorganize-mode');
--                isReorganizeMode = false;
-+                e.preventDefault();
-+                exitReorganizeMode(true);
-+                if (reorderToggle) {
-+                    reorderToggle.focus();
-+                }
-             });
-         });
-     }
- 
-     // Auth Elements
-     const authSection = document.getElementById('auth-section');
-     const loginBtn = document.getElementById('login-btn');
-     const signupBtn = document.getElementById('signup-btn');
-     const authSubmit = document.getElementById('auth-submit');
-     const authActions = document.getElementById('auth-actions');
-     const signupFields = document.getElementById('signup-fields');
-     const authTitle = document.getElementById('auth-title');
-     const authToggle = document.getElementById('auth-toggle');
-     const authEmail = document.getElementById('auth-email');
-     const authPassword = document.getElementById('auth-password');
-     const authUsername = document.getElementById('auth-username');
-     const authRePassword = document.getElementById('auth-re-password');
- 
-     // --- Translations ---
-     const translations = {
-       en: {
-         loginBtn: 'Login',
-         signupBtn: 'Sign Up',
-         logoutBtn: 'Logout',
-         installBtn: 'Install',
-         googleSignin: 'Sign in with Google',
-         manifesto: "McFatty's Manifesto",
-         manifestoTitle: "McFatty's Manifesto",
-         manifestoP1: "McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
-         manifestoP2: "This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.",
-         manifestoP3: "Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.",
-         manifestoP4: "We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.",
-         manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.",
-         donateBtn: 'Donate',
-         welcome: 'Welcome',
-         welcomeBack: 'Welcome back',
-         quickStatsTitle: 'Quick stats',
-         statEntriesToday: 'Entries today',
-         statDairyToday: 'Dairy items',
-         statOutsideMeals: 'Outside of mealtimes',
-         statLastEntry: 'Last entry',
-         quickAddTitle: 'Quick add',
-         quickAddHint: 'Log what you’re eating right now—no pressure, no judgement.',
-         growthTitle: 'Room to grow',
-         growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
-         recentLogTitle: 'Recent log',
-+        organizeTiles: 'Organize tiles',
-+        doneOrganizing: 'Done',
-+        reorderHint: 'Drag tiles to reorder. Tap Done when you’re finished.',
-         logSearchLabel: 'Search log',
-         logSearchPlaceholder: 'Search entries',
-         filterGroupLabel: 'Filters',
-         filterAll: 'All',
-         filterDairy: 'Dairy',
-         filterNonDairy: 'No dairy',
-         filterOutsideMeals: 'Outside of mealtimes',
-         filterMeals: 'At mealtimes',
-         noResults: 'No entries match your filters yet.',
-         addTitle: 'Add item',
-         foodLabel: 'Food item name',
-         foodPlaceholder: 'e.g., Cheeseburger',
-         addBtn: 'Add to log',
-         dairyLabel: 'Contains dairy',
-         outsideMealsLabel: 'Outside of mealtimes',
-         logTitle: 'Today’s log',
-         exportBtn: 'Export',
-         thItem: 'Item',
-         thTime: 'Time',
-         thDairy: 'Dairy',
-         thOutsideMeals: 'Outside of mealtimes',
-         emptyState: 'No items yet. Add your first item above.',
-         confirmTitle: 'Are you sure?',
-         cancelBtn: 'Cancel',
-         closeBtn: 'Close',
-diff --git a/index.html b/index.html
-index 1d255d9923f9b4921c26c800f164c0e44b0ae398..341c65e104d670a1aae288643cb90d753eaed39d 100644
---- a/index.html
-+++ b/index.html
-@@ -1046,50 +1120,53 @@
-         loginBtn: 'Anmelden',
-         signupBtn: 'Registrieren',
-         logoutBtn: 'Abmelden',
-         installBtn: 'Installieren',
-         googleSignin: 'Mit Google anmelden',
-         manifesto: 'McFettys Manifest',
-         manifestoTitle: 'McFettys Manifest',
-         manifestoP1: 'Bei McFettys Food Tracker geht es nicht um Kalorien, Einschränkungen oder Schuldgefühle. Wenn du Chips willst, iss sie. Keine Scham, keine Bestrafung. Schreib es einfach auf. Das Aufzeichnen ohne Urteil ist der entscheidende Akt.',
-         manifestoP2: 'Diese App ist kostenlos. Keine Abonnements, keine Upsells, keine Lifestyle-Pakete. Wir lehnen die Idee ab, dass uns Essen und Gesundheit zurückverkauft werden sollten. Essen sollte kein Geschäftsmodell sein.',
-         manifestoP3: 'Stattdessen hilft Ihnen McFatty’s, innezuhalten, auf Ihren Körper zu hören und Ihre Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht Ihnen das einfache Protokollieren, Muster zu erkennen und Ihre Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt für Ihre Entscheidungen verwurzelt sein.',
-         manifestoP4: 'Wir sind gegen Kreisläufe von Schuld, Scham und unmöglichen Versprechungen. Wir werden den als Selbstfürsorge getarnten Konsum nicht feiern. Wir glauben, die radikale Wahl ist, zu verlangsamen, auf sich selbst zu hören und zu Ihren eigenen Bedingungen zu essen.',
-         manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von Ihrer Schuld profitieren.',
-         donateBtn: 'Spenden',
-         welcome: 'Willkommen',
-         welcomeBack: 'Willkommen zurück',
-         quickStatsTitle: 'Schnelle Statistiken',
-         statEntriesToday: 'Einträge heute',
-         statDairyToday: 'Milchprodukte',
-         statOutsideMeals: 'Außerhalb der Mahlzeiten',
-         statLastEntry: 'Letzter Eintrag',
-         quickAddTitle: 'Schnell hinzufügen',
-         quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
-         growthTitle: 'Platz für mehr',
-         growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
-         recentLogTitle: 'Aktuelles Protokoll',
-+        organizeTiles: 'Kacheln anordnen',
-+        doneOrganizing: 'Fertig',
-+        reorderHint: 'Ziehe die Kacheln, um sie neu anzuordnen. Tippe auf „Fertig“, wenn du zufrieden bist.',
-         logSearchLabel: 'Protokoll durchsuchen',
-         logSearchPlaceholder: 'Einträge durchsuchen',
-         filterGroupLabel: 'Filter',
-         filterAll: 'Alle',
-         filterDairy: 'Milch',
-         filterNonDairy: 'Ohne Milch',
-         filterOutsideMeals: 'Außerhalb der Mahlzeiten',
-         filterMeals: 'Zu den Mahlzeiten',
-         noResults: 'Keine Einträge passen zu deinen Filtern.',
-         addTitle: 'Element hinzufügen',
-         foodLabel: 'Name des Lebensmittels',
-         foodPlaceholder: 'z.B. Käseburger',
-         addBtn: 'Zum Protokoll hinzufügen',
-         dairyLabel: 'Enthält Milchprodukte',
-         outsideMealsLabel: 'Außerhalb der Mahlzeiten',
-         logTitle: 'Heutiges Protokoll',
-         exportBtn: 'Exportieren',
-         thItem: 'Element',
-         thTime: 'Uhrzeit',
-         thDairy: 'Milchprodukte',
-         thOutsideMeals: 'Außerhalb der Mahlzeiten',
-         emptyState: 'Noch keine Einträge. Fügen Sie oben Ihren ersten Eintrag hinzu.',
-         confirmTitle: 'Sind Sie sicher?',
-         cancelBtn: 'Abbrechen',
-         closeBtn: 'Schließen',
-diff --git a/index.html b/index.html
-index 1d255d9923f9b4921c26c800f164c0e44b0ae398..341c65e104d670a1aae288643cb90d753eaed39d 100644
---- a/index.html
-+++ b/index.html
-@@ -1170,91 +1247,133 @@
-           <p>Angaben gemäß § 5 TMG</p>
-           <p>[Ihr Name]<br>[Ihre Straße und Hausnummer]<br>[Ihre PLZ und Stadt]</p>
-           <h4>Kontakt</h4>
-           <p>E-Mail: [Ihre E-Mail-Adresse]</p>
-           <h4>Haftungsausschluss</h4>
-           <p>Dies ist ein privates, nicht-kommerzielles Projekt. Die Inhalte unserer Seiten wurden mit größter Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität der Inhalte können wir jedoch keine Gewähr übernehmen. Als Diensteanbieter sind wir gemäß § 7 Abs.1 TMG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 TMG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.</p>`,
-         privacyPolicy: `<h3>Datenschutzerklärung</h3>
-           <p><strong>1. Allgemeiner Hinweis</strong></p>
-           <p>Die folgenden Hinweise geben einen einfachen Überblick darüber, was mit Ihren personenbezogenen Daten passiert, wenn Sie unsere App nutzen. Personenbezogene Daten sind alle Daten, mit denen Sie persönlich identifiziert werden können.</p>
-           <p><strong>Verantwortliche Stelle für die Datenerfassung in dieser App ist:</strong><br/>
-           [Ihr Name]<br>[Ihre Straße und Hausnummer]<br>[Ihre PLZ und Stadt]<br>E-Mail: [Ihre E-Mail-Adresse]</p>
-           <p><strong>2. Datenerfassung in unserer App</strong></p>
-           <p><strong>Nutzerauthentifizierung:</strong> Um diese App zu nutzen, müssen Sie ein Konto erstellen. Wir verwenden hierfür Firebase Authentication (ein Dienst von Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland). Bei der Registrierung per E-Mail und Passwort werden Ihre E-Mail-Adresse, ein Passwort-Hash und eine eindeutige Benutzer-ID gespeichert. Wenn Sie die Google-Anmeldung verwenden, übermittelt Google uns Ihren Namen, Ihre E-Mail-Adresse und Ihr Profilbild.</p>
-           <p><strong>Datenspeicherung:</strong> Ihre Essensprotokolle werden in einer Cloud Firestore-Datenbank gespeichert, die ebenfalls von Google bereitgestellt wird. Diese Daten sind mit Ihrer eindeutigen Benutzer-ID verknüpft. Wir verarbeiten diese Daten zu keinem anderen Zweck, als sie Ihnen in der App wieder anzuzeigen.</p>
-           <p><strong>Server-Log-Dateien:</strong> Der Provider der Seiten erhebt und speichert automatisch Informationen in so genannten Server-Log-Dateien, die Ihr Browser automatisch an uns übermittelt. Dies sind: Browsertyp und Browserversion, verwendetes Betriebssystem, Referrer URL, Hostname des zugreifenden Rechners, Uhrzeit der Serveranfrage und IP-Adresse. Eine Zusammenführung dieser Daten mit anderen Datenquellen wird nicht vorgenommen.</p>
-           <p><strong>3. Ihre Rechte</strong></p>
-           <p>Sie haben im Rahmen der geltenden gesetzlichen Bestimmungen jederzeit das Recht auf unentgeltliche Auskunft über Ihre gespeicherten personenbezogenen Daten, deren Herkunft und Empfänger und den Zweck der Datenverarbeitung und ggf. ein Recht auf Berichtigung, Sperrung oder Löschung dieser Daten. Hierzu sowie zu weiteren Fragen zum Thema personenbezogene Daten können Sie sich jederzeit unter der im Impressum angegebenen Adresse an uns wenden.</p>`
-       }
-     };
- 
-     const getTranslation = (key) => {
-       const dictionary = translations[lang] || translations.en;
-       return (dictionary && dictionary[key]) || translations.en[key] || '';
-     };
- 
-+    function updateReorderTexts() {
-+      if (!reorderToggle) return;
-+      const labelKey = isReorganizeMode ? 'doneOrganizing' : 'organizeTiles';
-+      const label = getTranslation(labelKey);
-+      reorderToggle.textContent = label;
-+      reorderToggle.setAttribute('aria-pressed', isReorganizeMode ? 'true' : 'false');
-+      reorderToggle.setAttribute('aria-label', label);
-+      if (reorderHint) {
-+        reorderHint.hidden = !isReorganizeMode;
-+        reorderHint.textContent = getTranslation('reorderHint');
-+      }
-+    }
-+
-+    function enterReorganizeMode() {
-+      if (!appContent || isReorganizeMode) return;
-+      isReorganizeMode = true;
-+      appContent.classList.add('reorganize-mode');
-+      updateReorderTexts();
-+    }
-+
-+    function exitReorganizeMode(commit = true) {
-+      if (dragSession) {
-+        const shouldCommit = Boolean(commit && dragSession.active);
-+        endCardDrag(shouldCommit);
-+      }
-+
-+      if (!appContent || !isReorganizeMode) {
-+        updateReorderTexts();
-+        return;
-+      }
-+
-+      isReorganizeMode = false;
-+      appContent.classList.remove('reorganize-mode');
-+      appContent.classList.remove('is-reordering');
-+      updateReorderTexts();
-+
-+      if (commit) {
-+        persistCardOrder();
-+      }
-+    }
-+
-     const updateAuthTexts = () => {
-       const titleKey = isLoginMode ? 'loginTitle' : 'signupTitle';
-       const actionKey = isLoginMode ? 'loginAction' : 'signupAction';
-       const toggleKey = isLoginMode ? 'authToggleToSignup' : 'authToggleToLogin';
-       authTitle.textContent = getTranslation(titleKey);
-       authSubmit.textContent = getTranslation(actionKey);
-       authToggle.textContent = getTranslation(toggleKey);
-     };
- 
-     const showInstallBanner = (message) => {
-       if (!message) return;
-       installBanner.textContent = message;
-       installBanner.classList.add('show');
-       clearTimeout(installBannerTimeout);
-       installBannerTimeout = setTimeout(() => installBanner.classList.remove('show'), 4000);
-     };
- 
-     const setLanguage = (newLang) => {
-       lang = newLang;
-       langToggle.setAttribute('aria-pressed', newLang === 'de' ? 'true' : 'false');
-       switchEl.classList.toggle('active', newLang === 'de');
-       document.documentElement.lang = newLang;
- 
-       document.querySelectorAll('[data-i18n]').forEach(el => {
-         const key = el.getAttribute('data-i18n');
-         el.textContent = getTranslation(key);
-       });
-       document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-         const key = el.getAttribute('data-i18n-placeholder');
-         el.placeholder = getTranslation(key);
-       });
- 
-       const user = auth.currentUser;
-       if (user) {
-         const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
-         const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
-         const welcomeText = getTranslation(welcomeTextKey);
-         const displayName = user.displayName || user.email || '';
-         welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
-       }
- 
-+      updateReorderTexts();
-       updateAuthTexts();
-       if (latestSnapshot) renderEntries(latestSnapshot);
-     };
- 
-     const addEntry = () => {
-       const name = nameInput.value.trim();
-       if (!name || !logCollection) return;
- 
-       logCollection.add({
-         name,
-         dairy: dairyCheckbox.checked,
-         outsideMeals: outsideMealsCheckbox.checked,
-         timestamp: firebase.firestore.FieldValue.serverTimestamp()
-       }).then(() => {
-         nameInput.value = '';
-         dairyCheckbox.checked = false;
-         outsideMealsCheckbox.checked = false;
-         nameInput.focus();
-       }).catch((error) => {
-         console.error('Error adding document: ', error);
-         alert(getTranslation('addError'));
-       });
-     };
- 
-     const getEntryDate = (entry) => {
-diff --git a/index.html b/index.html
-index 1d255d9923f9b4921c26c800f164c0e44b0ae398..341c65e104d670a1aae288643cb90d753eaed39d 100644
---- a/index.html
-+++ b/index.html
-@@ -1533,64 +1652,69 @@
-     };
- 
-     const resetAuthFields = () => {
-       authEmail.value = '';
-       authPassword.value = '';
-       authUsername.value = '';
-       authRePassword.value = '';
-     };
- 
-     const setAuthMode = (isLogin) => {
-       isLoginMode = isLogin;
-       signupFields.style.display = isLogin ? 'none' : 'block';
-       updateAuthTexts();
-     };
- 
-     auth.onAuthStateChanged(user => {
-       if (unsubscribe) { unsubscribe(); unsubscribe = null; }
- 
-       const loggedIn = !!user;
- 
-       landingPage.style.display = loggedIn ? 'none' : 'grid';
-       appContent.style.display = loggedIn ? 'grid' : 'none';
-       authActions.style.display = loggedIn ? 'none' : 'flex';
-       userInfo.style.display = loggedIn ? 'flex' : 'none';
-       authSection.style.display = 'none';
-+      if (dashboardControls) {
-+        dashboardControls.hidden = !loggedIn;
-+      }
- 
-       if (loggedIn) {
-+        updateReorderTexts();
-         resetFilters();
-         const displayName = user.displayName || user.email || '';
-         const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
-         const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
-         const welcomeText = getTranslation(welcomeTextKey);
-         welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
- 
-         userName.textContent = displayName;
- 
-         logCollection = db.collection('users').doc(user.uid).collection('logs');
-         unsubscribe = logCollection.orderBy('timestamp', 'desc').onSnapshot(renderEntries);
-       } else {
-+        exitReorganizeMode(false);
-         userName.textContent = '';
-         welcomeMessage.textContent = '';
-         latestSnapshot = null;
-         tbody.innerHTML = '';
-         emptyState.style.display = 'block';
-         logCollection = null;
-         allEntries = [];
-         resetFilters();
-         updateStats();
-         setAuthMode(true);
-         resetAuthFields();
-       }
-     });
- 
-     const handleAuthSubmit = async () => {
-       const email = authEmail.value.trim();
-       const password = authPassword.value.trim();
- 
-       if (!email || !password) {
-         alert(getTranslation('authMissingFields'));
-         return;
-       }
-       if (!isLoginMode) {
-         const username = authUsername.value.trim();
-         const confirmPassword = authRePassword.value.trim();
- 
-EOF
-)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>McFatty's Food Tracker</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0f1115">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+  <link rel="preload" href="Logo.png" as="image">
+
+  <style>
+    :root{
+      /* New Color Palette from Logo */
+      --primary: #f2c56d;   /* Golden Yellow */
+      --danger: #d9534f;    /* Muted Red */
+      --info: #5bc0de;      /* Teal Blue */
+      --text-0: #f7f5e6;    /* Cream White */
+      --text-1: #b9b6a3;    /* Muted Sand */
+      --bg-0:#1a1a1a;        /* Dark Charcoal */
+      --bg-1:#2a2a2a;        /* Lighter Charcoal */
+      --card:#333333;        /* Card Background */
+      --border:#444444;      /* Border Color */
+
+      --sp-4:4px; --sp-8:8px; --sp-12:12px; --sp-16:16px; --sp-20:20px; --sp-24:24px;
+      --fs-22:22px; --fs-18:18px; --fs-16:16px; --fs-14:14px; --lh:1.45;
+      --r-8:8px; --r-12:12px; --r-16:16px; --shadow-md:0 8px 20px rgba(0,0,0,.35);
+      --safe-top: env(safe-area-inset-top, 0px);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;background:var(--bg-0);color:var(--text-0);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;line-height:var(--lh)}
+    .container{max-width:860px;margin:0 auto;padding:var(--sp-12) var(--sp-16) var(--sp-24)}
+    .stack-16 > *+*{margin-top:var(--sp-16)}
+    .stack-20 > *+*{margin-top:var(--sp-20)}
+
+    /* Top bar */
+    .utility-bar{position:sticky;top:0;z-index:300;padding:calc(var(--sp-8)+var(--safe-top)) var(--sp-8) var(--sp-8);
+      margin:0 calc(-1*var(--sp-16)) var(--sp-12);
+      background:linear-gradient(180deg,rgba(26,26,26,.95),rgba(26,26,26,.75) 70%,rgba(26,26,26,0));
+      backdrop-filter:blur(4px)}
+    .utility-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 var(--sp-8)}
+    .icon-btn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;border:1px solid var(--border);background:var(--bg-1);color:var(--text-0);cursor:pointer;transition:.15s}
+    .icon-btn:active{transform:scale(.98)}
+    .icon{width:22px;height:22px;display:block}
+    .btn-danger:hover{background:#c9302c}
+    .btn:focus,.input:focus,.switch:focus-visible,.icon-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(242,197,109,.35)}
+    .btn-google{background-color:#fff;color:#333;border:1px solid #ccc;width:100%; gap: 10px;}
+
+    /* Install button hidden unless prompted */
+    #pwa-install{padding:12px 16px;font-size:14px;line-height:1;white-space:nowrap;max-width:100%;display:none}
+    @media (max-width:620px){.utility-row{flex-wrap:wrap;gap:12px}#pwa-install{width:100%}}
+
+    /* Sections */
+    .section{background:var(--card);border:1px solid var(--border);border-radius:var(--r-12);box-shadow:var(--shadow-md);padding:18px}
+    .section h2{font-family:Oswald,sans-serif;font-weight:700;font-size:var(--fs-22);margin:0 0 var(--sp-12)}
+    #landing-page{display:grid;gap:var(--sp-16)}
+    #app-content{display:grid;gap:var(--sp-16)}
+    .section-head{display:flex;justify-content:space-between;align-items:center}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .label{font-size:var(--fs-14);color:var(--text-1);margin-bottom:var(--sp-8);display:block}
+    .input{width:100%;background:var(--bg-1);color:var(--text-0);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+    .checkbox{width:20px;height:20px;cursor:pointer;margin-right:var(--sp-8)}
+    .controls{display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:flex-end}
+    .controls .grow{flex:1 1 260px}
+    .manifesto-paragraph{color:var(--text-0);line-height:1.6;margin:0 0 var(--sp-16)}
+    .info-text{color:var(--text-1);font-size:13px;text-align:center;margin-top:var(--sp-12)}
+
+    /* Dashboard */
+    .dashboard-grid{display:grid;gap:var(--sp-16);position:relative;grid-template-columns:repeat(2,minmax(0,1fr))}
+    .dashboard-controls{display:flex;flex-direction:column;gap:var(--sp-8);padding:0 var(--sp-8)}
+    .dashboard-controls[hidden]{display:none !important}
+    .dashboard-reorder-btn{align-self:flex-end}
+    .reorder-hint{margin:0;font-size:13px;color:var(--text-1)}
+    .dashboard-card{position:relative;cursor:grab;transition:transform .18s ease,box-shadow .18s ease;touch-action:pan-y;display:flex;flex-direction:column;gap:var(--sp-12)}
+    .dashboard-card:not(.span-2){justify-content:center;align-items:center;text-align:center;aspect-ratio:1/1;min-height:0;}
+    .dashboard-card.span-2{text-align:left;align-items:stretch}
+    .dashboard-card:active{cursor:grabbing}
+    .dashboard-card.is-dragging{opacity:.92;cursor:grabbing;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+    .dashboard-grid.is-reordering .dashboard-card{transition:transform .18s ease}
+    .dashboard-placeholder{border:1px dashed var(--border);border-radius:var(--r-12);background:rgba(255,255,255,.04);min-height:120px;margin:0}
+    .dashboard-placeholder:not(.span-2){aspect-ratio:1/1;}
+    .dashboard-placeholder.span-2{grid-column:1 / -1}
+    body.card-dragging{user-select:none}
+    .span-2{grid-column:1 / -1}
+    .quick-stats-grid{display:grid;gap:var(--sp-12);grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+    .stat-card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--r-12);padding:16px;box-shadow:var(--shadow-md)}
+    .stat-label{font-size:13px;color:var(--text-1);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;display:block}
+    .stat-value{font-family:Oswald,sans-serif;font-size:32px;line-height:1}
+    .stat-subtext{font-size:13px;color:var(--text-1);margin-top:4px}
+
+    .quick-add-subtext{color:var(--text-1);font-size:13px;margin:0 0 var(--sp-12);text-align:left}
+    .quick-add-body{display:grid;gap:var(--sp-12)}
+    .quick-add-actions{display:flex;gap:var(--sp-12);align-items:center;flex-wrap:wrap}
+
+    .log-controls{display:flex;flex-wrap:wrap;gap:var(--sp-12);align-items:center;margin-bottom:var(--sp-12)}
+    .log-search{flex:1 1 220px}
+    .filter-group{display:inline-flex;gap:var(--sp-8);background:var(--bg-1);padding:6px;border-radius:var(--r-12);border:1px solid var(--border)}
+    .filter-btn{border:none;background:none;color:var(--text-0);font-weight:600;padding:8px 12px;border-radius:var(--r-8);cursor:pointer;transition:.15s}
+    .filter-btn.is-active{background:var(--primary);color:#1b1b1b}
+    .filter-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(242,197,109,.35)}
+    .filter-btn:active{transform:scale(.98)}
+
+    .pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;display:inline-block}
+
+    /* Table */
+    .table{width:100%;border-collapse:separate;border-spacing:0 var(--sp-8)}
+    .sb-item-btn:focus{outline:none;box-shadow:inset 0 0 0 2px rgba(242,197,109,.35)}
+    .sb-item-btn:hover{background:#161a22}
+    .sb-item-icon{width:18px;height:18px;opacity:.9}
+    .sb-manifesto{padding:12px 14px;border-top:1px solid rgba(255,255,255,.05);margin:0;color:var(--text-1);font-size:13px;line-height:1.6;overflow:auto;max-height:calc(100vh - 240px)}
+    .sb-manifesto .manifesto-paragraph{margin-bottom:var(--sp-12)}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+    /* Header actions */
+    .header-actions{display:flex;align-items:center;gap:12px}
+    .auth-actions{display:flex;gap:10px}
+    .user-info{display:none;align-items:center;gap:10px}
+    .user-info.show{display:flex}
+
+    .logo-card{display:flex;align-items:center;justify-content:center;padding:var(--sp-16)}
+    .logo-card .logo-card-inner{width:100%;aspect-ratio:1/1;border-radius:var(--r-12);background:var(--bg-1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;padding:var(--sp-16); overflow: hidden;}
+    .logo-card img{width:100%; height: 100%; object-fit: contain; display:block;}
+
+    @keyframes wobble {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(1.5deg); }
+      75% { transform: rotate(-1.5deg); }
+    }
+
+    .reorganize-mode .dashboard-card {
+      animation: wobble 0.2s ease-in-out infinite;
+      touch-action: none;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--danger);
+      color: white;
+      border: 2px solid var(--bg-0);
+      font-weight: bold;
+      font-size: 16px;
+      line-height: 1;
+      text-align: center;
+      cursor: pointer;
+      display: none;
+      z-index: 10;
+    }
+
+    .reorganize-mode .close-btn {
+      display: block;
+    }
+    
+    .drag-handle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      display: none;
+      flex-direction: column;
+      justify-content: space-around;
+      cursor: move;
+      z-index: 20;
+    }
+
+    .reorganize-mode .drag-handle {
+      display: flex;
+    }
+
+    .drag-handle span {
+      width: 100%;
+      height: 2px;
+      background-color: var(--text-0);
+      border-radius: 1px;
+    }
+
+
+    @media (max-width:720px){
+      .dashboard-grid{grid-template-columns:minmax(0,1fr)}
+      .dashboard-card:not(.span-2){aspect-ratio:auto;min-height:220px}
+      .dashboard-reorder-btn{align-self:stretch}
+    }
+
+    @media (prefers-reduced-motion:reduce){.install-banner,.sidebar, .reorganize-mode .dashboard-card{transition:none; animation: none;}.btn:active{transform:none}}
+
+  </style>
+</head>
+<body>
+  <div id="scrim" class="scrim" tabindex="-1" aria-hidden="true"></div>
+  <aside id="sidebar" class="sidebar" aria-hidden="true" aria-labelledby="menu-title" role="dialog">
+    <div class="sb-head">
+      <h3 id="menu-title" class="sb-title" data-i18n="menuTitle">Menu</h3>
+      <button id="menu-close" class="icon-btn" aria-label="Close menu">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.7L12 12l6.3 6.3-1.3 1.3L10.7 13.3 4.4 19.6 3.1 18.3 9.4 12 3.1 5.7 4.4 4.4l6.3 6.3 6.3-6.3z"/></svg>
+      </button>
+    </div>
+    <div>
+      <div class="sb-section-title" data-i18n="corePractices">Core Practices</div>
+      <ul class="sb-list">
+        <li><button class="sb-item-btn" data-action="newEntry"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M19 11H13V5h-2v6H5v2h6v6h2v-6h6z"/></svg><span data-i18n="newJournal">New Journal Entry</span></button></li>
+        <li><button class="sb-item-btn" data-action="manifesto"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M20 6v14H6v2h14c1.1 0 2-.9 2-2V6h-2zm-4-4H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9H9V9h6v2zm-6 4h4v-2H9v2zm8-8H9V5h8v2z"/></svg><span data-i18n="manifesto">McFatty's Manifesto</span></button></li>
+        <li><button class="sb-item-btn" data-action="history"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7v2a9 9 0 0 0 9-9 9 9 0 0 0-9-9zm-1 5v5l4.25 2.52.75-1.23-3.5-2.07V8z"></path></svg><span data-i18n="history">History</span></button></li>
+      </ul>
+      <div class="sb-section-title" data-i18n="settings">Application Settings</div>
+      <ul class="sb-list">
+        <li><button class="sb-item-btn" data-action="account"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/></svg><span data-i18n="account">Account</span></button></li>
+        <li><button class="sb-item-btn" data-action="logout" id="logout-btn"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 17v-3H9v-2h7V9l4 4-4 4zm-5-3H4V5h7V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2z"></path></svg><span data-i18n="logout">Log Out</span></button></li>
+      </ul>
+            </div>
+          </div>
+        </div>
+        <div class="controls" style="margin-top: 16px;">
+          <button id="auth-submit" class="btn btn-primary" type="button"></button>
+          <button id="auth-toggle" class="btn btn-secondary" type="button"></button>
+        </div>
+        <div style="text-align:center; margin-top:16px; color:var(--text-1)">OR</div>
+        <button id="google-signin" class="btn btn-google" type="button">
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.20455c0-.63864-.05727-1.25182-.16364-1.84091H9v3.48182h4.84364c-.20818 1.125-.84273 2.07818-1.77727 2.72182v2.25818h2.90818c1.70182-1.56636 2.68636-3.87409 2.68636-6.62182z"/><path fill="#34A853" d="M9 18c2.43 0 4.46727-.80545 5.95636-2.18182l-2.90818-2.25818c-.80545.54273-1.84091.86182-3.04818.86182-2.34545 0-4.32818-1.58364-5.03545-3.71091H.957273v2.33182C2.43818 16.1573 5.48182 18 9 18z"/><path fill="#FBBC05" d="M3.96455 10.71c-.18-.54273-.28364-1.11636-.28364-1.71s.10364-1.16727.28364-1.71V4.95818H.957273C.347727 6.17364 0 7.54773 0 9c0 1.45227.347727 2.82636.957273 4.04182L3.96455 10.71z"/><path fill="#EA4335" d="M9 3.57818c1.32182 0 2.50727.45545 3.44 1.34818l2.58182-2.58182C13.4636.891818 11.4259 0 9 0 5.48182 0 2.43818 1.84273.957273 4.95818L3.96455 7.29C4.67182 5.16364 6.65455 3.57818 9 3.57818z"/></svg>
+          <span data-i18n="googleSignin">Sign in with Google</span>
+        </button>
+      </section>
+
+      <section id="about-section" class="section">
+        <h2 data-i18n="manifestoTitle">McFatty's Manifesto</h2>
+        <p class="manifesto-paragraph" data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
+        <p class="manifesto-paragraph" data-i18n="manifestoP2">This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
+        <p class="manifesto-paragraph" data-i18n="manifestoP3">Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
+        <p class="manifesto-paragraph" data-i18n="manifestoP4">We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
+        <p class="manifesto-paragraph" data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
+        <button id="donate-button" class="btn btn-primary" type="button" data-i18n="donateBtn">Donate</button>
+      </section>
+    </div>
+
+    <div id="dashboard-controls" class="dashboard-controls" hidden>
+      <button id="reorder-toggle" class="btn btn-secondary dashboard-reorder-btn" type="button" aria-pressed="false" aria-controls="app-content">Organize tiles</button>
+      <p id="reorder-hint" class="reorder-hint" data-i18n="reorderHint" hidden aria-live="polite">Drag tiles to reorder. Tap Done when you’re finished.</p>
+    </div>
+
+    <div id="app-content" class="dashboard-grid" style="display: none;">
+      <section id="logo-card" class="section dashboard-card logo-card" data-card-id="logo" aria-label="McFatty's logo">
+        <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
+        <button class="close-btn" aria-label="Finish organizing">&times;</button>
+        <div class="logo-card-inner">
+          <img src="Logo.png" alt="McFatty's Food Tracker logo">
+        </div>
+      </section>
+
+      <section id="manifesto-card" class="section dashboard-card logo-card" data-card-id="manifesto" aria-label="McFatty's Manifesto">
+        <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
+        <button class="close-btn" aria-label="Finish organizing">&times;</button>
+        <div class="logo-card-inner">
+          <img src="manifesto.png" alt="McFatty's Manifesto logo">
+        </div>
+      </section>
+
+      <section id="welcome-section" class="section dashboard-card" data-card-id="welcome">
+        <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
+        <button class="close-btn" aria-label="Finish organizing">&times;</button>
+        <h2 id="welcome-message" data-i18n="welcome"></h2>
+      </section>
+
+      <section id="growth-section" class="section dashboard-card" aria-labelledby="growth-title" data-card-id="growth">
+        <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
+    const sidebar = document.getElementById('sidebar');
+    const scrim = document.getElementById('scrim');
+    const welcomeMessage = document.getElementById('welcome-message');
+    const landingPage = document.getElementById('landing-page');
+    const appContent = document.getElementById('app-content');
+    const donateBtn = document.getElementById('donate-button');
+    const langToggle = document.getElementById('lang-toggle');
+    const switchEl = document.getElementById('switch');
+    const googleSigninBtn = document.getElementById('google-signin');
+    const pwaInstallBtn = document.getElementById('pwa-install');
+    const menuOpenBtn = document.getElementById('menu-open');
+    const menuCloseBtn = document.getElementById('menu-close');
+    const logoutBtn = document.getElementById('logout-btn');
+    const logoutBtnMain = document.getElementById('logout-btn-main');
+    const userInfo = document.getElementById('user-info');
+    const userName = document.getElementById('user-name');
+    const exportBtn = document.getElementById('export-button');
+    const statTotal = document.getElementById('stat-total');
+    const statDairy = document.getElementById('stat-dairy');
+    const statOutside = document.getElementById('stat-outside');
+    const statLast = document.getElementById('stat-last');
+    const statLastSubtext = document.getElementById('stat-last-subtext');
+    const logSearchInput = document.getElementById('log-search');
+    const noResultsMessage = document.getElementById('no-results');
+    const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
+    const dashboardControls = document.getElementById('dashboard-controls');
+    const reorderToggle = document.getElementById('reorder-toggle');
+    const reorderHint = document.getElementById('reorder-hint');
+
+    const DASHBOARD_ORDER_KEY = 'dashboard-card-order-v1';
+    const LONG_PRESS_DELAY_TOUCH = 280;
+    const LONG_PRESS_DELAY_POINTER = 160;
+    const DRAG_MOVE_CANCEL_THRESHOLD = 10;
+    let dragSession = null;
+
+    // Modals / legal links
+    const manifestoModal = document.getElementById('manifesto-modal');
+    const closeManifestoBtn = document.getElementById('close-manifesto');
+    const historyModal = document.getElementById('history-modal');
+    const closeHistoryBtn = document.getElementById('close-history');
+    const historyCo
