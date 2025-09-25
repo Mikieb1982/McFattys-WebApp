@@ -370,10 +370,17 @@
         </div>
       </section>
 
-      <section id="welcome-section" class="section dashboard-card span-2" data-card-id="welcome">
+      <section id="welcome-section" class="section dashboard-card" data-card-id="welcome">
         <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
         <button class="close-btn" aria-label="Finish organizing">&times;</button>
         <h2 id="welcome-message" data-i18n="welcome"></h2>
+      </section>
+
+      <section id="growth-section" class="section dashboard-card" aria-labelledby="growth-title" data-card-id="growth">
+        <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
+        <button class="close-btn" aria-label="Finish organizing">&times;</button>
+        <h2 id="growth-title" data-i18n="growthTitle">Room to grow</h2>
+        <p data-i18n="growthCopy">This space is ready for habits, reflections, or whatever else you need next.</p>
       </section>
 
       <section id="stats-section" class="section dashboard-card span-2" data-card-id="stats" aria-labelledby="quick-stats-title">
@@ -423,13 +430,6 @@
             <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
           </div>
         </div>
-      </section>
-
-      <section id="growth-section" class="section dashboard-card span-2" aria-labelledby="growth-title" data-card-id="growth">
-        <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-        <button class="close-btn" aria-label="Finish organizing">&times;</button>
-        <h2 id="growth-title" data-i18n="growthTitle">Room to grow</h2>
-        <p data-i18n="growthCopy">This space is ready for habits, reflections, or whatever else you need next.</p>
       </section>
 
       <section class="section dashboard-card span-2" aria-labelledby="recentLog" id="log-section" data-card-id="recent-log">
@@ -957,6 +957,7 @@
         manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.",
         donateBtn: 'Donate',
         welcome: 'Welcome',
+        welcomeBack: 'Welcome back',
         quickStatsTitle: 'Quick stats',
         statEntriesToday: 'Entries today',
         statDairyToday: 'Dairy items',
@@ -1056,6 +1057,7 @@
         manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von Ihrer Schuld profitieren.',
         donateBtn: 'Spenden',
         welcome: 'Willkommen',
+        welcomeBack: 'Willkommen zurück',
         quickStatsTitle: 'Schnelle Statistiken',
         statEntriesToday: 'Einträge heute',
         statDairyToday: 'Milchprodukte',
@@ -1224,9 +1226,11 @@
 
       const user = auth.currentUser;
       if (user) {
-        const welcomeText = getTranslation('welcome');
+        const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
+        const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
+        const welcomeText = getTranslation(welcomeTextKey);
         const displayName = user.displayName || user.email || '';
-        welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : welcomeText;
+        welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
       }
 
       updateAuthTexts();
@@ -1555,8 +1559,11 @@
       if (loggedIn) {
         resetFilters();
         const displayName = user.displayName || user.email || '';
-        const welcomeText = getTranslation('welcome');
-        welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : welcomeText;
+        const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
+        const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
+        const welcomeText = getTranslation(welcomeTextKey);
+        welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
+
         userName.textContent = displayName;
 
         logCollection = db.collection('users').doc(user.uid).collection('logs');
