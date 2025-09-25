@@ -50,10 +50,33 @@ const menuOpenBtn = document.getElementById('menu-open');
 const menuCloseBtn = document.getElementById('menu-close');
 const logoutBtn = document.getElementById('logout-btn');
 const logoutBtnMain = document.getElementById('logout-btn-main');
-logoutBtn.addEventListener('click', signOut);
-if (logoutBtnMain) {
-  logoutBtnMain.addEventListener('click', signOut);
+if (logoutBtn) {
+
+  logoutBtn.addEventListener('click', signOut);
+
 }
+
+if (logoutBtnMain) {
+
+  logoutBtnMain.addEventListener('click', signOut);
+
+}
+
+function signOut(event) {
+
+  if (event) {
+
+    event.preventDefault();
+
+  }
+
+  auth.signOut().catch((error) => {
+
+    console.error('Error signing out:', error);
+
+  });
+
+
 const userInfo = document.getElementById('user-info');
 const userName = document.getElementById('user-name');
 const exportBtn = document.getElementById('export-button');
