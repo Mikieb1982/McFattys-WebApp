@@ -704,7 +704,7 @@ const renderHistory = (snapshot) => {
       const outsideValue = Boolean(entry.outsideMeals);
       const outsideText = outsideValue ? getTranslation('yes') : getTranslation('no');
       const outsideClass = outsideValue ? 'pill-yes' : 'pill-no';
-      html += `<tr><td>${entry.name}</td><td>${time}</td><td><span class="pill ${pillClass}">${dairyText}</span></td><td><span class="pill ${outsideClass}">${outsideText}</span></td></tr>`;
+      html += `<tr><td>${(entry.name || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td><td>${time}</td><td><span class="pill ${pillClass}">${dairyText}</span></td><td><span class="pill ${outsideClass}">${outsideText}</span></td></tr>`;
     });
     html += `</tbody></table>`;
   });
