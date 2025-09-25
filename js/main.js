@@ -50,33 +50,6 @@ const menuOpenBtn = document.getElementById('menu-open');
 const menuCloseBtn = document.getElementById('menu-close');
 const logoutBtn = document.getElementById('logout-btn');
 const logoutBtnMain = document.getElementById('logout-btn-main');
-if (logoutBtn) {
-
-  logoutBtn.addEventListener('click', signOut);
-
-}
-
-if (logoutBtnMain) {
-
-  logoutBtnMain.addEventListener('click', signOut);
-
-}
-
-function signOut(event) {
-
-  if (event) {
-
-    event.preventDefault();
-
-  }
-
-  auth.signOut().catch((error) => {
-
-    console.error('Error signing out:', error);
-
-  });
-
-
 const userInfo = document.getElementById('user-info');
 const userName = document.getElementById('user-name');
 const exportBtn = document.getElementById('export-button');
@@ -373,4 +346,691 @@ const legalDocs = {
       [Ihr Name]<br>[Ihre Straße und Hausnummer]<br>[Ihre PLZ und Stadt]<br>E-Mail: [Ihre E-Mail-Adresse]</p>
       <p><strong>2. Datenerfassung in unserer App</strong></p>
       <p><strong>Nutzerauthentifizierung:</strong> Um diese App zu nutzen, müssen Sie ein Konto erstellen. Wir verwenden hierfür Firebase Authentication (ein Dienst von Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland). Bei der Registrierung per E-Mail und Passwort werden Ihre E-Mail-Adresse, ein Passwort-Hash und eine eindeutige Benutzer-ID gespeichert. Wenn Sie die Google-Anmeldung verwenden, übermittelt Google uns Ihren Namen, Ihre E-Mail-Adresse und Ihr Profilbild.</p>
-      <p><strong>Datenspeicherung:</strong> Ihre Essensprotokolle werden in einer Cloud Firestore-Datenbank gespeichert, die ebenfalls von Google bereitge
+      <p><strong>Datenspeicherung:</strong> Ihre Essensprotokolle werden in einer Cloud Firestore-Datenbank gespeichert, die ebenfalls von Google bereitgestellt wird. Diese Daten sind mit Ihrer eindeutigen Benutzer-ID verknüpft. Wir verarbeiten diese Daten zu keinem anderen Zweck, als sie Ihnen in der App wieder anzuzeigen.</p>
+      <p><strong>Server-Log-Dateien:</strong> Der Provider der Seiten erhebt und speichert automatisch Informationen in so genannten Server-Log-Dateien, die Ihr Browser automatisch an uns übermittelt. Dies sind: Browsertyp und Browserversion, verwendetes Betriebssystem, Referrer URL, Hostname des zugreifenden Rechners, Uhrzeit der Serveranfrage und IP-Adresse. Eine Zusammenführung dieser Daten mit anderen Datenquellen wird nicht vorgenommen.</p>
+      <p><strong>3. Ihre Rechte</strong></p>
+      <p>Sie haben im Rahmen der geltenden gesetzlichen Bestimmungen jederzeit das Recht auf unentgeltliche Auskunft über Ihre gespeicherten personenbezogenen Daten, deren Herkunft und Empfänger und den Zweck der Datenverarbeitung und ggf. ein Recht auf Berichtigung, Sperrung oder Löschung dieser Daten. Hierzu sowie zu weiteren Fragen zum Thema personenbezogene Daten können Sie sich jederzeit unter der im Impressum angegebenen Adresse an uns wenden.</p>`
+  }
+};
+
+const getTranslation = (key) => {
+  const dictionary = translations[lang] || translations.en;
+  return (dictionary && dictionary[key]) || translations.en[key] || '';
+};
+
+const tileSystem = initTileSystem({
+  container: appContent,
+  reorderToggle,
+  reorderHint,
+  getTranslation
+});
+
+const THEME_STORAGE_KEY = 'preferred-theme';
+const themeColors = {
+  light: '#fdfaf3',
+  dark: '#1a1a1a'
+};
+
+const getStoredTheme = () => {
+  try {
+    return localStorage.getItem(THEME_STORAGE_KEY);
+  } catch (error) {
+    return null;
+  }
+};
+
+const storeTheme = (value) => {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, value);
+  } catch (error) {
+    // ignore storage failures
+  }
+};
+
+const applyTheme = (theme) => {
+  const normalized = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = normalized;
+  if (themeColorMeta) {
+    const metaColor = themeColors[normalized] || themeColors.light;
+    themeColorMeta.setAttribute('content', metaColor);
+  }
+  const isDark = normalized === 'dark';
+  if (themeToggle) {
+    themeToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+    themeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+  if (themeToggleIcon) {
+    themeToggleIcon.textContent = isDark ? '☀️' : '🌙';
+  }
+  if (themeToggleLabel) {
+    themeToggleLabel.textContent = isDark ? 'Enable light mode' : 'Enable dark mode';
+  }
+};
+
+const initializeTheme = () => {
+  const stored = getStoredTheme();
+  if (stored === 'light' || stored === 'dark') {
+    applyTheme(stored);
+    return;
+  }
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(prefersDark ? 'dark' : 'light');
+};
+
+const toggleTheme = () => {
+  const current = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  storeTheme(next);
+};
+
+initializeTheme();
+
+if (themeToggle) {
+  themeToggle.addEventListener('click', toggleTheme);
+  themeToggle.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      toggleTheme();
+    }
+  });
+}
+
+const updateAuthTexts = () => {
+  const titleKey = isLoginMode ? 'loginTitle' : 'signupTitle';
+  const actionKey = isLoginMode ? 'loginAction' : 'signupAction';
+  const toggleKey = isLoginMode ? 'authToggleToSignup' : 'authToggleToLogin';
+  authTitle.textContent = getTranslation(titleKey);
+  authSubmit.textContent = getTranslation(actionKey);
+  authToggle.textContent = getTranslation(toggleKey);
+};
+
+const showInstallBanner = (message) => {
+  if (!message) return;
+  installBanner.textContent = message;
+  installBanner.classList.add('show');
+  clearTimeout(installBannerTimeout);
+  installBannerTimeout = setTimeout(() => installBanner.classList.remove('show'), 4000);
+};
+
+const setLanguage = (newLang) => {
+  lang = newLang;
+  langToggle.setAttribute('aria-pressed', newLang === 'de' ? 'true' : 'false');
+  switchEl.classList.toggle('active', newLang === 'de');
+  document.documentElement.lang = newLang;
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = getTranslation(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    el.placeholder = getTranslation(key);
+  });
+
+  const user = auth.currentUser;
+  if (user) {
+    const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
+    const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
+    const welcomeText = getTranslation(welcomeTextKey);
+    const displayName = user.displayName || user.email || '';
+    welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
+  }
+
+  tileSystem.refreshLabels();
+  updateAuthTexts();
+  if (latestSnapshot) renderEntries(latestSnapshot);
+};
+
+const addEntry = () => {
+  const name = nameInput.value.trim();
+  if (!name || !logCollection) return;
+
+  logCollection.add({
+    name,
+    dairy: dairyCheckbox.checked,
+    outsideMeals: outsideMealsCheckbox.checked,
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(() => {
+    nameInput.value = '';
+    dairyCheckbox.checked = false;
+    outsideMealsCheckbox.checked = false;
+    nameInput.focus();
+  }).catch((error) => {
+    console.error('Error adding document: ', error);
+    alert(getTranslation('addError'));
+  });
+};
+
+const getEntryDate = (entry) => {
+  if (entry && entry.timestamp && typeof entry.timestamp.toDate === 'function') {
+    return entry.timestamp.toDate();
+  }
+  return null;
+};
+
+const isSameDay = (dateA, dateB) => {
+  if (!dateA || !dateB) return false;
+  return dateA.getFullYear() === dateB.getFullYear() &&
+    dateA.getMonth() === dateB.getMonth() &&
+    dateA.getDate() === dateB.getDate();
+};
+
+const updateStats = () => {
+  if (!statTotal || !statDairy || !statOutside || !statLast || !statLastSubtext) return;
+
+  const today = new Date();
+  const locale = lang === 'de' ? 'de-DE' : 'en-US';
+  const entriesToday = allEntries.filter(entry => {
+    const date = getEntryDate(entry);
+    return isSameDay(date, today);
+  });
+  const dairyToday = entriesToday.filter(entry => entry.dairy).length;
+  const outsideMealsToday = entriesToday.filter(entry => entry.outsideMeals).length;
+  const latestEntry = allEntries.find(entry => getEntryDate(entry));
+  const latestDate = latestEntry ? getEntryDate(latestEntry) : null;
+
+  statTotal.textContent = entriesToday.length;
+  statDairy.textContent = dairyToday;
+  statOutside.textContent = outsideMealsToday;
+
+  if (latestDate) {
+    statLast.textContent = latestDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+    statLastSubtext.textContent = latestDate.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' });
+  } else {
+    statLast.textContent = '—';
+    statLastSubtext.textContent = '';
+  }
+};
+
+const renderRows = (entries) => {
+  tbody.innerHTML = '';
+
+  entries.forEach(entry => {
+    const tr = document.createElement('tr');
+
+    const nameCell = document.createElement('td');
+    nameCell.textContent = entry.name || '';
+
+    const timeCell = document.createElement('td');
+    const date = getEntryDate(entry);
+    timeCell.textContent = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : getTranslation('notAvailable');
+
+    const dairyCell = document.createElement('td');
+    const hasDairy = Boolean(entry.dairy);
+    const dairyPill = document.createElement('span');
+    dairyPill.className = `pill ${hasDairy ? 'pill-yes' : 'pill-no'}`;
+    dairyPill.textContent = hasDairy ? getTranslation('yes') : getTranslation('no');
+    dairyCell.appendChild(dairyPill);
+
+    const outsideCell = document.createElement('td');
+    const outsideValue = Boolean(entry.outsideMeals);
+    const outsidePill = document.createElement('span');
+    outsidePill.className = `pill ${outsideValue ? 'pill-yes' : 'pill-no'}`;
+    outsidePill.textContent = outsideValue ? getTranslation('yes') : getTranslation('no');
+    outsideCell.appendChild(outsidePill);
+
+    const actionsCell = document.createElement('td');
+    actionsCell.className = 'row-actions actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-secondary edit-entry';
+    editBtn.type = 'button';
+    editBtn.dataset.id = entry.id;
+    editBtn.textContent = getTranslation('editBtn');
+    editBtn.setAttribute('aria-label', `${getTranslation('editEntryAria')} ${entry.name || ''}`.trim());
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'btn btn-danger remove-entry';
+    removeBtn.type = 'button';
+    removeBtn.dataset.id = entry.id;
+    removeBtn.textContent = getTranslation('removeBtn');
+    removeBtn.setAttribute('aria-label', `${getTranslation('removeEntryAria')} ${entry.name || ''}`.trim());
+
+    actionsCell.appendChild(editBtn);
+    actionsCell.appendChild(removeBtn);
+
+    tr.appendChild(nameCell);
+    tr.appendChild(timeCell);
+    tr.appendChild(dairyCell);
+    tr.appendChild(outsideCell);
+    tr.appendChild(actionsCell);
+    tbody.appendChild(tr);
+  });
+};
+
+const resetFilters = () => {
+  activeFilter = 'all';
+  searchTerm = '';
+  if (logSearchInput) {
+    logSearchInput.value = '';
+  }
+  filterButtons.forEach(btn => btn.classList.toggle('is-active', btn.dataset.filter === 'all'));
+  toggleNoResults(false);
+};
+
+const toggleNoResults = (show) => {
+  if (!noResultsMessage) return;
+  noResultsMessage.style.display = show ? 'block' : 'none';
+};
+
+const applyFilters = () => {
+  if (!allEntries.length) {
+    tbody.innerHTML = '';
+    toggleNoResults(false);
+    return;
+  }
+
+  let filtered = [...allEntries];
+
+  if (searchTerm) {
+    filtered = filtered.filter(entry => (entry.name || '').toLowerCase().includes(searchTerm));
+  }
+
+  if (activeFilter === 'dairy') {
+    filtered = filtered.filter(entry => entry.dairy);
+  } else if (activeFilter === 'non-dairy') {
+    filtered = filtered.filter(entry => !entry.dairy);
+  } else if (activeFilter === 'outside-meals') {
+    filtered = filtered.filter(entry => entry.outsideMeals);
+  } else if (activeFilter === 'during-meals') {
+    filtered = filtered.filter(entry => !entry.outsideMeals);
+  }
+
+  if (!filtered.length) {
+    tbody.innerHTML = '';
+    toggleNoResults(true);
+    return;
+  }
+
+  toggleNoResults(false);
+  renderRows(filtered.slice(0, MAX_RECENT_ROWS));
+};
+
+const renderEntries = (snapshot) => {
+  latestSnapshot = snapshot;
+  allEntries = snapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      dairy: Boolean(data.dairy),
+      outsideMeals: Boolean(data.outsideMeals)
+    };
+  });
+
+  updateStats();
+
+  if (!allEntries.length) {
+    tbody.innerHTML = '';
+    emptyState.style.display = 'block';
+    toggleNoResults(false);
+    return;
+  }
+
+  emptyState.style.display = 'none';
+  applyFilters();
+};
+
+const renderHistory = (snapshot) => {
+  historyContent.innerHTML = '';
+  if (!snapshot || snapshot.empty) {
+    historyContent.innerHTML = `<p>${getTranslation('emptyState')}</p>`;
+    return;
+  }
+
+  const entriesByDate = {};
+  snapshot.forEach(doc => {
+    const entry = doc.data();
+    if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
+      const date = entry.timestamp.toDate();
+      const key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+      (entriesByDate[key] ||= []).push(entry);
+    }
+  });
+
+  let html = '';
+  Object.keys(entriesByDate).sort().reverse().forEach(key => {
+    const [y,m,d] = key.split('-').map(n=>parseInt(n,10));
+    const display = new Date(y, m-1, d).toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+    html += `<h3>${display}</h3>`;
+    html += `<table class="table" style="margin-bottom:20px;"><thead><tr><th>${getTranslation('thItem')}</th><th>${getTranslation('thTime')}</th><th>${getTranslation('thDairy')}</th><th>${getTranslation('thOutsideMeals')}</th></tr></thead><tbody>`;
+    entriesByDate[key].sort((a,b)=>b.timestamp.seconds - a.timestamp.seconds).forEach(entry=>{
+      const time = entry.timestamp.toDate().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+      const hasDairy = Boolean(entry.dairy);
+      const dairyText = hasDairy ? getTranslation('yes') : getTranslation('no');
+      const pillClass = hasDairy ? 'pill-yes' : 'pill-no';
+      const outsideValue = Boolean(entry.outsideMeals);
+      const outsideText = outsideValue ? getTranslation('yes') : getTranslation('no');
+      const outsideClass = outsideValue ? 'pill-yes' : 'pill-no';
+      html += `<tr><td>${entry.name}</td><td>${time}</td><td><span class="pill ${pillClass}">${dairyText}</span></td><td><span class="pill ${outsideClass}">${outsideText}</span></td></tr>`;
+    });
+    html += `</tbody></table>`;
+  });
+
+  historyContent.innerHTML = html || `<p>${getTranslation('emptyState')}</p>`;
+};
+
+const handleLogAction = (event) => {
+  if (!logCollection) return;
+  const button = event.target.closest('button');
+  if (!button) return;
+
+  const { id } = button.dataset;
+  if (!id) return;
+
+  if (button.classList.contains('remove-entry')) {
+    logCollection.doc(id).delete().catch(error => {
+      console.error('Error removing document: ', error);
+      alert(getTranslation('deleteError'));
+    });
+    return;
+  }
+
+  if (button.classList.contains('edit-entry')) {
+    const currentName = button.closest('tr')?.querySelector('td')?.textContent || '';
+    const newName = prompt(getTranslation('editBtn'), currentName);
+    if (newName && newName.trim() && newName.trim() !== currentName) {
+      logCollection.doc(id).update({ name: newName.trim() }).catch(error => {
+        console.error('Error updating document:', error);
+        alert(getTranslation('updateError'));
+      });
+    }
+  }
+};
+
+const exportToCsv = () => {
+  if (!logCollection) return;
+
+  logCollection.orderBy('timestamp', 'desc').get().then(snapshot => {
+    const header = [
+      getTranslation('csvHeaderDate'),
+      getTranslation('csvHeaderItem'),
+      getTranslation('csvHeaderDairy'),
+      getTranslation('csvHeaderOutsideMeals')
+    ].join(',');
+    let csvContent = "data:text/csv;charset=utf-8," + header + "\n";
+    const locale = lang === 'de' ? 'de-DE' : 'en-US';
+
+    snapshot.forEach(doc => {
+      const entry = doc.data();
+      const date = entry.timestamp ? entry.timestamp.toDate().toLocaleDateString(locale) : getTranslation('notAvailable');
+      const safeName = `"${(entry.name || '').replace(/"/g, '""')}"`;
+      const hasDairy = Boolean(entry.dairy);
+      const outsideValue = Boolean(entry.outsideMeals);
+      const row = [
+        date,
+        safeName,
+        hasDairy ? getTranslation('csvYes') : getTranslation('csvNo'),
+        outsideValue ? getTranslation('csvYes') : getTranslation('csvNo')
+      ].join(',');
+      csvContent += row + "\n";
+    });
+
+    const link = document.createElement('a');
+    link.href = encodeURI(csvContent);
+    link.download = 'mcfattys_log.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+};
+
+const resetAuthFields = () => {
+  authEmail.value = '';
+  authPassword.value = '';
+  authUsername.value = '';
+  authRePassword.value = '';
+};
+
+const setAuthMode = (isLogin) => {
+  isLoginMode = isLogin;
+  signupFields.style.display = isLogin ? 'none' : 'block';
+  updateAuthTexts();
+};
+
+auth.onAuthStateChanged(user => {
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+
+  const loggedIn = !!user;
+
+  landingPage.style.display = loggedIn ? 'none' : 'grid';
+  appContent.style.display = loggedIn ? 'grid' : 'none';
+  authActions.style.display = loggedIn ? 'none' : 'flex';
+  userInfo.style.display = loggedIn ? 'flex' : 'none';
+  authSection.style.display = 'none';
+  if (dashboardControls) {
+    dashboardControls.hidden = !loggedIn;
+  }
+
+  if (loggedIn) {
+    tileSystem.refreshLabels();
+    resetFilters();
+    const displayName = user.displayName || user.email || '';
+    const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
+    const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
+    const welcomeText = getTranslation(welcomeTextKey);
+    welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
+
+    userName.textContent = displayName;
+
+    logCollection = db.collection('users').doc(user.uid).collection('logs');
+    unsubscribe = logCollection.orderBy('timestamp', 'desc').onSnapshot(renderEntries);
+  } else {
+    tileSystem.exitReorganizeMode(false);
+    userName.textContent = '';
+    welcomeMessage.textContent = '';
+    latestSnapshot = null;
+    tbody.innerHTML = '';
+    emptyState.style.display = 'block';
+    logCollection = null;
+    allEntries = [];
+    resetFilters();
+    updateStats();
+    setAuthMode(true);
+    resetAuthFields();
+  }
+});
+
+const handleAuthSubmit = async () => {
+  const email = authEmail.value.trim();
+  const password = authPassword.value.trim();
+
+  if (!email || !password) {
+    alert(getTranslation('authMissingFields'));
+    return;
+  }
+  if (!isLoginMode) {
+    const username = authUsername.value.trim();
+    const confirmPassword = authRePassword.value.trim();
+    if (!username) {
+      alert(getTranslation('authMissingUsername'));
+      return;
+    }
+    if (password !== confirmPassword) {
+      alert(getTranslation('authPasswordMismatch'));
+      return;
+    }
+  }
+
+  authSubmit.disabled = true;
+  try {
+    if (isLoginMode) {
+      await auth.signInWithEmailAndPassword(email, password);
+    } else {
+      const username = authUsername.value.trim();
+      const { user: newUser } = await auth.createUserWithEmailAndPassword(email, password);
+      await newUser.updateProfile({ displayName: username });
+      await db.collection('users').doc(newUser.uid).set({
+        displayName: username,
+        email,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
+    authSection.style.display = 'none';
+    resetAuthFields();
+  } catch (error) {
+    alert(`${getTranslation('authErrorPrefix')} ${error.message}`);
+  } finally {
+    authSubmit.disabled = false;
+  }
+};
+
+// Helpers
+const signOut = (event) => {
+  if (event) {
+    event.preventDefault();
+  }
+  auth.signOut().catch((error) => {
+    console.error('Error signing out:', error);
+  });
+};
+const toggleLanguage = () => setLanguage(lang === 'en' ? 'de' : 'en');
+
+// Event Listeners
+addBtn.addEventListener('click', addEntry);
+tbody.addEventListener('click', handleLogAction);
+exportBtn.addEventListener('click', exportToCsv);
+
+if (logSearchInput) {
+  logSearchInput.addEventListener('input', (event) => {
+    searchTerm = event.target.value.trim().toLowerCase();
+    applyFilters();
+  });
+}
+
+filterButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    const { filter } = button.dataset;
+    if (!filter) return;
+    activeFilter = filter;
+    filterButtons.forEach(btn => btn.classList.toggle('is-active', btn === button));
+    applyFilters();
+  });
+});
+
+loginBtn.addEventListener('click', () => { resetAuthFields(); authSection.style.display = 'block'; setAuthMode(true); });
+signupBtn.addEventListener('click', () => { resetAuthFields(); authSection.style.display = 'block'; setAuthMode(false); });
+authToggle.addEventListener('click', () => setAuthMode(!isLoginMode));
+authSubmit.addEventListener('click', handleAuthSubmit);
+
+googleSigninBtn.addEventListener('click', () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => {
+  alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
+  console.error('Google sign-in error:', err);
+}));
+
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', signOut);
+}
+
+if (logoutBtnMain) {
+  logoutBtnMain.addEventListener('click', signOut);
+}
+
+donateBtn.addEventListener('click', () => {
+  const w = window.open('https://www.paypal.com/donate', '_blank');
+  if (w) w.opener = null;
+});
+
+langToggle.addEventListener('click', toggleLanguage);
+langToggle.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    toggleLanguage();
+  }
+});
+
+menuOpenBtn.addEventListener('click', () => { sidebar.classList.add('open'); scrim.classList.add('show'); });
+menuCloseBtn.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
+scrim.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
+
+// Sidebar actions -> modals
+sidebar.addEventListener('click', (event) => {
+  const button = event.target.closest('.sb-item-btn');
+  if (!button) return;
+  const action = button.dataset.action;
+
+  if (action === 'manifesto') {
+    manifestoModal.classList.add('show');
+  } else if (action === 'history') {
+    if (!logCollection) return;
+    logCollection.orderBy('timestamp', 'desc').get().then(renderHistory);
+    historyModal.classList.add('show');
+  }
+  // Close sidebar after action
+  sidebar.classList.remove('open');
+  scrim.classList.remove('show');
+});
+
+if (logoCard && instructionsModal) {
+  logoCard.addEventListener('click', () => {
+    if (!tileSystem.isReorganizeMode()) {
+      instructionsModal.classList.add('show');
+    }
+  });
+}
+
+// Manifesto card click
+const manifestoCard = document.getElementById('manifesto-card');
+if (manifestoCard) {
+  manifestoCard.addEventListener('click', () => {
+    if (!tileSystem.isReorganizeMode()) {
+      manifestoModal.classList.add('show');
+    }
+  });
+}
+
+if (closeInstructionsBtn && instructionsModal) {
+  closeInstructionsBtn.addEventListener('click', () => instructionsModal.classList.remove('show'));
+}
+
+closeManifestoBtn.addEventListener('click', () => manifestoModal.classList.remove('show'));
+closeHistoryBtn.addEventListener('click', () => historyModal.classList.remove('show'));
+
+impressumLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  legalTitle.textContent = getTranslation('impressum');
+  legalContent.innerHTML = lang === 'de' ? legalDocs.de.impressum : legalDocs.en.impressum;
+  legalModal.classList.add('show');
+});
+
+privacyLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  legalTitle.textContent = getTranslation('privacyPolicy');
+  legalContent.innerHTML = lang === 'de' ? legalDocs.de.privacyPolicy : legalDocs.en.privacyPolicy;
+  legalModal.classList.add('show');
+});
+
+closeLegalBtn.addEventListener('click', () => legalModal.classList.remove('show'));
+
+// PWA install
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  pwaInstallBtn.style.display = 'inline-flex';
+});
+
+pwaInstallBtn.addEventListener('click', async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  const { outcome } = await deferredInstallPrompt.userChoice;
+  showInstallBanner(getTranslation(outcome === 'accepted' ? 'installSuccess' : 'installDismissed'));
+  deferredInstallPrompt = null;
+  pwaInstallBtn.style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+  showInstallBanner(getTranslation('installSuccess'));
+  deferredInstallPrompt = null;
+  pwaInstallBtn.style.display = 'none';
+});
+
+// SW
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js').catch(err => console.error('SW registration failed:', err)));
+}
+
+// Boot
+setLanguage('en');
+
