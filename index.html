@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/tiles.css">
 
-  
+
 </head>
 <body>
   <div id="scrim" class="scrim" tabindex="-1" aria-hidden="true"></div>
@@ -206,6 +206,26 @@
       <div class="modal-content" style="text-align: left;" id="legal-content"></div>
       <div class="modal-actions">
         <button id="close-legal" class="btn btn-primary" data-i18n="closeBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="instructions-modal" role="dialog" aria-modal="true" aria-labelledby="instructions-title">
+    <div class="modal">
+      <h3 id="instructions-title">Tile Functions</h3>
+      <div class="modal-content" style="text-align: left;">
+        <ul>
+          <li><strong>Logo:</strong> Click this tile to see these instructions again.</li>
+          <li><strong>Manifesto:</strong> Displays the app's philosophy on mindful eating.</li>
+          <li><strong>Welcome:</strong> A simple welcome message.</li>
+          <li><strong>Room to grow:</strong> A placeholder for future features like habits or reflections.</li>
+          <li><strong>Quick stats:</strong> Shows a summary of your food entries for the current day.</li>
+          <li><strong>Quick add:</strong> The main form for logging what you've eaten.</li>
+          <li><strong>Recent log:</strong> A table of your recent entries with search and filter options.</li>
+        </ul>
+      </div>
+      <div class="modal-actions">
+        <button id="close-instructions" class="btn btn-primary">Close</button>
       </div>
     </div>
   </div>
