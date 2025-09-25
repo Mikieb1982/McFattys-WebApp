@@ -23,6 +23,7 @@
       --danger: #d9534f;    /* Muted Red */
       --info: #5bc0de;      /* Teal Blue */
       --text-0: #f7f5e6;    /* Cream White */
+      --text-1: #b9b6a3;    /* Muted Sand */
       --bg-0:#1a1a1a;        /* Dark Charcoal */
       --bg-1:#2a2a2a;        /* Lighter Charcoal */
       --card:#333333;        /* Card Background */
@@ -89,11 +90,19 @@
 
     /* Dashboard */
     .dashboard-grid{display:grid;gap:var(--sp-16);position:relative;grid-template-columns:repeat(2,minmax(0,1fr))}
-    .dashboard-card{position:relative;cursor:grab;transition:transform .18s ease,box-shadow .18s ease; touch-action: none;}
-    .dashboard-card:active{cursor:grabbing}
+    .dashboard-controls{display:flex;flex-direction:column;gap:var(--sp-8);padding:0 var(--sp-8)}
+    .dashboard-controls[hidden]{display:none !important}
+    .dashboard-reorder-btn{align-self:flex-end}
+    .reorder-hint{margin:0;font-size:13px;color:var(--text-1)}
+    .dashboard-card{position:relative;transition:transform .18s ease,box-shadow .18s ease;touch-action:pan-y;display:flex;flex-direction:column;gap:var(--sp-12)}
+    .reorganize-mode .dashboard-card{cursor:grab}
+    .reorganize-mode .dashboard-card:active{cursor:grabbing}
+    .dashboard-card:not(.span-2){justify-content:center;align-items:center;text-align:center;aspect-ratio:1/1;min-height:0;}
+    .dashboard-card.span-2{text-align:left;align-items:stretch}
     .dashboard-card.is-dragging{opacity:.92;cursor:grabbing;box-shadow:0 18px 40px rgba(0,0,0,.5)}
     .dashboard-grid.is-reordering .dashboard-card{transition:transform .18s ease}
     .dashboard-placeholder{border:1px dashed var(--border);border-radius:var(--r-12);background:rgba(255,255,255,.04);min-height:120px;margin:0}
+    .dashboard-placeholder:not(.span-2){aspect-ratio:1/1;}
     .dashboard-placeholder.span-2{grid-column:1 / -1}
     body.card-dragging{user-select:none}
     .span-2{grid-column:1 / -1}
@@ -192,6 +201,10 @@
       animation: wobble 0.2s ease-in-out infinite;
     }
 
+    .reorganize-mode .dashboard-card:not(.is-dragging) > *:not(.drag-handle):not(.close-btn) {
+      pointer-events: none;
+    }
+
     .close-btn {
       position: absolute;
       top: -10px;
@@ -224,7 +237,7 @@
       display: none;
       flex-direction: column;
       justify-content: space-around;
-      cursor: move;
+      cursor: grab;
       z-index: 20;
     }
 
@@ -239,6 +252,25 @@
       border-radius: 1px;
     }
 
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+
+    .drag-handle {
+      touch-action: none;
+    }
+
+    .drag-handle:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(242,197,109,.35);
+    }
+
+
+    @media (max-width:720px){
+      .dashboard-grid{grid-template-columns:minmax(0,1fr)}
+      .dashboard-card:not(.span-2){aspect-ratio:auto;min-height:220px}
+      .dashboard-reorder-btn{align-self:stretch}
+    }
 
     @media (prefers-reduced-motion:reduce){.install-banner,.sidebar, .reorganize-mode .dashboard-card{transition:none; animation: none;}.btn:active{transform:none}}
 
@@ -351,6 +383,11 @@
         <p class="manifesto-paragraph" data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
         <button id="donate-button" class="btn btn-primary" type="button" data-i18n="donateBtn">Donate</button>
       </section>
+    </div>
+
+    <div id="dashboard-controls" class="dashboard-controls" hidden>
+      <button id="reorder-toggle" class="btn btn-secondary dashboard-reorder-btn" type="button" aria-pressed="false" aria-controls="app-content">Organize tiles</button>
+      <p id="reorder-hint" class="reorder-hint" data-i18n="reorderHint" hidden aria-live="polite">Drag tiles to reorder. Tap Done when you’re finished.</p>
     </div>
 
     <div id="app-content" class="dashboard-grid" style="display: none;">
@@ -601,12 +638,12 @@
     const logSearchInput = document.getElementById('log-search');
     const noResultsMessage = document.getElementById('no-results');
     const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
+    const dashboardControls = document.getElementById('dashboard-controls');
+    const reorderToggle = document.getElementById('reorder-toggle');
+    const reorderHint = document.getElementById('reorder-hint');
 
     const DASHBOARD_ORDER_KEY = 'dashboard-card-order-v1';
-    const LONG_PRESS_DELAY_TOUCH = 280;
-    const LONG_PRESS_DELAY_POINTER = 160;
-    const DRAG_MOVE_CANCEL_THRESHOLD = 10;
-    let dragSession = null;
+    let dragState = null;
 
     // Modals / legal links
     const manifestoModal = document.getElementById('manifesto-modal');
@@ -692,238 +729,255 @@
       });
     }
 
-    function detachGlobalPointerListeners() {
-      window.removeEventListener('pointermove', handleCardPointerMove);
-      window.removeEventListener('pointerup', handleCardPointerUp);
-      window.removeEventListener('pointercancel', handleCardPointerUp);
-    }
-
-    function endCardDrag(commit) {
-      if (!dragSession) return;
-
-      clearTimeout(dragSession.longPressTimer);
-      dragSession.longPressTimer = null;
-
-      detachGlobalPointerListeners();
-
-      const { card, placeholder, active } = dragSession;
-
-      if (active && placeholder && placeholder.parentNode) {
-        placeholder.parentNode.replaceChild(card, placeholder);
-      }
-
-      if (active && card) {
-        card.classList.remove('is-dragging');
-        card.style.position = '';
-        card.style.zIndex = '';
-        card.style.width = '';
-        card.style.height = '';
-        card.style.left = '';
-        card.style.top = '';
-        card.style.pointerEvents = '';
-        card.style.transition = '';
-      }
-
-      if (active) {
-        if (commit) {
-          persistCardOrder();
-        }
-      }
-
-      dragSession = null;
-    }
-
-    function positionDraggedCard(event) {
-      if (!dragSession || !dragSession.card) return;
-      const card = dragSession.card;
-      const containerRect = appContent.getBoundingClientRect();
-      const cardWidth = card.offsetWidth;
-      const cardHeight = card.offsetHeight;
-      const rawX = event.clientX - containerRect.left - dragSession.offsetX;
-      const rawY = event.clientY - containerRect.top - dragSession.offsetY;
-      const maxX = Math.max(containerRect.width - cardWidth, 0);
-      const maxY = Math.max(containerRect.height - cardHeight, 0);
-      const clampedX = Math.min(Math.max(rawX, 0), maxX);
-      const clampedY = Math.min(Math.max(rawY, 0), maxY);
-      card.style.left = `${clampedX}px`;
-      card.style.top = `${clampedY}px`;
-    }
-
-    function updatePlaceholderPosition(event) {
-      if (!dragSession || !dragSession.placeholder) return false;
-
-      const { placeholder, card } = dragSession;
-      const cards = getDashboardCards().filter(el => el !== card);
-      if (!cards.length) return false;
-
-      const { clientX, clientY } = event;
-      const element = document.elementFromPoint(clientX, clientY);
-      const targetCard = element ? element.closest('.dashboard-card') : null;
-
-      if (targetCard && targetCard !== card) {
-        const rect = targetCard.getBoundingClientRect();
-        const verticalMiddle = rect.top + rect.height / 2;
-        const horizontalMiddle = rect.left + rect.width / 2;
-        const before = clientY < verticalMiddle || (Math.abs(clientY - verticalMiddle) < rect.height / 3 && clientX < horizontalMiddle);
-
-        if (before) {
-          if (placeholder.nextSibling !== targetCard) {
-            appContent.insertBefore(placeholder, targetCard);
-            return true;
-          }
-        } else if (targetCard.nextSibling !== placeholder) {
-          appContent.insertBefore(placeholder, targetCard.nextSibling);
-          return true;
-        }
-
-        return false;
-      }
-
-      const firstCard = cards[0];
-      const firstRect = firstCard.getBoundingClientRect();
-      if (clientY < firstRect.top) {
-        if (placeholder !== firstCard) {
-          appContent.insertBefore(placeholder, firstCard);
-          return true;
-        }
-        return false;
-      }
-
-      const lastCard = cards[cards.length - 1];
-      const lastRect = lastCard.getBoundingClientRect();
-      if (clientY > lastRect.bottom) {
-        if (lastCard.nextSibling !== placeholder) {
-          appContent.appendChild(placeholder);
-          return true;
-        }
-        return false;
-      }
-
-      return false;
-    }
-
-    function beginCardDrag(event) {
-      if (!dragSession || dragSession.active || !isReorganizeMode) return;
-
-      clearTimeout(dragSession.longPressTimer);
-      dragSession.longPressTimer = null;
-
-      const card = dragSession.card;
-      if (!card) return;
-
-      const cardRect = card.getBoundingClientRect();
-      const containerRect = appContent.getBoundingClientRect();
-
-      dragSession.active = true;
-      dragSession.offsetX = event.clientX - cardRect.left;
-      dragSession.offsetY = event.clientY - cardRect.top;
-
+    function createPlaceholder(card, rect) {
       const placeholder = document.createElement('div');
       placeholder.className = 'dashboard-placeholder';
       if (card.classList.contains('span-2')) {
         placeholder.classList.add('span-2');
       }
-      placeholder.style.minHeight = `${cardRect.height}px`;
-
-      dragSession.placeholder = placeholder;
-
-      appContent.insertBefore(placeholder, card);
-      appContent.appendChild(card);
-
-      card.classList.add('is-dragging');
-      card.style.position = 'absolute';
-      card.style.zIndex = '900';
-      card.style.width = `${cardRect.width}px`;
-      card.style.height = `${cardRect.height}px`;
-      card.style.left = `${cardRect.left - containerRect.left}px`;
-      card.style.top = `${cardRect.top - containerRect.top}px`;
-      card.style.pointerEvents = 'none';
+      placeholder.style.minHeight = `${rect.height}px`;
+      return placeholder;
     }
 
-    function handleCardPointerMove(event) {
-      if (!dragSession || event.pointerId !== dragSession.pointerId || !isReorganizeMode) return;
+    function removeDragListeners() {
+      window.removeEventListener('pointermove', handleCardDragMove);
+      window.removeEventListener('pointerup', handleCardDragEnd);
+      window.removeEventListener('pointercancel', handleCardDragEnd);
+    }
 
-      dragSession.lastEvent = event;
+    function resetDraggedCardStyles(card) {
+      card.classList.remove('is-dragging');
+      card.style.position = '';
+      card.style.width = '';
+      card.style.height = '';
+      card.style.left = '';
+      card.style.top = '';
+      card.style.zIndex = '';
+      card.style.pointerEvents = '';
+      card.style.transform = '';
+    }
 
-      if (!dragSession.active) {
-        if (dragSession.longPressTimer) {
-          const dx = Math.abs(event.clientX - dragSession.startX);
-          const dy = Math.abs(event.clientY - dragSession.startY);
-          if (dx > DRAG_MOVE_CANCEL_THRESHOLD || dy > DRAG_MOVE_CANCEL_THRESHOLD) {
-            endCardDrag(false);
+    function finishDrag(commit) {
+      if (!dragState) return;
+
+      const { card, placeholder, originalParent, originalNextSibling, pointerId, captureTarget } = dragState;
+
+      removeDragListeners();
+
+      if (captureTarget && captureTarget.releasePointerCapture) {
+        try {
+          captureTarget.releasePointerCapture(pointerId);
+        } catch (error) {
+          // ignore
+        }
+      }
+
+      if (placeholder) {
+        if (commit && placeholder.parentNode) {
+          placeholder.parentNode.insertBefore(card, placeholder);
+        } else if (!commit && originalParent) {
+          if (originalNextSibling && originalNextSibling.parentNode === originalParent) {
+            originalParent.insertBefore(card, originalNextSibling);
+          } else {
+            originalParent.appendChild(card);
           }
+        }
+        if (placeholder.parentNode) {
+          placeholder.parentNode.removeChild(placeholder);
+        }
+      }
+
+      resetDraggedCardStyles(card);
+      document.body.classList.remove('card-dragging');
+
+      dragState = null;
+
+      if (commit) {
+        persistCardOrder();
+      }
+    }
+
+    function updateDraggedCardPosition(event) {
+      if (!dragState) return;
+      const { card, offsetX, offsetY } = dragState;
+      card.style.left = `${event.clientX - offsetX}px`;
+      card.style.top = `${event.clientY - offsetY}px`;
+    }
+
+    function updatePlaceholderFromPointer(event) {
+      if (!dragState || !appContent) return;
+      const { placeholder, card } = dragState;
+      if (!placeholder) return;
+
+      const element = document.elementFromPoint(event.clientX, event.clientY);
+      const targetCard = element ? element.closest('.dashboard-card') : null;
+
+      if (targetCard && targetCard !== card) {
+        const rect = targetCard.getBoundingClientRect();
+        const before = event.clientY < rect.top + rect.height / 2;
+
+        if (before) {
+          if (targetCard !== placeholder.nextSibling) {
+            appContent.insertBefore(placeholder, targetCard);
+          }
+        } else if (targetCard.nextSibling !== placeholder) {
+          appContent.insertBefore(placeholder, targetCard.nextSibling);
         }
         return;
       }
 
-      event.preventDefault();
-      positionDraggedCard(event);
-      const moved = updatePlaceholderPosition(event);
-      if (moved) {
-        dragSession.hasMoved = true;
+      const cards = getDashboardCards().filter(item => item !== card);
+      if (!cards.length) return;
+
+      const firstCard = cards[0];
+      const firstRect = firstCard.getBoundingClientRect();
+      if (event.clientY < firstRect.top) {
+        if (placeholder !== firstCard) {
+          appContent.insertBefore(placeholder, firstCard);
+        }
+        return;
+      }
+
+      const lastCard = cards[cards.length - 1];
+      const lastRect = lastCard.getBoundingClientRect();
+      if (event.clientY > lastRect.bottom) {
+        if (lastCard.nextSibling !== placeholder) {
+          appContent.appendChild(placeholder);
+        }
       }
     }
 
-    function handleCardPointerUp(event) {
-      if (!dragSession || event.pointerId !== dragSession.pointerId) return;
-      const shouldCommit = Boolean(dragSession.active);
-      endCardDrag(shouldCommit);
+    function handleCardDragMove(event) {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+      event.preventDefault();
+      updateDraggedCardPosition(event);
+      updatePlaceholderFromPointer(event);
     }
 
-    function handleCardPointerDown(event) {
-        if (!event.isPrimary) return;
-        if (event.pointerType === 'mouse' && event.button !== 0) return;
-        if (dragSession) return;
-        if (!appContent) return;
-
-        const handle = event.target.closest('.drag-handle');
-        if (!handle) return; // Only start drag from the handle
-
-        const card = handle.closest('.dashboard-card');
-        if (!card || !card.dataset.cardId) return;
-
-        const delay = event.pointerType === 'touch' ? LONG_PRESS_DELAY_TOUCH : LONG_PRESS_DELAY_POINTER;
-
-        dragSession = {
-            card,
-            pointerId: event.pointerId,
-            startX: event.clientX,
-            startY: event.clientY,
-            longPressTimer: setTimeout(() => {
-                if (!dragSession) return;
-                if (!isReorganizeMode) {
-                    appContent.classList.add('reorganize-mode');
-                    isReorganizeMode = true;
-                }
-                const triggerEvent = dragSession.lastEvent || event;
-                beginCardDrag(triggerEvent);
-            }, delay),
-            hasMoved: false,
-            active: false,
-            offsetX: 0,
-            offsetY: 0,
-            placeholder: null,
-            lastEvent: event
-        };
-
-        window.addEventListener('pointermove', handleCardPointerMove, { passive: false });
-        window.addEventListener('pointerup', handleCardPointerUp);
-        window.addEventListener('pointercancel', handleCardPointerUp);
+    function handleCardDragEnd(event) {
+      if (!dragState || event.pointerId !== dragState.pointerId) return;
+      const commit = event.type !== 'pointercancel';
+      finishDrag(commit);
     }
 
+    function startCardDrag(card, event) {
+      if (!isReorganizeMode || !appContent || dragState) return;
+
+      const rect = card.getBoundingClientRect();
+      const placeholder = createPlaceholder(card, rect);
+      const originalParent = card.parentNode;
+      const originalNextSibling = card.nextSibling;
+      const captureTarget = event.currentTarget || event.target || card;
+
+      dragState = {
+        card,
+        placeholder,
+        pointerId: event.pointerId,
+        offsetX: event.clientX - rect.left,
+        offsetY: event.clientY - rect.top,
+        originalParent,
+        originalNextSibling,
+        captureTarget
+      };
+
+      appContent.insertBefore(placeholder, card);
+
+      card.classList.add('is-dragging');
+      card.style.position = 'fixed';
+      card.style.width = `${rect.width}px`;
+      card.style.height = `${rect.height}px`;
+      card.style.left = `${rect.left}px`;
+      card.style.top = `${rect.top}px`;
+      card.style.zIndex = '950';
+      card.style.pointerEvents = 'none';
+      card.style.transform = 'scale(1.02)';
+
+      document.body.classList.add('card-dragging');
+
+      try {
+        captureTarget.setPointerCapture(event.pointerId);
+      } catch (error) {
+        // ignore
+      }
+
+      updateDraggedCardPosition(event);
+
+      window.addEventListener('pointermove', handleCardDragMove, { passive: false });
+      window.addEventListener('pointerup', handleCardDragEnd);
+      window.addEventListener('pointercancel', handleCardDragEnd);
+    }
+
+    function handleHandlePointerDown(event) {
+      if (!isReorganizeMode) return;
+      if (!event.isPrimary) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+      const card = event.currentTarget ? event.currentTarget.closest('.dashboard-card') : event.target.closest('.dashboard-card');
+      if (!card || !card.dataset.cardId) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      startCardDrag(card, event);
+    }
+
+    function toggleReorderMode() {
+      if (isReorganizeMode) {
+        exitReorganizeMode(true);
+        if (reorderToggle) {
+          reorderToggle.focus();
+        }
+      } else {
+        enterReorganizeMode();
+      }
+    }
+
+    function handleReorderKeydown(event) {
+      if (event.key !== 'Escape') return;
+
+      if (dragState) {
+        finishDrag(false);
+        return;
+      }
+
+      if (isReorganizeMode) {
+        exitReorganizeMode(true);
+        if (reorderToggle) {
+          reorderToggle.focus();
+        }
+      }
+    }
 
     function initDashboardReordering() {
-        if (!appContent) return;
-        applyStoredCardOrder();
-        persistCardOrder();
-        appContent.addEventListener('pointerdown', handleCardPointerDown); // Listen on the container
-        document.querySelectorAll('.close-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                appContent.classList.remove('reorganize-mode');
-                isReorganizeMode = false;
-            });
+      if (!appContent) return;
+      applyStoredCardOrder();
+      persistCardOrder();
+      updateReorderTexts();
+
+      getDashboardCards().forEach(card => {
+        const handle = card.querySelector('.drag-handle');
+        if (handle) {
+          handle.setAttribute('role', 'button');
+          handle.setAttribute('tabindex', '-1');
+          handle.addEventListener('pointerdown', handleHandlePointerDown);
+        }
+      });
+
+      if (reorderToggle) {
+        reorderToggle.addEventListener('click', toggleReorderMode);
+      }
+
+      document.addEventListener('keydown', handleReorderKeydown);
+
+      document.querySelectorAll('.close-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          exitReorganizeMode(true);
+          if (reorderToggle) {
+            reorderToggle.focus();
+          }
         });
+      });
     }
 
     // Auth Elements
@@ -968,6 +1022,9 @@
         growthTitle: 'Room to grow',
         growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
         recentLogTitle: 'Recent log',
+        organizeTiles: 'Organize tiles',
+        doneOrganizing: 'Done',
+        reorderHint: 'Drag tiles to reorder. Tap Done when you’re finished.',
         logSearchLabel: 'Search log',
         logSearchPlaceholder: 'Search entries',
         filterGroupLabel: 'Filters',
@@ -1068,6 +1125,9 @@
         growthTitle: 'Platz für mehr',
         growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
         recentLogTitle: 'Aktuelles Protokoll',
+        organizeTiles: 'Kacheln anordnen',
+        doneOrganizing: 'Fertig',
+        reorderHint: 'Ziehe die Kacheln, um sie neu anzuordnen. Tippe auf „Fertig“, wenn du zufrieden bist.',
         logSearchLabel: 'Protokoll durchsuchen',
         logSearchPlaceholder: 'Einträge durchsuchen',
         filterGroupLabel: 'Filter',
@@ -1192,6 +1252,57 @@
       return (dictionary && dictionary[key]) || translations.en[key] || '';
     };
 
+    function updateReorderTexts() {
+      if (!reorderToggle) return;
+      const labelKey = isReorganizeMode ? 'doneOrganizing' : 'organizeTiles';
+      const label = getTranslation(labelKey);
+      reorderToggle.textContent = label;
+      reorderToggle.setAttribute('aria-pressed', isReorganizeMode ? 'true' : 'false');
+      reorderToggle.setAttribute('aria-label', label);
+      if (reorderHint) {
+        reorderHint.hidden = !isReorganizeMode;
+        reorderHint.textContent = getTranslation('reorderHint');
+      }
+    }
+
+    function enterReorganizeMode() {
+      if (!appContent || isReorganizeMode) return;
+      isReorganizeMode = true;
+      appContent.classList.add('reorganize-mode', 'is-reordering');
+      getDashboardCards().forEach(card => {
+        const handle = card.querySelector('.drag-handle');
+        if (handle) {
+          handle.setAttribute('tabindex', '0');
+        }
+      });
+      updateReorderTexts();
+    }
+
+    function exitReorganizeMode(commit = true) {
+      if (dragState) {
+        finishDrag(commit);
+      }
+
+      if (!appContent || !isReorganizeMode) {
+        updateReorderTexts();
+        return;
+      }
+
+      isReorganizeMode = false;
+      appContent.classList.remove('reorganize-mode', 'is-reordering');
+      getDashboardCards().forEach(card => {
+        const handle = card.querySelector('.drag-handle');
+        if (handle) {
+          handle.removeAttribute('tabindex');
+        }
+      });
+      updateReorderTexts();
+
+      if (commit) {
+        persistCardOrder();
+      }
+    }
+
     const updateAuthTexts = () => {
       const titleKey = isLoginMode ? 'loginTitle' : 'signupTitle';
       const actionKey = isLoginMode ? 'loginAction' : 'signupAction';
@@ -1233,6 +1344,7 @@
         welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
       }
 
+      updateReorderTexts();
       updateAuthTexts();
       if (latestSnapshot) renderEntries(latestSnapshot);
     };
@@ -1555,8 +1667,12 @@
       authActions.style.display = loggedIn ? 'none' : 'flex';
       userInfo.style.display = loggedIn ? 'flex' : 'none';
       authSection.style.display = 'none';
+      if (dashboardControls) {
+        dashboardControls.hidden = !loggedIn;
+      }
 
       if (loggedIn) {
+        updateReorderTexts();
         resetFilters();
         const displayName = user.displayName || user.email || '';
         const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
@@ -1569,6 +1685,7 @@
         logCollection = db.collection('users').doc(user.uid).collection('logs');
         unsubscribe = logCollection.orderBy('timestamp', 'desc').onSnapshot(renderEntries);
       } else {
+        exitReorganizeMode(false);
         userName.textContent = '';
         welcomeMessage.textContent = '';
         latestSnapshot = null;
