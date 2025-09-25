@@ -23,7 +23,6 @@
       --danger: #d9534f;    /* Muted Red */
       --info: #5bc0de;      /* Teal Blue */
       --text-0: #f7f5e6;    /* Cream White */
-      --text-1: #b9b6a3;    /* Muted Sand */
       --bg-0:#1a1a1a;        /* Dark Charcoal */
       --bg-1:#2a2a2a;        /* Lighter Charcoal */
       --card:#333333;        /* Card Background */
@@ -90,10 +89,6 @@
 
     /* Dashboard */
     .dashboard-grid{display:grid;gap:var(--sp-16);position:relative;grid-template-columns:repeat(2,minmax(0,1fr))}
-    .dashboard-controls{display:flex;flex-direction:column;gap:var(--sp-8);padding:0 var(--sp-8)}
-    .dashboard-controls[hidden]{display:none !important}
-    .dashboard-reorder-btn{align-self:flex-end}
-    .reorder-hint{margin:0;font-size:13px;color:var(--text-1)}
     .dashboard-card{position:relative;transition:transform .18s ease,box-shadow .18s ease;touch-action:pan-y;display:flex;flex-direction:column;gap:var(--sp-12)}
     .reorganize-mode .dashboard-card{cursor:grab}
     .reorganize-mode .dashboard-card:active{cursor:grabbing}
@@ -102,7 +97,6 @@
     .dashboard-card.is-dragging{opacity:.92;cursor:grabbing;box-shadow:0 18px 40px rgba(0,0,0,.5)}
     .dashboard-grid.is-reordering .dashboard-card{transition:transform .18s ease}
     .dashboard-placeholder{border:1px dashed var(--border);border-radius:var(--r-12);background:rgba(255,255,255,.04);min-height:120px;margin:0}
-    .dashboard-placeholder:not(.span-2){aspect-ratio:1/1;}
     .dashboard-placeholder.span-2{grid-column:1 / -1}
     body.card-dragging{user-select:none}
     .span-2{grid-column:1 / -1}
@@ -201,10 +195,6 @@
       animation: wobble 0.2s ease-in-out infinite;
     }
 
-    .reorganize-mode .dashboard-card:not(.is-dragging) > *:not(.drag-handle):not(.close-btn) {
-      pointer-events: none;
-    }
-
     .close-btn {
       position: absolute;
       top: -10px;
@@ -227,7 +217,7 @@
     .reorganize-mode .close-btn {
       display: block;
     }
-    
+
     .drag-handle {
       position: absolute;
       top: 10px;
@@ -256,20 +246,14 @@
       cursor: grabbing;
     }
 
-    .drag-handle {
-      touch-action: none;
-    }
-
     .drag-handle:focus-visible {
       outline: none;
       box-shadow: 0 0 0 3px rgba(242,197,109,.35);
     }
 
-
     @media (max-width:720px){
       .dashboard-grid{grid-template-columns:minmax(0,1fr)}
       .dashboard-card:not(.span-2){aspect-ratio:auto;min-height:220px}
-      .dashboard-reorder-btn{align-self:stretch}
     }
 
     @media (prefers-reduced-motion:reduce){.install-banner,.sidebar, .reorganize-mode .dashboard-card{transition:none; animation: none;}.btn:active{transform:none}}
@@ -297,13 +281,6 @@
         <li><button class="sb-item-btn" data-action="account"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6z"/></svg><span data-i18n="account">Account</span></button></li>
         <li><button class="sb-item-btn" data-action="logout" id="logout-btn"><svg class="sb-item-icon" viewBox="0 0 24 24"><path fill="currentColor" d="M16 17v-3H9v-2h7V9l4 4-4 4zm-5-3H4V5h7V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h7v-2z"></path></svg><span data-i18n="logout">Log Out</span></button></li>
       </ul>
-      <div id="sidebar-manifesto" class="sb-manifesto" hidden>
-        <p class="manifesto-paragraph" data-i18n="manifestoP1">McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP2">This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP3">Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP4">We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.</p>
-        <p class="manifesto-paragraph" data-i18n="manifestoP5">The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.</p>
-      </div>
     </div>
   </aside>
 
