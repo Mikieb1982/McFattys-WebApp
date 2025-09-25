@@ -49,7 +49,11 @@ const pwaInstallBtn = document.getElementById('pwa-install');
 const menuOpenBtn = document.getElementById('menu-open');
 const menuCloseBtn = document.getElementById('menu-close');
 const logoutBtn = document.getElementById('logout-btn');
-const logoutBtnMain.addEventListener('click', signOut);
+const logoutBtnMain = document.getElementById('logout-btn-main');
+logoutBtn.addEventListener('click', signOut);
+if (logoutBtnMain) {
+  logoutBtnMain.addEventListener('click', signOut);
+}
 const userInfo = document.getElementById('user-info');
 const userName = document.getElementById('user-name');
 const exportBtn = document.getElementById('export-button');
