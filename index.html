@@ -23,6 +23,7 @@
       --danger: #d9534f;    /* Muted Red */
       --info: #5bc0de;      /* Teal Blue */
       --text-0: #f7f5e6;    /* Cream White */
+      --text-1: #b9b6a3;    /* Muted Sand */
       --bg-0:#1a1a1a;        /* Dark Charcoal */
       --bg-1:#2a2a2a;        /* Lighter Charcoal */
       --card:#333333;        /* Card Background */
@@ -249,6 +250,8 @@
 
 
     @media (max-width:720px){
+      .dashboard-grid{grid-template-columns:minmax(0,1fr)}
+      .dashboard-card:not(.span-2){aspect-ratio:auto;min-height:220px}
       .dashboard-reorder-btn{align-self:stretch}
     }
 
