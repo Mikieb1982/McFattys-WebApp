@@ -1,4 +1,31 @@
+// app.js (ES module)
 import { renderTiles, initTileSystem } from './tiles.js';
+
+// Firebase v9+ (modular)
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut as fbSignOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {
+  getFirestore,
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  getDocs,
+  query,
+  orderBy,
+  serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC1qN3ksU0uYhXRXYNmYlmGX0iyUa-BJFQ",
@@ -10,16 +37,17 @@ const firebaseConfig = {
   measurementId: "G-KQX4BQ71VK"
 };
 
-const app = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Constants
 const MAX_RECENT_ROWS = 10;
 
-const appContent = document.getElementById('app-content');
-renderTiles(appContent);
-
-let logCollection;
-let unsubscribe;
+// State
+let logCollectionRef = null;
+let unsubscribe = null;
 let lang = 'en';
 let deferredInstallPrompt = null;
 let installBannerTimeout;
@@ -29,76 +57,17 @@ let allEntries = [];
 let activeFilter = 'all';
 let searchTerm = '';
 
-// Elements
-const nameInput = document.getElementById('food-name');
-const dairyCheckbox = document.getElementById('contains-dairy');
-const outsideMealsCheckbox = document.getElementById('outside-meals');
-const addBtn = document.getElementById('add-button');
-const tbody = document.getElementById('log-body');
-const emptyState = document.getElementById('empty-state');
-const installBanner = document.getElementById('install-banner');
-const sidebar = document.getElementById('sidebar');
-const scrim = document.getElementById('scrim');
-const welcomeMessage = document.getElementById('welcome-message');
-const landingPage = document.getElementById('landing-page');
-const donateBtn = document.getElementById('donate-button');
-const langToggle = document.getElementById('lang-toggle');
-const switchEl = document.getElementById('switch');
-const googleSigninBtn = document.getElementById('google-signin');
-const pwaInstallBtn = document.getElementById('pwa-install');
-const menuOpenBtn = document.getElementById('menu-open');
-const menuCloseBtn = document.getElementById('menu-close');
-const logoutBtn = document.getElementById('logout-btn');
-const logoutBtnMain = document.getElementById('logout-btn-main');
-const userInfo = document.getElementById('user-info');
-const userName = document.getElementById('user-name');
-const exportBtn = document.getElementById('export-button');
-const statTotal = document.getElementById('stat-total');
-const statDairy = document.getElementById('stat-dairy');
-const statOutside = document.getElementById('stat-outside');
-const statLast = document.getElementById('stat-last');
-const statLastSubtext = document.getElementById('stat-last-subtext');
-const logSearchInput = document.getElementById('log-search');
-const noResultsMessage = document.getElementById('no-results');
-const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
-const dashboardControls = document.getElementById('dashboard-controls');
-const reorderToggle = document.getElementById('reorder-toggle');
-const reorderHint = document.getElementById('reorder-hint');
-const themeToggle = document.getElementById('theme-toggle');
-const themeToggleIcon = document.getElementById('theme-toggle-icon');
-const themeToggleLabel = document.getElementById('theme-toggle-label');
-const themeColorMeta = document.getElementById('theme-color');
-
-
-// Modals / legal links
-const manifestoModal = document.getElementById('manifesto-modal');
-const closeManifestoBtn = document.getElementById('close-manifesto');
-const historyModal = document.getElementById('history-modal');
-const closeHistoryBtn = document.getElementById('close-history');
-const historyContent = document.getElementById('history-content');
-const legalModal = document.getElementById('legal-modal');
-const legalTitle = document.getElementById('legal-title');
-const legalContent = document.getElementById('legal-content');
-const closeLegalBtn = document.getElementById('close-legal');
-const impressumLink = document.getElementById('impressum-link');
-const privacyLink = document.getElementById('privacy-link');
-const instructionsModal = document.getElementById('instructions-modal');
-const closeInstructionsBtn = document.getElementById('close-instructions');
-const logoCard = document.getElementById('logo-card');
-
-// Auth Elements
-const authSection = document.getElementById('auth-section');
-const loginBtn = document.getElementById('login-btn');
-const signupBtn = document.getElementById('signup-btn');
-const authSubmit = document.getElementById('auth-submit');
-const authActions = document.getElementById('auth-actions');
-const signupFields = document.getElementById('signup-fields');
-const authTitle = document.getElementById('auth-title');
-const authToggle = document.getElementById('auth-toggle');
-const authEmail = document.getElementById('auth-email');
-const authPassword = document.getElementById('auth-password');
-const authUsername = document.getElementById('auth-username');
-const authRePassword = document.getElementById('auth-re-password');
+// Element refs (assigned on DOMContentLoaded)
+let appContent, nameInput, dairyCheckbox, outsideMealsCheckbox, addBtn, tbody, emptyState, installBanner;
+let sidebar, scrim, welcomeMessage, landingPage, donateBtn, langToggle, switchEl, googleSigninBtn, pwaInstallBtn;
+let menuOpenBtn, menuCloseBtn, logoutBtn, logoutBtnMain, userInfo, userName, exportBtn;
+let statTotal, statDairy, statOutside, statLast, statLastSubtext, logSearchInput, noResultsMessage, filterButtons;
+let dashboardControls, reorderToggle, reorderHint, themeToggle, themeToggleIcon, themeToggleLabel, themeColorMeta;
+let manifestoModal, closeManifestoBtn, historyModal, closeHistoryBtn, historyContent;
+let legalModal, legalTitle, legalContent, closeLegalBtn, impressumLink, privacyLink;
+let instructionsModal, closeInstructionsBtn, logoCard, manifestoCard;
+let authSection, loginBtn, signupBtn, authSubmit, authActions, signupFields, authTitle, authToggle;
+let authEmail, authPassword, authUsername, authRePassword;
 
 // --- Translations ---
 const translations = {
@@ -353,40 +322,22 @@ const legalDocs = {
   }
 };
 
+// i18n helpers
 const getTranslation = (key) => {
   const dictionary = translations[lang] || translations.en;
   return (dictionary && dictionary[key]) || translations.en[key] || '';
 };
 
-const tileSystem = initTileSystem({
-  container: appContent,
-  reorderToggle,
-  reorderHint,
-  getTranslation
-});
-
+// Theme
 const THEME_STORAGE_KEY = 'preferred-theme';
-const themeColors = {
-  light: '#fdfaf3',
-  dark: '#1a1a1a'
-};
+const themeColors = { light: '#fdfaf3', dark: '#1a1a1a' };
 
 const getStoredTheme = () => {
-  try {
-    return localStorage.getItem(THEME_STORAGE_KEY);
-  } catch (error) {
-    return null;
-  }
+  try { return localStorage.getItem(THEME_STORAGE_KEY); } catch { return null; }
 };
-
 const storeTheme = (value) => {
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, value);
-  } catch (error) {
-    // ignore storage failures
-  }
+  try { localStorage.setItem(THEME_STORAGE_KEY, value); } catch { /* ignore */ }
 };
-
 const applyTheme = (theme) => {
   const normalized = theme === 'dark' ? 'dark' : 'light';
   document.documentElement.dataset.theme = normalized;
@@ -399,24 +350,15 @@ const applyTheme = (theme) => {
     themeToggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
     themeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
   }
-  if (themeToggleIcon) {
-    themeToggleIcon.textContent = isDark ? '☀️' : '🌙';
-  }
-  if (themeToggleLabel) {
-    themeToggleLabel.textContent = isDark ? 'Enable light mode' : 'Enable dark mode';
-  }
+  if (themeToggleIcon) themeToggleIcon.textContent = isDark ? '☀️' : '🌙';
+  if (themeToggleLabel) themeToggleLabel.textContent = isDark ? 'Enable light mode' : 'Enable dark mode';
 };
-
 const initializeTheme = () => {
   const stored = getStoredTheme();
-  if (stored === 'light' || stored === 'dark') {
-    applyTheme(stored);
-    return;
-  }
+  if (stored === 'light' || stored === 'dark') { applyTheme(stored); return; }
   const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   applyTheme(prefersDark ? 'dark' : 'light');
 };
-
 const toggleTheme = () => {
   const current = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
   const next = current === 'dark' ? 'light' : 'dark';
@@ -424,29 +366,18 @@ const toggleTheme = () => {
   storeTheme(next);
 };
 
-initializeTheme();
-
-if (themeToggle) {
-  themeToggle.addEventListener('click', toggleTheme);
-  themeToggle.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      toggleTheme();
-    }
-  });
-}
-
+// UI updates
 const updateAuthTexts = () => {
   const titleKey = isLoginMode ? 'loginTitle' : 'signupTitle';
   const actionKey = isLoginMode ? 'loginAction' : 'signupAction';
   const toggleKey = isLoginMode ? 'authToggleToSignup' : 'authToggleToLogin';
-  authTitle.textContent = getTranslation(titleKey);
-  authSubmit.textContent = getTranslation(actionKey);
-  authToggle.textContent = getTranslation(toggleKey);
+  if (authTitle) authTitle.textContent = getTranslation(titleKey);
+  if (authSubmit) authSubmit.textContent = getTranslation(actionKey);
+  if (authToggle) authToggle.textContent = getTranslation(toggleKey);
 };
 
 const showInstallBanner = (message) => {
-  if (!message) return;
+  if (!message || !installBanner) return;
   installBanner.textContent = message;
   installBanner.classList.add('show');
   clearTimeout(installBannerTimeout);
@@ -455,8 +386,8 @@ const showInstallBanner = (message) => {
 
 const setLanguage = (newLang) => {
   lang = newLang;
-  langToggle.setAttribute('aria-pressed', newLang === 'de' ? 'true' : 'false');
-  switchEl.classList.toggle('active', newLang === 'de');
+  if (langToggle) langToggle.setAttribute('aria-pressed', newLang === 'de' ? 'true' : 'false');
+  if (switchEl) switchEl.classList.toggle('active', newLang === 'de');
   document.documentElement.lang = newLang;
 
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -469,7 +400,7 @@ const setLanguage = (newLang) => {
   });
 
   const user = auth.currentUser;
-  if (user) {
+  if (user && welcomeMessage) {
     const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
     const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
     const welcomeText = getTranslation(welcomeTextKey);
@@ -477,38 +408,18 @@ const setLanguage = (newLang) => {
     welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
   }
 
-  tileSystem.refreshLabels();
+  if (tileSystem) tileSystem.refreshLabels();
   updateAuthTexts();
   if (latestSnapshot) renderEntries(latestSnapshot);
 };
 
-const addEntry = () => {
-  const name = nameInput.value.trim();
-  if (!name || !logCollection) return;
-
-  logCollection.add({
-    name,
-    dairy: dairyCheckbox.checked,
-    outsideMeals: outsideMealsCheckbox.checked,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(() => {
-    nameInput.value = '';
-    dairyCheckbox.checked = false;
-    outsideMealsCheckbox.checked = false;
-    nameInput.focus();
-  }).catch((error) => {
-    console.error('Error adding document: ', error);
-    alert(getTranslation('addError'));
-  });
-};
-
+// Firestore helpers
 const getEntryDate = (entry) => {
   if (entry && entry.timestamp && typeof entry.timestamp.toDate === 'function') {
     return entry.timestamp.toDate();
   }
   return null;
 };
-
 const isSameDay = (dateA, dateB) => {
   if (!dateA || !dateB) return false;
   return dateA.getFullYear() === dateB.getFullYear() &&
@@ -516,23 +427,20 @@ const isSameDay = (dateA, dateB) => {
     dateA.getDate() === dateB.getDate();
 };
 
+// Stats + rendering
 const updateStats = () => {
   if (!statTotal || !statDairy || !statOutside || !statLast || !statLastSubtext) return;
-
   const today = new Date();
   const locale = lang === 'de' ? 'de-DE' : 'en-US';
-  const entriesToday = allEntries.filter(entry => {
-    const date = getEntryDate(entry);
-    return isSameDay(date, today);
-  });
+  const entriesToday = allEntries.filter(entry => isSameDay(getEntryDate(entry), today));
   const dairyToday = entriesToday.filter(entry => entry.dairy).length;
   const outsideMealsToday = entriesToday.filter(entry => entry.outsideMeals).length;
   const latestEntry = allEntries.find(entry => getEntryDate(entry));
   const latestDate = latestEntry ? getEntryDate(latestEntry) : null;
 
-  statTotal.textContent = entriesToday.length;
-  statDairy.textContent = dairyToday;
-  statOutside.textContent = outsideMealsToday;
+  statTotal.textContent = String(entriesToday.length);
+  statDairy.textContent = String(dairyToday);
+  statOutside.textContent = String(outsideMealsToday);
 
   if (latestDate) {
     statLast.textContent = latestDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
@@ -544,8 +452,8 @@ const updateStats = () => {
 };
 
 const renderRows = (entries) => {
+  if (!tbody) return;
   tbody.innerHTML = '';
-
   entries.forEach(entry => {
     const tr = document.createElement('tr');
 
@@ -599,16 +507,6 @@ const renderRows = (entries) => {
   });
 };
 
-const resetFilters = () => {
-  activeFilter = 'all';
-  searchTerm = '';
-  if (logSearchInput) {
-    logSearchInput.value = '';
-  }
-  filterButtons.forEach(btn => btn.classList.toggle('is-active', btn.dataset.filter === 'all'));
-  toggleNoResults(false);
-};
-
 const toggleNoResults = (show) => {
   if (!noResultsMessage) return;
   noResultsMessage.style.display = show ? 'block' : 'none';
@@ -616,17 +514,14 @@ const toggleNoResults = (show) => {
 
 const applyFilters = () => {
   if (!allEntries.length) {
-    tbody.innerHTML = '';
+    if (tbody) tbody.innerHTML = '';
     toggleNoResults(false);
     return;
   }
-
   let filtered = [...allEntries];
-
   if (searchTerm) {
     filtered = filtered.filter(entry => (entry.name || '').toLowerCase().includes(searchTerm));
   }
-
   if (activeFilter === 'dairy') {
     filtered = filtered.filter(entry => entry.dairy);
   } else if (activeFilter === 'non-dairy') {
@@ -636,52 +531,47 @@ const applyFilters = () => {
   } else if (activeFilter === 'during-meals') {
     filtered = filtered.filter(entry => !entry.outsideMeals);
   }
-
   if (!filtered.length) {
-    tbody.innerHTML = '';
+    if (tbody) tbody.innerHTML = '';
     toggleNoResults(true);
     return;
   }
-
   toggleNoResults(false);
   renderRows(filtered.slice(0, MAX_RECENT_ROWS));
 };
 
 const renderEntries = (snapshot) => {
   latestSnapshot = snapshot;
-  allEntries = snapshot.docs.map(doc => {
-    const data = doc.data();
+  allEntries = snapshot.docs.map(docSnap => {
+    const data = docSnap.data();
     return {
-      id: doc.id,
+      id: docSnap.id,
       ...data,
       dairy: Boolean(data.dairy),
       outsideMeals: Boolean(data.outsideMeals)
     };
   });
-
   updateStats();
-
   if (!allEntries.length) {
-    tbody.innerHTML = '';
-    emptyState.style.display = 'block';
+    if (tbody) tbody.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
     toggleNoResults(false);
     return;
   }
-
-  emptyState.style.display = 'none';
+  if (emptyState) emptyState.style.display = 'none';
   applyFilters();
 };
 
 const renderHistory = (snapshot) => {
+  if (!historyContent) return;
   historyContent.innerHTML = '';
   if (!snapshot || snapshot.empty) {
     historyContent.innerHTML = `<p>${getTranslation('emptyState')}</p>`;
     return;
   }
-
   const entriesByDate = {};
-  snapshot.forEach(doc => {
-    const entry = doc.data();
+  snapshot.forEach(docSnap => {
+    const entry = docSnap.data();
     if (entry.timestamp && typeof entry.timestamp.toDate === 'function') {
       const date = entry.timestamp.toDate();
       const key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
@@ -696,7 +586,7 @@ const renderHistory = (snapshot) => {
 
     html += `<h3>${display}</h3>`;
     html += `<table class="table" style="margin-bottom:20px;"><thead><tr><th>${getTranslation('thItem')}</th><th>${getTranslation('thTime')}</th><th>${getTranslation('thDairy')}</th><th>${getTranslation('thOutsideMeals')}</th></tr></thead><tbody>`;
-    entriesByDate[key].sort((a,b)=>b.timestamp.seconds - a.timestamp.seconds).forEach(entry=>{
+    entriesByDate[key].sort((a,b)=> (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)).forEach(entry=>{
       const time = entry.timestamp.toDate().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
       const hasDairy = Boolean(entry.dairy);
       const dairyText = hasDairy ? getTranslation('yes') : getTranslation('no');
@@ -704,7 +594,8 @@ const renderHistory = (snapshot) => {
       const outsideValue = Boolean(entry.outsideMeals);
       const outsideText = outsideValue ? getTranslation('yes') : getTranslation('no');
       const outsideClass = outsideValue ? 'pill-yes' : 'pill-no';
-      html += `<tr><td>${(entry.name || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td><td>${time}</td><td><span class="pill ${pillClass}">${dairyText}</span></td><td><span class="pill ${outsideClass}">${outsideText}</span></td></tr>`;
+      const safeName = (entry.name || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      html += `<tr><td>${safeName}</td><td>${time}</td><td><span class="pill ${pillClass}">${dairyText}</span></td><td><span class="pill ${outsideClass}">${outsideText}</span></td></tr>`;
     });
     html += `</tbody></table>`;
   });
@@ -712,19 +603,41 @@ const renderHistory = (snapshot) => {
   historyContent.innerHTML = html || `<p>${getTranslation('emptyState')}</p>`;
 };
 
-const handleLogAction = (event) => {
-  if (!logCollection) return;
+// CRUD
+const addEntry = async () => {
+  const name = (nameInput?.value || '').trim();
+  if (!name || !logCollectionRef) return;
+  try {
+    await addDoc(logCollectionRef, {
+      name,
+      dairy: !!dairyCheckbox?.checked,
+      outsideMeals: !!outsideMealsCheckbox?.checked,
+      timestamp: serverTimestamp()
+    });
+    if (nameInput) nameInput.value = '';
+    if (dairyCheckbox) dairyCheckbox.checked = false;
+    if (outsideMealsCheckbox) outsideMealsCheckbox.checked = false;
+    nameInput?.focus();
+  } catch (error) {
+    console.error('Error adding document: ', error);
+    alert(getTranslation('addError'));
+  }
+};
+
+const handleLogAction = async (event) => {
+  if (!logCollectionRef) return;
   const button = event.target.closest('button');
   if (!button) return;
-
   const { id } = button.dataset;
   if (!id) return;
 
   if (button.classList.contains('remove-entry')) {
-    logCollection.doc(id).delete().catch(error => {
+    try {
+      await deleteDoc(doc(logCollectionRef, id));
+    } catch (error) {
       console.error('Error removing document: ', error);
       alert(getTranslation('deleteError'));
-    });
+    }
     return;
   }
 
@@ -732,118 +645,75 @@ const handleLogAction = (event) => {
     const currentName = button.closest('tr')?.querySelector('td')?.textContent || '';
     const newName = prompt(getTranslation('editBtn'), currentName);
     if (newName && newName.trim() && newName.trim() !== currentName) {
-      logCollection.doc(id).update({ name: newName.trim() }).catch(error => {
+      try {
+        await updateDoc(doc(logCollectionRef, id), { name: newName.trim() });
+      } catch (error) {
         console.error('Error updating document:', error);
         alert(getTranslation('updateError'));
-      });
+      }
     }
   }
 };
 
-const exportToCsv = () => {
-  if (!logCollection) return;
+const exportToCsv = async () => {
+  if (!logCollectionRef) return;
+  const header = [
+    getTranslation('csvHeaderDate'),
+    getTranslation('csvHeaderItem'),
+    getTranslation('csvHeaderDairy'),
+    getTranslation('csvHeaderOutsideMeals')
+  ].join(',');
+  let csvContent = "data:text/csv;charset=utf-8," + header + "\n";
+  const locale = lang === 'de' ? 'de-DE' : 'en-US';
 
-  logCollection.orderBy('timestamp', 'desc').get().then(snapshot => {
-    const header = [
-      getTranslation('csvHeaderDate'),
-      getTranslation('csvHeaderItem'),
-      getTranslation('csvHeaderDairy'),
-      getTranslation('csvHeaderOutsideMeals')
+  const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
+  const snap = await getDocs(q);
+  snap.forEach(docSnap => {
+    const entry = docSnap.data();
+    const date = entry.timestamp ? entry.timestamp.toDate().toLocaleDateString(locale) : getTranslation('notAvailable');
+    const safeName = `"${(entry.name || '').replace(/"/g, '""')}"`;
+    const hasDairy = Boolean(entry.dairy);
+    const outsideValue = Boolean(entry.outsideMeals);
+    const row = [
+      date,
+      safeName,
+      hasDairy ? getTranslation('csvYes') : getTranslation('csvNo'),
+      outsideValue ? getTranslation('csvYes') : getTranslation('csvNo')
     ].join(',');
-    let csvContent = "data:text/csv;charset=utf-8," + header + "\n";
-    const locale = lang === 'de' ? 'de-DE' : 'en-US';
-
-    snapshot.forEach(doc => {
-      const entry = doc.data();
-      const date = entry.timestamp ? entry.timestamp.toDate().toLocaleDateString(locale) : getTranslation('notAvailable');
-      const safeName = `"${(entry.name || '').replace(/"/g, '""')}"`;
-      const hasDairy = Boolean(entry.dairy);
-      const outsideValue = Boolean(entry.outsideMeals);
-      const row = [
-        date,
-        safeName,
-        hasDairy ? getTranslation('csvYes') : getTranslation('csvNo'),
-        outsideValue ? getTranslation('csvYes') : getTranslation('csvNo')
-      ].join(',');
-      csvContent += row + "\n";
-    });
-
-    const link = document.createElement('a');
-    link.href = encodeURI(csvContent);
-    link.download = 'mcfattys_log.csv';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    csvContent += row + "\n";
   });
+
+  const link = document.createElement('a');
+  link.href = encodeURI(csvContent);
+  link.download = 'mcfattys_log.csv';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
 
+// Auth helpers
 const resetAuthFields = () => {
-  authEmail.value = '';
-  authPassword.value = '';
-  authUsername.value = '';
-  authRePassword.value = '';
+  if (authEmail) authEmail.value = '';
+  if (authPassword) authPassword.value = '';
+  if (authUsername) authUsername.value = '';
+  if (authRePassword) authRePassword.value = '';
 };
-
 const setAuthMode = (isLogin) => {
   isLoginMode = isLogin;
-  signupFields.style.display = isLogin ? 'none' : 'block';
+  if (signupFields) signupFields.style.display = isLogin ? 'none' : 'block';
   updateAuthTexts();
 };
-
-auth.onAuthStateChanged(user => {
-  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-
-  const loggedIn = !!user;
-
-  landingPage.style.display = loggedIn ? 'none' : 'grid';
-  appContent.style.display = loggedIn ? 'grid' : 'none';
-  authActions.style.display = loggedIn ? 'none' : 'flex';
-  userInfo.style.display = loggedIn ? 'flex' : 'none';
-  authSection.style.display = 'none';
-  if (dashboardControls) {
-    dashboardControls.hidden = !loggedIn;
-  }
-
-  if (loggedIn) {
-    tileSystem.refreshLabels();
-    resetFilters();
-    const displayName = user.displayName || user.email || '';
-    const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
-    const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
-    const welcomeText = getTranslation(welcomeTextKey);
-    welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
-
-    userName.textContent = displayName;
-
-    logCollection = db.collection('users').doc(user.uid).collection('logs');
-    unsubscribe = logCollection.orderBy('timestamp', 'desc').onSnapshot(renderEntries);
-  } else {
-    tileSystem.exitReorganizeMode(false);
-    userName.textContent = '';
-    welcomeMessage.textContent = '';
-    latestSnapshot = null;
-    tbody.innerHTML = '';
-    emptyState.style.display = 'block';
-    logCollection = null;
-    allEntries = [];
-    resetFilters();
-    updateStats();
-    setAuthMode(true);
-    resetAuthFields();
-  }
-});
-
 const handleAuthSubmit = async () => {
-  const email = authEmail.value.trim();
-  const password = authPassword.value.trim();
+  const email = (authEmail?.value || '').trim();
+  const password = (authPassword?.value || '').trim();
 
   if (!email || !password) {
     alert(getTranslation('authMissingFields'));
     return;
   }
   if (!isLoginMode) {
-    const username = authUsername.value.trim();
-    const confirmPassword = authRePassword.value.trim();
+    const username = (authUsername?.value || '').trim();
+    const confirmPassword = (authRePassword?.value || '').trim();
     if (!username) {
       alert(getTranslation('authMissingUsername'));
       return;
@@ -854,183 +724,343 @@ const handleAuthSubmit = async () => {
     }
   }
 
-  authSubmit.disabled = true;
+  if (authSubmit) authSubmit.disabled = true;
   try {
     if (isLoginMode) {
-      await auth.signInWithEmailAndPassword(email, password);
+      await signInWithEmailAndPassword(auth, email, password);
     } else {
-      const username = authUsername.value.trim();
-      const { user: newUser } = await auth.createUserWithEmailAndPassword(email, password);
-      await newUser.updateProfile({ displayName: username });
-      await db.collection('users').doc(newUser.uid).set({
-        displayName: username,
-        email,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
+      const username = (authUsername?.value || '').trim();
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: username });
+      // Store minimal profile doc (optional): Firestore security rules should protect this.
+      // You can add a users collection if desired.
     }
-    authSection.style.display = 'none';
+    if (authSection) authSection.style.display = 'none';
     resetAuthFields();
   } catch (error) {
     alert(`${getTranslation('authErrorPrefix')} ${error.message}`);
   } finally {
-    authSubmit.disabled = false;
+    if (authSubmit) authSubmit.disabled = false;
   }
-};
-
-// Helpers
-const signOut = (event) => {
-  if (event) {
-    event.preventDefault();
-  }
-  auth.signOut().catch((error) => {
-    console.error('Error signing out:', error);
-  });
 };
 const toggleLanguage = () => setLanguage(lang === 'en' ? 'de' : 'en');
 
-// Event Listeners
-addBtn.addEventListener('click', addEntry);
-tbody.addEventListener('click', handleLogAction);
-exportBtn.addEventListener('click', exportToCsv);
+// Tile system (initialized after DOM loads)
+let tileSystem = null;
 
-if (logSearchInput) {
-  logSearchInput.addEventListener('input', (event) => {
-    searchTerm = event.target.value.trim().toLowerCase();
-    applyFilters();
-  });
-}
-
-filterButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    const { filter } = button.dataset;
-    if (!filter) return;
-    activeFilter = filter;
-    filterButtons.forEach(btn => btn.classList.toggle('is-active', btn === button));
-    applyFilters();
-  });
-});
-
-loginBtn.addEventListener('click', () => { resetAuthFields(); authSection.style.display = 'block'; setAuthMode(true); });
-signupBtn.addEventListener('click', () => { resetAuthFields(); authSection.style.display = 'block'; setAuthMode(false); });
-authToggle.addEventListener('click', () => setAuthMode(!isLoginMode));
-authSubmit.addEventListener('click', handleAuthSubmit);
-
-googleSigninBtn.addEventListener('click', () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => {
-  alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
-  console.error('Google sign-in error:', err);
-}));
-
-if (logoutBtn) {
-  logoutBtn.addEventListener('click', signOut);
-}
-
-if (logoutBtnMain) {
-  logoutBtnMain.addEventListener('click', signOut);
-}
-
-donateBtn.addEventListener('click', () => {
-  const w = window.open('https://www.paypal.com/donate', '_blank');
-  if (w) w.opener = null;
-});
-
-langToggle.addEventListener('click', toggleLanguage);
-langToggle.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault();
-    toggleLanguage();
+// DOMContentLoaded: wire everything
+document.addEventListener('DOMContentLoaded', () => {
+  // Core containers
+  appContent = document.getElementById('app-content');
+  if (appContent) {
+    renderTiles(appContent);
   }
-});
 
-menuOpenBtn.addEventListener('click', () => { sidebar.classList.add('open'); scrim.classList.add('show'); });
-menuCloseBtn.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
-scrim.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
+  // Elements
+  nameInput = document.getElementById('food-name');
+  dairyCheckbox = document.getElementById('contains-dairy');
+  outsideMealsCheckbox = document.getElementById('outside-meals');
+  addBtn = document.getElementById('add-button');
+  tbody = document.getElementById('log-body');
+  emptyState = document.getElementById('empty-state');
+  installBanner = document.getElementById('install-banner');
+  sidebar = document.getElementById('sidebar');
+  scrim = document.getElementById('scrim');
+  welcomeMessage = document.getElementById('welcome-message');
+  landingPage = document.getElementById('landing-page');
+  donateBtn = document.getElementById('donate-button');
+  langToggle = document.getElementById('lang-toggle');
+  switchEl = document.getElementById('switch');
+  googleSigninBtn = document.getElementById('google-signin');
+  pwaInstallBtn = document.getElementById('pwa-install');
+  menuOpenBtn = document.getElementById('menu-open');
+  menuCloseBtn = document.getElementById('menu-close');
+  logoutBtn = document.getElementById('logout-btn');
+  logoutBtnMain = document.getElementById('logout-btn-main');
+  userInfo = document.getElementById('user-info');
+  userName = document.getElementById('user-name');
+  exportBtn = document.getElementById('export-button');
+  statTotal = document.getElementById('stat-total');
+  statDairy = document.getElementById('stat-dairy');
+  statOutside = document.getElementById('stat-outside');
+  statLast = document.getElementById('stat-last');
+  statLastSubtext = document.getElementById('stat-last-subtext');
+  logSearchInput = document.getElementById('log-search');
+  noResultsMessage = document.getElementById('no-results');
+  filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
+  dashboardControls = document.getElementById('dashboard-controls');
+  reorderToggle = document.getElementById('reorder-toggle');
+  reorderHint = document.getElementById('reorder-hint');
+  themeToggle = document.getElementById('theme-toggle');
+  themeToggleIcon = document.getElementById('theme-toggle-icon');
+  themeToggleLabel = document.getElementById('theme-toggle-label');
+  themeColorMeta = document.getElementById('theme-color');
 
-// Sidebar actions -> modals
-sidebar.addEventListener('click', (event) => {
-  const button = event.target.closest('.sb-item-btn');
-  if (!button) return;
-  const action = button.dataset.action;
+  // Modals / legal links
+  manifestoModal = document.getElementById('manifesto-modal');
+  closeManifestoBtn = document.getElementById('close-manifesto');
+  historyModal = document.getElementById('history-modal');
+  closeHistoryBtn = document.getElementById('close-history');
+  historyContent = document.getElementById('history-content');
+  legalModal = document.getElementById('legal-modal');
+  legalTitle = document.getElementById('legal-title');
+  legalContent = document.getElementById('legal-content');
+  closeLegalBtn = document.getElementById('close-legal');
+  impressumLink = document.getElementById('impressum-link');
+  privacyLink = document.getElementById('privacy-link');
+  instructionsModal = document.getElementById('instructions-modal');
+  closeInstructionsBtn = document.getElementById('close-instructions');
+  logoCard = document.getElementById('logo-card');
+  manifestoCard = document.getElementById('manifesto-card');
 
-  if (action === 'manifesto') {
-    manifestoModal.classList.add('show');
-  } else if (action === 'history') {
-    if (!logCollection) return;
-    logCollection.orderBy('timestamp', 'desc').get().then(renderHistory);
-    historyModal.classList.add('show');
+  // Auth Elements
+  authSection = document.getElementById('auth-section');
+  loginBtn = document.getElementById('login-btn');
+  signupBtn = document.getElementById('signup-btn');
+  authSubmit = document.getElementById('auth-submit');
+  authActions = document.getElementById('auth-actions');
+  signupFields = document.getElementById('signup-fields');
+  authTitle = document.getElementById('auth-title');
+  authToggle = document.getElementById('auth-toggle');
+  authEmail = document.getElementById('auth-email');
+  authPassword = document.getElementById('auth-password');
+  authUsername = document.getElementById('auth-username');
+  authRePassword = document.getElementById('auth-re-password');
+
+  // Init tile system
+  tileSystem = initTileSystem({
+    container: appContent,
+    reorderToggle,
+    reorderHint,
+    getTranslation
+  });
+
+  // Theme
+  initializeTheme();
+  if (themeToggle) {
+    themeToggle.addEventListener('click', toggleTheme);
+    themeToggle.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleTheme();
+      }
+    });
   }
-  // Close sidebar after action
-  sidebar.classList.remove('open');
-  scrim.classList.remove('show');
-});
 
-if (logoCard && instructionsModal) {
-  logoCard.addEventListener('click', () => {
-    if (!tileSystem.isReorganizeMode()) {
-      instructionsModal.classList.add('show');
+  // Auth state
+  onAuthStateChanged(auth, (user) => {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+
+    const loggedIn = !!user;
+    if (landingPage) landingPage.style.display = loggedIn ? 'none' : 'grid';
+    if (appContent) appContent.style.display = loggedIn ? 'grid' : 'none';
+    if (authActions) authActions.style.display = loggedIn ? 'none' : 'flex';
+    if (userInfo) userInfo.style.display = loggedIn ? 'flex' : 'none';
+    if (authSection) authSection.style.display = 'none';
+    if (dashboardControls) dashboardControls.hidden = !loggedIn;
+
+    if (loggedIn) {
+      tileSystem?.refreshLabels();
+      resetFilters();
+      const displayName = user.displayName || user.email || '';
+      const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
+      const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
+      const welcomeText = getTranslation(welcomeTextKey);
+      if (welcomeMessage) {
+        welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
+      }
+      if (userName) userName.textContent = displayName;
+
+      logCollectionRef = collection(db, 'users', user.uid, 'logs');
+      const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
+      unsubscribe = onSnapshot(q, renderEntries);
+    } else {
+      tileSystem?.exitReorganizeMode(false);
+      if (userName) userName.textContent = '';
+      if (welcomeMessage) welcomeMessage.textContent = '';
+      latestSnapshot = null;
+      if (tbody) tbody.innerHTML = '';
+      if (emptyState) emptyState.style.display = 'block';
+      logCollectionRef = null;
+      allEntries = [];
+      resetFilters();
+      updateStats();
+      setAuthMode(true);
+      resetAuthFields();
     }
   });
-}
 
-// Manifesto card click
-const manifestoCard = document.getElementById('manifesto-card');
-if (manifestoCard) {
-  manifestoCard.addEventListener('click', () => {
-    if (!tileSystem.isReorganizeMode()) {
-      manifestoModal.classList.add('show');
-    }
+  // Buttons & events
+  if (addBtn) addBtn.addEventListener('click', addEntry);
+  if (tbody) tbody.addEventListener('click', handleLogAction);
+  if (exportBtn) exportBtn.addEventListener('click', exportToCsv);
+
+  if (logSearchInput) {
+    logSearchInput.addEventListener('input', (event) => {
+      searchTerm = event.target.value.trim().toLowerCase();
+      applyFilters();
+    });
+  }
+
+  if (filterButtons?.length) {
+    filterButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const { filter } = button.dataset;
+        if (!filter) return;
+        activeFilter = filter;
+        filterButtons.forEach(btn => btn.classList.toggle('is-active', btn === button));
+        applyFilters();
+      });
+    });
+  }
+
+  if (loginBtn) loginBtn.addEventListener('click', () => { resetAuthFields(); if (authSection) authSection.style.display = 'block'; setAuthMode(true); });
+  if (signupBtn) signupBtn.addEventListener('click', () => { resetAuthFields(); if (authSection) authSection.style.display = 'block'; setAuthMode(false); });
+  if (authToggle) authToggle.addEventListener('click', () => setAuthMode(!isLoginMode));
+  if (authSubmit) authSubmit.addEventListener('click', handleAuthSubmit);
+
+  if (googleSigninBtn) {
+    googleSigninBtn.addEventListener('click', () => {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider).catch(err => {
+        alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
+        console.error('Google sign-in error:', err);
+      });
+    });
+  }
+
+  if (logoutBtn) logoutBtn.addEventListener('click', (e) => { e.preventDefault(); fbSignOut(auth).catch(console.error); });
+  if (logoutBtnMain) logoutBtnMain.addEventListener('click', (e) => { e.preventDefault(); fbSignOut(auth).catch(console.error); });
+
+  if (donateBtn) {
+    donateBtn.addEventListener('click', () => {
+      const w = window.open('https://www.paypal.com/donate', '_blank');
+      if (w) w.opener = null;
+    });
+  }
+
+  if (langToggle) {
+    langToggle.addEventListener('click', toggleLanguage);
+    langToggle.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleLanguage();
+      }
+    });
+  }
+
+  if (menuOpenBtn) menuOpenBtn.addEventListener('click', () => { sidebar?.classList.add('open'); scrim?.classList.add('show'); });
+  if (menuCloseBtn) menuCloseBtn.addEventListener('click', () => { sidebar?.classList.remove('open'); scrim?.classList.remove('show'); });
+  if (scrim) scrim.addEventListener('click', () => { sidebar?.classList.remove('open'); scrim?.classList.remove('show'); });
+
+  // Sidebar actions -> modals
+  if (sidebar) {
+    sidebar.addEventListener('click', (event) => {
+      const button = event.target.closest('.sb-item-btn');
+      if (!button) return;
+      const action = button.dataset.action;
+
+      if (action === 'manifesto') {
+        manifestoModal?.classList.add('show');
+      } else if (action === 'history') {
+        if (!logCollectionRef) return;
+        const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
+        getDocs(q).then(renderHistory);
+        historyModal?.classList.add('show');
+      }
+      sidebar.classList.remove('open');
+      scrim?.classList.remove('show');
+    });
+  }
+
+  if (logoCard && instructionsModal) {
+    logoCard.addEventListener('click', () => {
+      if (!tileSystem?.isReorganizeMode()) {
+        instructionsModal.classList.add('show');
+      }
+    });
+  }
+
+  if (manifestoCard) {
+    manifestoCard.addEventListener('click', () => {
+      if (!tileSystem?.isReorganizeMode()) {
+        manifestoModal?.classList.add('show');
+      }
+    });
+  }
+
+  if (closeInstructionsBtn && instructionsModal) {
+    closeInstructionsBtn.addEventListener('click', () => instructionsModal.classList.remove('show'));
+  }
+
+  if (closeManifestoBtn) closeManifestoBtn.addEventListener('click', () => manifestoModal?.classList.remove('show'));
+  if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => historyModal?.classList.remove('show'));
+
+  if (impressumLink) {
+    impressumLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (legalTitle) legalTitle.textContent = getTranslation('impressum');
+      if (legalContent) legalContent.innerHTML = lang === 'de' ? legalDocs.de.impressum : legalDocs.en.impressum;
+      legalModal?.classList.add('show');
+    });
+  }
+
+  if (privacyLink) {
+    privacyLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (legalTitle) legalTitle.textContent = getTranslation('privacyPolicy');
+      if (legalContent) legalContent.innerHTML = lang === 'de' ? legalDocs.de.privacyPolicy : legalDocs.en.privacyPolicy;
+      legalModal?.classList.add('show');
+    });
+  }
+
+  if (closeLegalBtn) closeLegalBtn.addEventListener('click', () => legalModal?.classList.remove('show'));
+
+  // PWA install
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    if (pwaInstallBtn) pwaInstallBtn.style.display = 'inline-flex';
   });
-}
 
-if (closeInstructionsBtn && instructionsModal) {
-  closeInstructionsBtn.addEventListener('click', () => instructionsModal.classList.remove('show'));
-}
+  if (pwaInstallBtn) {
+    pwaInstallBtn.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      showInstallBanner(getTranslation(outcome === 'accepted' ? 'installSuccess' : 'installDismissed'));
+      deferredInstallPrompt = null;
+      pwaInstallBtn.style.display = 'none';
+    });
+  }
 
-closeManifestoBtn.addEventListener('click', () => manifestoModal.classList.remove('show'));
-closeHistoryBtn.addEventListener('click', () => historyModal.classList.remove('show'));
+  window.addEventListener('appinstalled', () => {
+    showInstallBanner(getTranslation('installSuccess'));
+    deferredInstallPrompt = null;
+    if (pwaInstallBtn) pwaInstallBtn.style.display = 'none';
+  });
 
-impressumLink.addEventListener('click', (e) => {
-  e.preventDefault();
-  legalTitle.textContent = getTranslation('impressum');
-  legalContent.innerHTML = lang === 'de' ? legalDocs.de.impressum : legalDocs.en.impressum;
-  legalModal.classList.add('show');
+  // SW
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js').catch(err => console.error('SW registration failed:', err));
+    });
+  }
+
+  // Boot
+  setLanguage('en');
 });
 
-privacyLink.addEventListener('click', (e) => {
-  e.preventDefault();
-  legalTitle.textContent = getTranslation('privacyPolicy');
-  legalContent.innerHTML = lang === 'de' ? legalDocs.de.privacyPolicy : legalDocs.en.privacyPolicy;
-  legalModal.classList.add('show');
-});
+// Filters reset (needs to run inside auth change as well)
+const resetFilters = () => {
+  activeFilter = 'all';
+  searchTerm = '';
+  if (logSearchInput) logSearchInput.value = '';
+  if (filterButtons?.length) {
+    filterButtons.forEach(btn => btn.classList.toggle('is-active', btn.dataset.filter === 'all'));
+  }
+  toggleNoResults(false);
+};
 
-closeLegalBtn.addEventListener('click', () => legalModal.classList.remove('show'));
-
-// PWA install
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  pwaInstallBtn.style.display = 'inline-flex';
-});
-
-pwaInstallBtn.addEventListener('click', async () => {
-  if (!deferredInstallPrompt) return;
-  deferredInstallPrompt.prompt();
-  const { outcome } = await deferredInstallPrompt.userChoice;
-  showInstallBanner(getTranslation(outcome === 'accepted' ? 'installSuccess' : 'installDismissed'));
-  deferredInstallPrompt = null;
-  pwaInstallBtn.style.display = 'none';
-});
-
-window.addEventListener('appinstalled', () => {
-  showInstallBanner(getTranslation('installSuccess'));
-  deferredInstallPrompt = null;
-  pwaInstallBtn.style.display = 'none';
-});
-
-// SW
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js').catch(err => console.error('SW registration failed:', err)));
-}
-
-// Boot
-setLanguage('en');
-
+// Export to other modules if needed
+export { app, auth, db };
