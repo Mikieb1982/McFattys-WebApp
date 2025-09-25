@@ -91,7 +91,7 @@ body.card-dragging {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--sp-16);
+  padding: 0;
 }
 
 .logo-card .logo-card-inner {
@@ -110,7 +110,7 @@ body.card-dragging {
 .logo-card img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .drag-handle {
