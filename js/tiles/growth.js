@@ -1,7 +1,7 @@
 const growthTile = {
   id: 'growth',
   elementId: 'growth-section',
-  classNames: [],
+  classNames: ['tile--growth'],
   ariaLabelledBy: 'growth-title',
   span: false,
   template: `

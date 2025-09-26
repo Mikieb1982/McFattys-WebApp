@@ -1,7 +1,7 @@
 const quickAddTile = {
   id: 'quick-add',
   elementId: 'add-item-section',
-  classNames: ['span-2'],
+  classNames: ['span-2', 'tile--quick-add'],
   ariaLabelledBy: 'addItem',
   span: true,
   template: `

@@ -1,7 +1,7 @@
 const statsTile = {
   id: 'stats',
   elementId: 'stats-section',
-  classNames: ['span-2'],
+  classNames: ['span-2', 'tile--stats'],
   ariaLabelledBy: 'quick-stats-title',
   span: true,
   template: `

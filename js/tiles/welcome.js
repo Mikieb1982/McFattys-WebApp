@@ -1,7 +1,7 @@
 const welcomeTile = {
   id: 'welcome',
   elementId: 'welcome-section',
-  classNames: [],
+  classNames: ['tile--welcome'],
   ariaLabelledBy: 'welcome-message',
   span: false,
   template: `

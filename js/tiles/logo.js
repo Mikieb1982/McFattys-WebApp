@@ -1,7 +1,7 @@
 const logoTile = {
   id: 'logo',
   elementId: 'logo-card',
-  classNames: ['logo-card'],
+  classNames: ['logo-card', 'tile--logo'],
   ariaLabel: "McFatty's logo",
   span: false,
   template: `
