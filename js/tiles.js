@@ -1,192 +1,22 @@
-const tileDefinitions = [
-  {
-    id: 'logo',
-    elementId: 'logo-card',
-    classNames: ['logo-card'],
-    ariaLabel: "McFatty's logo",
-    span: false,
-    template: `
-      <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-      <button class="close-btn" aria-label="Finish organizing">&times;</button>
-      <div class="logo-card-inner">
-        <img src="Logo.png" alt="McFatty's Food Tracker logo">
-      </div>
-    `
-  },
-  {
-    id: 'manifesto',
-    elementId: 'manifesto-card',
-    classNames: ['logo-card'],
-    ariaLabel: "McFatty's Manifesto",
-    span: false,
-    template: `
-      <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-      <button class="close-btn" aria-label="Finish organizing">&times;</button>
-      <div class="logo-card-inner">
-        <img src="manifesto.png" alt="McFatty's Manifesto logo">
-      </div>
-    `
-  },
-  {
-    id: 'support',
-    elementId: 'support-card',
-    classNames: [],
-    ariaLabelledBy: 'support-title',
-    span: false,
-    template: `
-      <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-      <button class="close-btn" aria-label="Finish organizing">&times;</button>
-      <svg class="icon" style="width: 48px; height: 48px; margin-bottom: 8px;" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-      <h2 id="support-title" data-i18n="supportTitle" style="font-size: var(--fs-18); margin: 0;">Support Us</h2>
-      <p data-i18n="supportCopy" style="font-size: 13px; color: var(--text-1); margin: 4px 0 0;">If you find this app useful, please consider a small donation.</p>
-    `
-  },
-  {
-    id: 'welcome',
-    elementId: 'welcome-section',
-    classNames: [],
-    ariaLabelledBy: 'welcome-message',
-    span: false,
-    template: `
-      <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-      <button class="close-btn" aria-label="Finish organizing">&times;</button>
-      <h2 id="welcome-message" data-i18n="welcome"></h2>
-    `
-  },
-  {
-    id: 'growth',
-    elementId: 'growth-section',
-    classNames: [],
-    ariaLabelledBy: 'growth-title',
-    span: false,
-    template: `
-      <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-      <button class="close-btn" aria-label="Finish organizing">&times;</button>
-      <h2 id="growth-title" data-i18n="growthTitle">Room to grow</h2>
-      <p data-i18n="growthCopy">This space is ready for habits, reflections, or whatever else you need next.</p>
-    `
-  },
-  {
-    id: 'support',
-    elementId: 'support-card',
-    classNames: ['support-card'],
-    ariaLabelledBy: 'support-title',
-    span: false,
-    template: `
-      <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-      <button class="close-btn" aria-label="Finish organizing">&times;</button>
-      <div class="support-card-inner">
-        <span class="support-badge" data-i18n="supportBadge">Keep McFatty’s free</span>
-        <h2 id="support-title" data-i18n="supportTitle">Support us</h2>
-        <p class="support-copy" data-i18n="supportCopy">Chip in to cover hosting and keep the tracker open for everyone.</p>
-        <button id="support-button" class="btn btn-primary" type="button" data-i18n="donateBtn">Donate</button>
-      </div>
-    `
-  },
-  {
-    id: 'stats',
-    elementId: 'stats-section',
-    classNames: ['span-2'],
-    ariaLabelledBy: 'quick-stats-title',
-    span: true,
-    template: `
-      <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-      <button class="close-btn" aria-label="Finish organizing">&times;</button>
-      <h2 id="quick-stats-title" data-i18n="quickStatsTitle">Quick stats</h2>
-      <div class="quick-stats-grid">
-        <div class="stat-card">
-          <span class="stat-label" data-i18n="statEntriesToday">Entries today</span>
-          <div id="stat-total" class="stat-value">0</div>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label" data-i18n="statDairyToday">Dairy items</span>
-          <div id="stat-dairy" class="stat-value">0</div>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label" data-i18n="statOutsideMeals">Outside of mealtimes</span>
-          <div id="stat-outside" class="stat-value">0</div>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label" data-i18n="statLastEntry">Last entry</span>
-          <div id="stat-last" class="stat-value" aria-live="polite">—</div>
-          <div id="stat-last-subtext" class="stat-subtext"></div>
-        </div>
-      </div>
-    `
-  },
-  {
-    id: 'quick-add',
-    elementId: 'add-item-section',
-    classNames: ['span-2'],
-    ariaLabelledBy: 'addItem',
-    span: true,
-    template: `
-      <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-      <button class="close-btn" aria-label="Finish organizing">&times;</button>
-      <h2 id="addItem" data-i18n="quickAddTitle">Quick add</h2>
-      <p class="quick-add-subtext" data-i18n="quickAddHint">Log what you’re eating right now—no pressure, no judgement.</p>
-      <div class="quick-add-body">
-        <div>
-          <label for="food-name" class="label" data-i18n="foodLabel">Food item name</label>
-          <input id="food-name" class="input" type="text" placeholder="e.g., Cheeseburger" data-i18n-placeholder="foodPlaceholder">
-        </div>
-        <div class="quick-add-actions">
-          <label style="display:flex;align-items:center;gap:var(--sp-8);margin:0;">
-            <input id="contains-dairy" type="checkbox" class="checkbox" aria-label="Contains dairy">
-            <span data-i18n="dairyLabel">Contains dairy</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:var(--sp-8);margin:0;">
-            <input id="outside-meals" type="checkbox" class="checkbox" aria-label="Outside of mealtimes">
-            <span data-i18n="outsideMealsLabel">Outside of mealtimes</span>
-          </label>
-          <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
-        </div>
-      </div>
-    `
-  },
-  {
-    id: 'recent-log',
-    elementId: 'log-section',
-    classNames: ['span-2'],
-    ariaLabelledBy: 'recentLog',
-    span: true,
-    template: `
-      <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
-      <button class="close-btn" aria-label="Finish organizing">&times;</button>
-      <div class="section-head">
-        <h2 id="recentLog" data-i18n="recentLogTitle">Recent log</h2>
-        <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
-      </div>
-      <div class="log-controls" role="search">
-        <div class="log-search">
-          <label class="sr-only" for="log-search" data-i18n="logSearchLabel">Search log</label>
-          <input id="log-search" class="input" type="search" placeholder="Search entries" data-i18n-placeholder="logSearchPlaceholder">
-        </div>
-        <div class="filter-group" role="group" aria-labelledby="log-filters-label">
-          <span id="log-filters-label" class="sr-only" data-i18n="filterGroupLabel">Filters</span>
-          <button type="button" class="filter-btn is-active" data-filter="all" data-i18n="filterAll">All</button>
-          <button type="button" class="filter-btn" data-filter="dairy" data-i18n="filterDairy">Dairy</button>
-          <button type="button" class="filter-btn" data-filter="non-dairy" data-i18n="filterNonDairy">No dairy</button>
-          <button type="button" class="filter-btn" data-filter="outside-meals" data-i18n="filterOutsideMeals">Outside of mealtimes</button>
-          <button type="button" class="filter-btn" data-filter="during-meals" data-i18n="filterMeals">At mealtimes</button>
-        </div>
-      </div>
-      <table class="table" aria-describedby="recentLog">
-        <thead>
-          <tr>
-            <th data-i18n="thItem">Item</th>
-            <th data-i18n="thTime">Time</th>
-            <th data-i18n="thDairy">Dairy</th>
-            <th data-i18n="thOutsideMeals">Outside of mealtimes</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="log-body"></tbody>
-      </table>
-      <div id="empty-state" class="info-text" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
-      <div id="no-results" class="info-text" style="display:none" data-i18n="noResults">No entries match your filters yet.</div>
-    `
-  }
+import logoTile from './tiles/logo.js';
+import manifestoTile from './tiles/manifesto.js';
+import welcomeTile from './tiles/welcome.js';
+import growthTile from './tiles/growth.js';
+import supportTile from './tiles/support.js';
+import statsTile from './tiles/stats.js';
+import quickAddTile from './tiles/quick-add.js';
+import recentLogTile from './tiles/recent-log.js';
+
+// To add or remove tiles, create or delete a file in js/tiles and update this list.
+export const tileDefinitions = [
+  logoTile,
+  manifestoTile,
+  welcomeTile,
+  growthTile,
+  supportTile,
+  statsTile,
+  quickAddTile,
+  recentLogTile
 ];
 
 let containerRef = null;
@@ -615,4 +445,4 @@ export function initTileSystem({ container, reorderToggle, reorderHint, getTrans
     refreshLabels: updateReorderTexts,
     isReorganizeMode: () => isReorganizeMode
   };
-    }
+}
