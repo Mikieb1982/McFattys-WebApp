@@ -1,7 +1,7 @@
 const manifestoTile = {
   id: 'manifesto',
   elementId: 'manifesto-card',
-  classNames: ['logo-card'],
+  classNames: ['logo-card', 'tile--manifesto'],
   ariaLabel: "McFatty's Manifesto",
   span: false,
   template: `

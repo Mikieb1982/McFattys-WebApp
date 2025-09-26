@@ -386,12 +386,17 @@
 }
 
 .dashboard-grid.is-reordering .dashboard-card {
-  padding-top: calc(18px + 36px);
+  padding-top: calc(var(--card-padding, 18px) + 36px);
   cursor: grab;
+  will-change: transform;
 }
 
 .dashboard-grid.is-reordering .dashboard-card:active {
   cursor: grabbing;
+}
+
+.dashboard-grid.is-reordering .dashboard-card.is-dragging {
+  transition: none;
 }
 
 .drag-handle,

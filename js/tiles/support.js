@@ -1,7 +1,7 @@
 const supportTile = {
   id: 'support',
   elementId: 'support-card',
-  classNames: ['support-card'],
+  classNames: ['support-card', 'tile--support'],
   span: false,
   template: `
     <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
