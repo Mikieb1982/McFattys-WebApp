@@ -39,6 +39,25 @@ To run this project, you'll need a Firebase account and a project with Authentic
 3.  **Run Locally**:
     * Serve the `index.html` file with a local web server.
 
+## Deploying to Firebase Hosting
+
+1.  Install the [Firebase CLI](https://firebase.google.com/docs/cli) if you have not already done so.
+2.  Authenticate with Firebase:
+    ```bash
+    firebase login
+    ```
+3.  Update [`.firebaserc`](.firebaserc) with the ID of the Firebase project you created earlier.
+4.  Preview the site locally to make sure everything looks correct:
+    ```bash
+    firebase emulators:start --only hosting
+    ```
+    The site will be served at the URL shown in the terminal output.
+5.  When you are ready to deploy, run:
+    ```bash
+    firebase deploy --only hosting
+    ```
+    Your site will now be hosted on Firebase instead of Netlify.
+
 ## Data Model
 
 Food entries are stored in a Cloud Firestore collection with the following structure:
