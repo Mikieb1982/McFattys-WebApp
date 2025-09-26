@@ -1,118 +1,3 @@
-.dashboard-grid {
-  display: grid;
-  gap: var(--sp-16);
-  position: relative;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.dashboard-card {
-  position: relative;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
-  touch-action: pan-y;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-12);
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--r-12);
-  box-shadow: var(--shadow-tile);
-  padding: 18px;
-  overflow: hidden;
-}
-
-.dashboard-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(180deg, var(--tile-highlight) 0%, rgba(255, 255, 255, 0) 45%);
-  mix-blend-mode: soft-light;
-}
-
-.dashboard-card:not(.span-2) {
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  aspect-ratio: 1 / 1;
-  min-height: 0;
-}
-
-.dashboard-card.span-2 {
-  grid-column: 1 / -1;
-  text-align: left;
-  align-items: stretch;
-}
-
-.dashboard-grid.is-reordering .dashboard-card {
-  transition: transform 0.18s ease;
-}
-
-.dashboard-card.is-dragging {
-  opacity: 0.92;
-  cursor: grabbing;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
-}
-
-.reorganize-mode .dashboard-card {
-  cursor: grab;
-  animation: wobble 0.2s ease-in-out infinite;
-}
-
-.reorganize-mode .dashboard-card:active {
-  cursor: grabbing;
-}
-
-.dashboard-placeholder {
-  border: 1px dashed var(--border);
-  border-radius: var(--r-12);
-  background: rgba(255, 255, 255, 0.04);
-  min-height: 120px;
-  margin: 0;
-}
-
-[data-theme="light"] .dashboard-placeholder {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.dashboard-placeholder:not(.span-2) {
-  aspect-ratio: 1 / 1;
-}
-
-.dashboard-placeholder.span-2 {
-  grid-column: 1 / -1;
-}
-
-body.card-dragging {
-  user-select: none;
-}
-
-.logo-card {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
-
-.logo-card .logo-card-inner {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: var(--r-12);
-  background: var(--bg-1);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--sp-16);
-  overflow: hidden;
-}
-
-.logo-card img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
 .support-card {
   padding: 0;
 }
@@ -137,10 +22,31 @@ body.card-dragging {
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
+/* Responsive illustration size merging both branches */
 .support-illustration {
-  width: 320px;
+  width: clamp(80px, 25vw, 320px);
   max-width: 100%;
   height: auto;
+}
+
+/* Badge kept from main */
+.support-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-1);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .support-badge {
+  color: var(--text-2);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .support-copy {
@@ -154,210 +60,3 @@ body.card-dragging {
   justify-content: center;
 }
 
-.drag-handle {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 24px;
-  height: 24px;
-  display: none;
-  flex-direction: column;
-  justify-content: space-around;
-  cursor: grab;
-  z-index: 20;
-}
-
-.reorganize-mode .drag-handle {
-  display: flex;
-}
-
-.drag-handle span {
-  width: 100%;
-  height: 2px;
-  background-color: var(--text-0);
-  border-radius: 1px;
-}
-
-.drag-handle:active {
-  cursor: grabbing;
-}
-
-.drag-handle:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(242, 197, 109, 0.35);
-}
-
-.close-btn {
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--danger);
-  color: white;
-  border: 2px solid var(--bg-0);
-  font-weight: bold;
-  font-size: 16px;
-  line-height: 1;
-  text-align: center;
-  cursor: pointer;
-  display: none;
-  z-index: 10;
-}
-
-.reorganize-mode .close-btn {
-  display: block;
-}
-
-.quick-stats-grid {
-  display: grid;
-  gap: var(--sp-12);
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-}
-
-.stat-card {
-  position: relative;
-  background: var(--bg-1);
-  border: 1px solid var(--border);
-  border-radius: var(--r-12);
-  padding: 16px;
-  box-shadow: var(--shadow-tile);
-  overflow: hidden;
-}
-
-.stat-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(180deg, var(--tile-highlight) 0%, rgba(255, 255, 255, 0) 50%);
-  mix-blend-mode: soft-light;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: var(--text-1);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 6px;
-  display: block;
-}
-
-.stat-value {
-  font-family: Oswald, sans-serif;
-  font-size: 32px;
-  line-height: 1;
-}
-
-.stat-subtext {
-  font-size: 13px;
-  color: var(--text-1);
-  margin-top: 4px;
-}
-
-.quick-add-subtext {
-  color: var(--text-1);
-  font-size: 13px;
-  margin: 0 0 var(--sp-12);
-  text-align: left;
-}
-
-.quick-add-body {
-  display: grid;
-  gap: var(--sp-12);
-}
-
-.quick-add-actions {
-  display: flex;
-  gap: var(--sp-12);
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.log-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-12);
-  align-items: center;
-  margin-bottom: var(--sp-12);
-}
-
-.log-search {
-  flex: 1 1 220px;
-}
-
-.table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 var(--sp-8);
-}
-
-.table thead th {
-  color: var(--text-1);
-  font-size: 13px;
-  font-weight: 600;
-  text-align: left;
-  padding-bottom: 4px;
-}
-
-.table tbody tr {
-  background: var(--bg-1);
-  border: 1px solid var(--border);
-  border-radius: var(--r-8);
-}
-
-.table tbody td {
-  padding: 10px;
-  vertical-align: middle;
-}
-
-.row-actions {
-  text-align: right;
-}
-
-.row-actions .btn {
-  padding: 8px 12px;
-  min-height: 0;
-}
-
-.reorganize-mode .dashboard-card.is-active-drag {
-  animation: none;
-}
-
-@keyframes wobble {
-  0%,
-  100% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(1.5deg);
-  }
-  75% {
-    transform: rotate(-1.5deg);
-  }
-}
-
-@media (max-width: 720px) {
-  .dashboard-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .dashboard-card:not(.span-2) {
-    aspect-ratio: 1 / 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .install-banner,
-  .sidebar,
-  .reorganize-mode .dashboard-card {
-    transition: none;
-    animation: none;
-  }
-
-  .btn:active {
-    transform: none;
-  }
-}
