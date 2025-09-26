@@ -257,7 +257,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: center;<<<<<<< codex/redesign-tile-styles-and-colors-hc11wg
   width: 100%;
   flex: 1 1 auto;
   min-height: clamp(200px, 38vw, 320px);
@@ -266,8 +266,14 @@
 }
 
 .logo-card .logo-card-inner img {
-  width: 90%;
-  height: 90%;
+  width: 100%;
+  height: 100%;
+=======
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: clamp(200px, 38vw, 320px);
+  border-radius: inherit;
+  o
   object-fit: cover;
   display: block;
 }
@@ -458,6 +464,8 @@
   overflow: hidden;
 }
 
+
+  
 .tile--recent-log .log-table-inner {
   max-height: clamp(260px, 45vh, 420px);
   overflow-y: auto;

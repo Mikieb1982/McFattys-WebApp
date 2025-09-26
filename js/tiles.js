@@ -28,6 +28,115 @@ let isReorganizeMode = false;
 
 const DASHBOARD_ORDER_KEY = 'dashboard-card-order-v1';
 
+function getNodeIndex(node) {
+  if (!node || !node.parentNode) return -1;
+  return Array.prototype.indexOf.call(node.parentNode.children, node);
+}
+
+function captureCardPositions(excludeCard) {
+  if (!containerRef) return null;
+  const positions = new Map();
+  getDashboardCards().forEach(card => {
+    if (card === excludeCard) return;
+    positions.set(card, card.getBoundingClientRect());
+  });
+  return positions;
+}
+
+function animateCardPositions(previousPositions, excludeCard) {
+  if (!previousPositions) return;
+  requestAnimationFrame(() => {
+    previousPositions.forEach((prevRect, card) => {
+      if (!card || card === excludeCard) return;
+      const nextRect = card.getBoundingClientRect();
+      const deltaX = prevRect.left - nextRect.left;
+      const deltaY = prevRect.top - nextRect.top;
+      if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) {
+        return;
+      }
+      const originalTransition = card.style.transition;
+      card.style.transition = 'none';
+      card.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
+      void card.offsetHeight;
+      if (originalTransition) {
+        card.style.transition = originalTransition;
+      } else {
+        card.style.removeProperty('transition');
+      }
+      card.style.transform = '';
+    });
+  });
+}
+
+function getSortableCards(excludeCard) {
+  if (!containerRef) return [];
+  return getDashboardCards().filter(card => card !== excludeCard);
+}
+
+function swapPlaceholderWithCard(targetCard, draggedCard) {
+  if (!dragState || !containerRef) return false;
+  const { placeholder } = dragState;
+  if (!placeholder || !targetCard) return false;
+
+  const placeholderIndex = getNodeIndex(placeholder);
+  const targetIndex = getNodeIndex(targetCard);
+  if (placeholderIndex === -1 || targetIndex === -1 || placeholderIndex === targetIndex) {
+    return false;
+  }
+
+  const previousPositions = captureCardPositions(draggedCard);
+
+  if (placeholderIndex < targetIndex) {
+    const targetNext = targetCard.nextSibling;
+    containerRef.insertBefore(targetCard, placeholder);
+    if (targetNext && targetNext !== placeholder) {
+      containerRef.insertBefore(placeholder, targetNext);
+    } else {
+      containerRef.appendChild(placeholder);
+    }
+  } else {
+    const placeholderNext = placeholder.nextSibling;
+    containerRef.insertBefore(placeholder, targetCard);
+    if (placeholderNext) {
+      containerRef.insertBefore(targetCard, placeholderNext);
+    } else {
+      containerRef.appendChild(targetCard);
+    }
+  }
+
+  animateCardPositions(previousPositions, draggedCard);
+  return true;
+}
+
+function movePlaceholderBefore(reference, draggedCard) {
+  if (!dragState || !containerRef) return false;
+  const { placeholder } = dragState;
+  if (!placeholder || !reference || reference === placeholder) return false;
+  if (reference.previousSibling === placeholder) return false;
+
+  const previousPositions = captureCardPositions(draggedCard);
+  containerRef.insertBefore(placeholder, reference);
+  animateCardPositions(previousPositions, draggedCard);
+  return true;
+}
+
+function movePlaceholderAfter(reference, draggedCard) {
+  if (!dragState || !containerRef) return false;
+  const { placeholder } = dragState;
+  if (!placeholder || !reference) return false;
+  const next = reference.nextSibling;
+  if (next === placeholder) return false;
+
+  const previousPositions = captureCardPositions(draggedCard);
+  if (next) {
+    containerRef.insertBefore(placeholder, next);
+  } else {
+    containerRef.appendChild(placeholder);
+  }
+  animateCardPositions(previousPositions, draggedCard);
+  return true;
+}
+
 export function renderTiles(container) {
   if (!container) return;
   container.innerHTML = '';
@@ -207,38 +316,65 @@ function updatePlaceholderFromPointer(event) {
   const element = document.elementFromPoint(event.clientX, event.clientY);
   const targetCard = element ? element.closest('.dashboard-card') : null;
 
-  if (targetCard && targetCard !== card) {
-    const rect = targetCard.getBoundingClientRect();
-    const before = event.clientY < rect.top + rect.height / 2;
-
-    if (before) {
-      if (targetCard !== placeholder.nextSibling) {
-        containerRef.insertBefore(placeholder, targetCard);
-      }
-    } else if (targetCard.nextSibling !== placeholder) {
-      containerRef.insertBefore(placeholder, targetCard.nextSibling);
+  if (targetCard && targetCard !== card && targetCard !== placeholder) {
+    if (swapPlaceholderWithCard(targetCard, card)) {
+      return;
     }
-    return;
   }
 
-  const cards = getDashboardCards().filter(item => item !== card);
+  const cards = getSortableCards(card);
   if (!cards.length) return;
 
   const firstCard = cards[0];
   const firstRect = firstCard.getBoundingClientRect();
   if (event.clientY < firstRect.top) {
-    if (placeholder !== firstCard) {
-      containerRef.insertBefore(placeholder, firstCard);
-    }
+    movePlaceholderBefore(firstCard, card);
     return;
   }
 
   const lastCard = cards[cards.length - 1];
   const lastRect = lastCard.getBoundingClientRect();
   if (event.clientY > lastRect.bottom) {
-    if (lastCard.nextSibling !== placeholder) {
-      containerRef.appendChild(placeholder);
+    movePlaceholderAfter(lastCard, card);
+    return;
+  }
+
+  let closestCard = null;
+  let closestDistance = Number.POSITIVE_INFINITY;
+  cards.forEach(currentCard => {
+    const rect = currentCard.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const dx = event.clientX - centerX;
+    const dy = event.clientY - centerY;
+    const distance = Math.hypot(dx, dy);
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestCard = currentCard;
     }
+  });
+
+  if (!closestCard || closestCard === placeholder) {
+    return;
+  }
+
+  const rect = closestCard.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  const deltaX = event.clientX - centerX;
+  const deltaY = event.clientY - centerY;
+  const dominantAxis = Math.abs(deltaX) > Math.abs(deltaY) ? 'x' : 'y';
+
+  if (dominantAxis === 'x') {
+    if (deltaX < 0) {
+      movePlaceholderBefore(closestCard, card);
+    } else {
+      movePlaceholderAfter(closestCard, card);
+    }
+  } else if (deltaY < 0) {
+    movePlaceholderBefore(closestCard, card);
+  } else {
+    movePlaceholderAfter(closestCard, card);
   }
 }
 
