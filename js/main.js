@@ -1,4 +1,31 @@
+// app.js (ES module)
 import { renderTiles, initTileSystem } from './tiles.js';
+
+// Firebase v9+ (modular)
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {
+  getAuth,
+  onAuthStateChanged,
+  signOut as fbSignOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {
+  getFirestore,
+  collection,
+  doc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  getDocs,
+  query,
+  orderBy,
+  serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyC1qN3ksU0uYhXRXYNmYlmGX0iyUa-BJFQ",
@@ -10,16 +37,17 @@ const firebaseConfig = {
   measurementId: "G-KQX4BQ71VK"
 };
 
-const app = firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Constants
 const MAX_RECENT_ROWS = 10;
 
-const appContent = document.getElementById('app-content');
-renderTiles(appContent);
-
-let logCollection;
-let unsubscribe;
+// State
+let logCollectionRef = null;
+let unsubscribe = null;
 let lang = 'en';
 let deferredInstallPrompt = null;
 let installBannerTimeout;
@@ -29,77 +57,122 @@ let allEntries = [];
 let activeFilter = 'all';
 let searchTerm = '';
 
-// Elements
-const nameInput = document.getElementById('food-name');
-const dairyCheckbox = document.getElementById('contains-dairy');
-const outsideMealsCheckbox = document.getElementById('outside-meals');
-const addBtn = document.getElementById('add-button');
-const tbody = document.getElementById('log-body');
-const emptyState = document.getElementById('empty-state');
-const installBanner = document.getElementById('install-banner');
-const sidebar = document.getElementById('sidebar');
-const scrim = document.getElementById('scrim');
-const welcomeMessage = document.getElementById('welcome-message');
-const landingPage = document.getElementById('landing-page');
-const donateBtn = document.getElementById('donate-button');
-const supportTileBtn = document.getElementById('support-button');
-const langToggle = document.getElementById('lang-toggle');
-const switchEl = document.getElementById('switch');
-const googleSigninBtn = document.getElementById('google-signin');
-const pwaInstallBtn = document.getElementById('pwa-install');
-const menuOpenBtn = document.getElementById('menu-open');
-const menuCloseBtn = document.getElementById('menu-close');
-const logoutBtn = document.getElementById('logout-btn');
-const logoutBtnMain = document.getElementById('logout-btn-main');
-const userInfo = document.getElementById('user-info');
-const userName = document.getElementById('user-name');
-const exportBtn = document.getElementById('export-button');
-const statTotal = document.getElementById('stat-total');
-const statDairy = document.getElementById('stat-dairy');
-const statOutside = document.getElementById('stat-outside');
-const statLast = document.getElementById('stat-last');
-const statLastSubtext = document.getElementById('stat-last-subtext');
-const logSearchInput = document.getElementById('log-search');
-const noResultsMessage = document.getElementById('no-results');
-const filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
-const dashboardControls = document.getElementById('dashboard-controls');
-const reorderToggle = document.getElementById('reorder-toggle');
-const reorderHint = document.getElementById('reorder-hint');
-const themeToggle = document.getElementById('theme-toggle');
-const themeToggleIcon = document.getElementById('theme-toggle-icon');
-const themeToggleLabel = document.getElementById('theme-toggle-label');
-const themeColorMeta = document.getElementById('theme-color');
+// Element refs (assigned on DOMContentLoaded)
+let appContent, nameInput, dairyCheckbox, outsideMealsCheckbox, addBtn, tbody, emptyState, installBanner;
+let sidebar, scrim, welcomeMessage, landingPage, donateBtn, langToggle, switchEl, googleSigninBtn, pwaInstallBtn;
+let menuOpenBtn, menuCloseBtn, logoutBtn, logoutBtnMain, userInfo, userName, exportBtn;
+let statTotal, statDairy, statOutside, statLast, statLastSubtext, logSearchInput, noResultsMessage, filterButtons;
+let dashboardControls, reorderToggle, reorderHint, themeToggle, themeToggleIcon, themeToggleLabel, themeColorMeta;
+let manifestoModal, closeManifestoBtn, historyModal, closeHistoryBtn, historyContent;
+let legalModal, legalTitle, legalContent, closeLegalBtn, impressumLink, privacyLink;
+let instructionsModal, closeInstructionsBtn, logoCard, manifestoCard, supportCard;
+let authSection, loginBtn, signupBtn, authSubmit, authActions, signupFields, authTitle, authToggle;
+let authEmail, authPassword, authUsername, authRePassword;
 
+// DOM Content Loaded - Initialize element references
+document.addEventListener('DOMContentLoaded', () => {
+  // Main app elements
+  appContent = document.getElementById('app-content');
+  nameInput = document.getElementById('food-name');
+  dairyCheckbox = document.getElementById('contains-dairy');
+  outsideMealsCheckbox = document.getElementById('outside-meals');
+  addBtn = document.getElementById('add-button');
+  tbody = document.getElementById('log-body');
+  emptyState = document.getElementById('empty-state');
+  installBanner = document.getElementById('install-banner');
+  
+  // Navigation and UI
+  sidebar = document.getElementById('sidebar');
+  scrim = document.getElementById('scrim');
+  welcomeMessage = document.getElementById('welcome-message');
+  landingPage = document.getElementById('landing-page');
+  donateBtn = document.getElementById('donate-button');
+  langToggle = document.getElementById('lang-toggle');
+  switchEl = document.getElementById('switch');
+  googleSigninBtn = document.getElementById('google-signin');
+  pwaInstallBtn = document.getElementById('pwa-install');
+  
+  // Menu controls
+  menuOpenBtn = document.getElementById('menu-open');
+  menuCloseBtn = document.getElementById('menu-close');
+  logoutBtn = document.getElementById('logout-btn');
+  logoutBtnMain = document.getElementById('logout-btn-main');
+  userInfo = document.getElementById('user-info');
+  userName = document.getElementById('user-name');
+  exportBtn = document.getElementById('export-button');
+  
+  // Stats elements
+  statTotal = document.getElementById('stat-total');
+  statDairy = document.getElementById('stat-dairy');
+  statOutside = document.getElementById('stat-outside');
+  statLast = document.getElementById('stat-last');
+  statLastSubtext = document.getElementById('stat-last-subtext');
+  
+  // Search and filters
+  logSearchInput = document.getElementById('log-search');
+  noResultsMessage = document.getElementById('no-results');
+  filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
+  
+  // Dashboard controls
+  dashboardControls = document.getElementById('dashboard-controls');
+  reorderToggle = document.getElementById('reorder-toggle');
+  reorderHint = document.getElementById('reorder-hint');
+  
+  // Theme controls
+  themeToggle = document.getElementById('theme-toggle');
+  themeToggleIcon = document.getElementById('theme-toggle-icon');
+  themeToggleLabel = document.getElementById('theme-toggle-label');
+  themeColorMeta = document.getElementById('theme-color');
+  
+  // Modals
+  manifestoModal = document.getElementById('manifesto-modal');
+  closeManifestoBtn = document.getElementById('close-manifesto');
+  historyModal = document.getElementById('history-modal');
+  closeHistoryBtn = document.getElementById('close-history');
+  historyContent = document.getElementById('history-content');
+  legalModal = document.getElementById('legal-modal');
+  legalTitle = document.getElementById('legal-title');
+  legalContent = document.getElementById('legal-content');
+  closeLegalBtn = document.getElementById('close-legal');
+  impressumLink = document.getElementById('impressum-link');
+  privacyLink = document.getElementById('privacy-link');
+  instructionsModal = document.getElementById('instructions-modal');
+  closeInstructionsBtn = document.getElementById('close-instructions');
+  
+  // Cards
+  logoCard = document.getElementById('logo-card');
+  manifestoCard = document.getElementById('manifesto-card');
+  supportCard = document.getElementById('support-button');
+  
+  // Auth elements
+  authSection = document.getElementById('auth-section');
+  loginBtn = document.getElementById('login-btn');
+  signupBtn = document.getElementById('signup-btn');
+  authSubmit = document.getElementById('auth-submit');
+  authActions = document.getElementById('auth-actions');
+  signupFields = document.getElementById('signup-fields');
+  authTitle = document.getElementById('auth-title');
+  authToggle = document.getElementById('auth-toggle');
+  authEmail = document.getElementById('auth-email');
+  authPassword = document.getElementById('auth-password');
+  authUsername = document.getElementById('auth-username');
+  authRePassword = document.getElementById('auth-re-password');
 
-// Modals / legal links
-const manifestoModal = document.getElementById('manifesto-modal');
-const closeManifestoBtn = document.getElementById('close-manifesto');
-const historyModal = document.getElementById('history-modal');
-const closeHistoryBtn = document.getElementById('close-history');
-const historyContent = document.getElementById('history-content');
-const legalModal = document.getElementById('legal-modal');
-const legalTitle = document.getElementById('legal-title');
-const legalContent = document.getElementById('legal-content');
-const closeLegalBtn = document.getElementById('close-legal');
-const impressumLink = document.getElementById('impressum-link');
-const privacyLink = document.getElementById('privacy-link');
-const instructionsModal = document.getElementById('instructions-modal');
-const closeInstructionsBtn = document.getElementById('close-instructions');
-const logoCard = document.getElementById('logo-card');
+  // Initialize tile system after elements are available
+  const tileSystem = initTileSystem({
+    container: appContent,
+    reorderToggle,
+    reorderHint,
+    getTranslation
+  });
 
-// Auth Elements
-const authSection = document.getElementById('auth-section');
-const loginBtn = document.getElementById('login-btn');
-const signupBtn = document.getElementById('signup-btn');
-const authSubmit = document.getElementById('auth-submit');
-const authActions = document.getElementById('auth-actions');
-const signupFields = document.getElementById('signup-fields');
-const authTitle = document.getElementById('auth-title');
-const authToggle = document.getElementById('auth-toggle');
-const authEmail = document.getElementById('auth-email');
-const authPassword = document.getElementById('auth-password');
-const authUsername = document.getElementById('auth-username');
-const authRePassword = document.getElementById('auth-re-password');
+  // Initialize theme and other setup
+  initializeTheme();
+  setLanguage('en');
+  
+  // Set up event listeners after elements are available
+  setupEventListeners(tileSystem);
+});
 
 // --- Translations ---
 const translations = {
@@ -111,11 +184,11 @@ const translations = {
     googleSignin: 'Sign in with Google',
     manifesto: "McFatty's Manifesto",
     manifestoTitle: "McFatty's Manifesto",
-    manifestoP1: "McFatty’s Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
+    manifestoP1: "McFatty's Food Tracker is not about calories, restrictions, or guilt. If you want chips, eat them. No shame, no punishment. Just write it down. Recording without judgment is the act that matters.",
     manifestoP2: "This app is free. No subscriptions, no upsells, no lifestyle packages. We reject the idea that food and health should be sold back to us. Eating should not be a business model.",
-    manifestoP3: "Instead, McFatty’s helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.",
+    manifestoP3: "Instead, McFatty's helps you pause, check in with your body, and notice your habits. Consciously or subconsciously, the simple act of logging allows you to see patterns and slowly shift your relationship with food. Change should not be a race. It should be slow, gentle, and rooted in respect for your choices.",
     manifestoP4: "We are against cycles of guilt, shame, and impossible promises. We will not celebrate consumerism dressed up as self-care. We believe the radical choice is to slow down, listen to yourself, and eat on your own terms.",
-    manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn’t. But McFatty’s will never profit from your guilt.",
+    manifestoP5: "The app will always be free to use. There is a donation button for those who want to support, because while the world should be free, it isn't. But McFatty's will never profit from your guilt.",
     donateBtn: 'Donate',
     welcome: 'Welcome',
     welcomeBack: 'Welcome back',
@@ -125,16 +198,16 @@ const translations = {
     statOutsideMeals: 'Outside of mealtimes',
     statLastEntry: 'Last entry',
     quickAddTitle: 'Quick add',
-    quickAddHint: 'Log what you’re eating right now—no pressure, no judgement.',
+    quickAddHint: 'Log what you're eating right now—no pressure, no judgement.',
     growthTitle: 'Room to grow',
     growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
-    supportBadge: 'Keep McFatty’s free',
+    supportBadge: 'Keep McFatty's free',
     supportTitle: 'Support us',
     supportCopy: 'Chip in to cover hosting and keep the tracker open for everyone.',
     recentLogTitle: 'Recent log',
     organizeTiles: 'Organize tiles',
     doneOrganizing: 'Done',
-    reorderHint: 'Drag tiles to reorder. Tap Done when you’re finished.',
+    reorderHint: 'Drag tiles to reorder. Tap Done when you're finished.',
     logSearchLabel: 'Search log',
     logSearchPlaceholder: 'Search entries',
     filterGroupLabel: 'Filters',
@@ -150,7 +223,7 @@ const translations = {
     addBtn: 'Add to log',
     dairyLabel: 'Contains dairy',
     outsideMealsLabel: 'Outside of mealtimes',
-    logTitle: 'Today’s log',
+    logTitle: 'Today's log',
     exportBtn: 'Export',
     thItem: 'Item',
     thTime: 'Time',
@@ -182,7 +255,7 @@ const translations = {
     passwordLabel: 'Password',
     usernameLabel: 'Username',
     rePasswordLabel: 'Re-type Password',
-    installSuccess: 'App installed! Find McFatty’s on your home screen.',
+    installSuccess: 'App installed! Find McFatty's on your home screen.',
     installDismissed: 'Install dismissed.',
     yes: 'Yes',
     no: 'No',
@@ -208,6 +281,8 @@ const translations = {
     historyTitle: 'Log History',
     impressum: 'Legal Notice',
     privacyPolicy: 'Privacy Policy',
+    supportTitle: 'Support Us',
+    supportCopy: 'If you find this app useful, please consider a small donation.',
   },
   de: {
     loginBtn: 'Anmelden',
@@ -219,9 +294,9 @@ const translations = {
     manifestoTitle: 'McFettys Manifest',
     manifestoP1: 'Bei McFettys Food Tracker geht es nicht um Kalorien, Einschränkungen oder Schuldgefühle. Wenn du Chips willst, iss sie. Keine Scham, keine Bestrafung. Schreib es einfach auf. Das Aufzeichnen ohne Urteil ist der entscheidende Akt.',
     manifestoP2: 'Diese App ist kostenlos. Keine Abonnements, keine Upsells, keine Lifestyle-Pakete. Wir lehnen die Idee ab, dass uns Essen und Gesundheit zurückverkauft werden sollten. Essen sollte kein Geschäftsmodell sein.',
-    manifestoP3: 'Stattdessen hilft Ihnen McFatty’s, innezuhalten, auf Ihren Körper zu hören und Ihre Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht Ihnen das einfache Protokollieren, Muster zu erkennen und Ihre Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt für Ihre Entscheidungen verwurzelt sein.',
+    manifestoP3: 'Stattdessen hilft Ihnen McFatty's, innezuhalten, auf Ihren Körper zu hören und Ihre Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht Ihnen das einfache Protokollieren, Muster zu erkennen und Ihre Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt für Ihre Entscheidungen verwurzelt sein.',
     manifestoP4: 'Wir sind gegen Kreisläufe von Schuld, Scham und unmöglichen Versprechungen. Wir werden den als Selbstfürsorge getarnten Konsum nicht feiern. Wir glauben, die radikale Wahl ist, zu verlangsamen, auf sich selbst zu hören und zu Ihren eigenen Bedingungen zu essen.',
-    manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von Ihrer Schuld profitieren.',
+    manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty's wird niemals von Ihrer Schuld profitieren.',
     donateBtn: 'Spenden',
     welcome: 'Willkommen',
     welcomeBack: 'Willkommen zurück',
@@ -234,13 +309,13 @@ const translations = {
     quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
     growthTitle: 'Platz für mehr',
     growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
-    supportBadge: 'McFatty’s kostenlos halten',
+    supportBadge: 'McFatty's kostenlos halten',
     supportTitle: 'Unterstütze uns',
     supportCopy: 'Hilf mit, die Hosting-Kosten zu decken und den Tracker für alle offen zu halten.',
     recentLogTitle: 'Aktuelles Protokoll',
     organizeTiles: 'Kacheln anordnen',
     doneOrganizing: 'Fertig',
-    reorderHint: 'Ziehe die Kacheln, um sie neu anzuordnen. Tippe auf „Fertig“, wenn du zufrieden bist.',
+    reorderHint: 'Ziehe die Kacheln, um sie neu anzuordnen. Tippe auf „Fertig", wenn du zufrieden bist.',
     logSearchLabel: 'Protokoll durchsuchen',
     logSearchPlaceholder: 'Einträge durchsuchen',
     filterGroupLabel: 'Filter',
@@ -288,7 +363,7 @@ const translations = {
     passwordLabel: 'Passwort',
     usernameLabel: 'Benutzername',
     rePasswordLabel: 'Passwort erneut eingeben',
-    installSuccess: 'App installiert! McFatty’s ist jetzt auf deinem Startbildschirm.',
+    installSuccess: 'App installiert! McFatty's ist jetzt auf deinem Startbildschirm.',
     installDismissed: 'Installation abgebrochen.',
     yes: 'Ja',
     no: 'Nein',
@@ -314,6 +389,8 @@ const translations = {
     historyTitle: 'Protokollverlauf',
     impressum: 'Impressum',
     privacyPolicy: 'Datenschutzerklärung',
+    supportTitle: 'Unterstütze uns',
+    supportCopy: 'Wenn du diese App nützlich findest, ziehe bitte eine kleine Spende in Betracht.',
   }
 };
 
@@ -360,38 +437,21 @@ const legalDocs = {
   }
 };
 
+// i18n helpers
 const getTranslation = (key) => {
   const dictionary = translations[lang] || translations.en;
   return (dictionary && dictionary[key]) || translations.en[key] || '';
 };
 
-const tileSystem = initTileSystem({
-  container: appContent,
-  reorderToggle,
-  reorderHint,
-  getTranslation
-});
-
+// Theme
 const THEME_STORAGE_KEY = 'preferred-theme';
-const themeColors = {
-  light: '#fdfaf3',
-  dark: '#1a1a1a'
-};
+const themeColors = { light: '#fdfaf3', dark: '#1a1a1a' };
 
 const getStoredTheme = () => {
-  try {
-    return localStorage.getItem(THEME_STORAGE_KEY);
-  } catch (error) {
-    return null;
-  }
+  try { return localStorage.getItem(THEME_STORAGE_KEY); } catch { return null; }
 };
-
 const storeTheme = (value) => {
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, value);
-  } catch (error) {
-    // ignore storage failures
-  }
+  try { localStorage.setItem(THEME_STORAGE_KEY, value); } catch { /* ignore */ }
 };
 
 const applyTheme = (theme) => {
@@ -430,18 +490,6 @@ const toggleTheme = () => {
   applyTheme(next);
   storeTheme(next);
 };
-
-initializeTheme();
-
-if (themeToggle) {
-  themeToggle.addEventListener('click', toggleTheme);
-  themeToggle.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      toggleTheme();
-    }
-  });
-}
 
 const updateAuthTexts = () => {
   const titleKey = isLoginMode ? 'loginTitle' : 'signupTitle';
@@ -484,20 +532,19 @@ const setLanguage = (newLang) => {
     welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
   }
 
-  tileSystem.refreshLabels();
   updateAuthTexts();
   if (latestSnapshot) renderEntries(latestSnapshot);
 };
 
 const addEntry = () => {
   const name = nameInput.value.trim();
-  if (!name || !logCollection) return;
+  if (!name || !logCollectionRef) return;
 
-  logCollection.add({
+  addDoc(logCollectionRef, {
     name,
     dairy: dairyCheckbox.checked,
     outsideMeals: outsideMealsCheckbox.checked,
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    timestamp: serverTimestamp()
   }).then(() => {
     nameInput.value = '';
     dairyCheckbox.checked = false;
@@ -720,7 +767,7 @@ const renderHistory = (snapshot) => {
 };
 
 const handleLogAction = (event) => {
-  if (!logCollection) return;
+  if (!logCollectionRef) return;
   const button = event.target.closest('button');
   if (!button) return;
 
@@ -728,7 +775,7 @@ const handleLogAction = (event) => {
   if (!id) return;
 
   if (button.classList.contains('remove-entry')) {
-    logCollection.doc(id).delete().catch(error => {
+    deleteDoc(doc(logCollectionRef, id)).catch(error => {
       console.error('Error removing document: ', error);
       alert(getTranslation('deleteError'));
     });
@@ -739,7 +786,7 @@ const handleLogAction = (event) => {
     const currentName = button.closest('tr')?.querySelector('td')?.textContent || '';
     const newName = prompt(getTranslation('editBtn'), currentName);
     if (newName && newName.trim() && newName.trim() !== currentName) {
-      logCollection.doc(id).update({ name: newName.trim() }).catch(error => {
+      updateDoc(doc(logCollectionRef, id), { name: newName.trim() }).catch(error => {
         console.error('Error updating document:', error);
         alert(getTranslation('updateError'));
       });
@@ -748,9 +795,10 @@ const handleLogAction = (event) => {
 };
 
 const exportToCsv = () => {
-  if (!logCollection) return;
+  if (!logCollectionRef) return;
 
-  logCollection.orderBy('timestamp', 'desc').get().then(snapshot => {
+  const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
+  getDocs(q).then(snapshot => {
     const header = [
       getTranslation('csvHeaderDate'),
       getTranslation('csvHeaderItem'),
@@ -785,60 +833,17 @@ const exportToCsv = () => {
 };
 
 const resetAuthFields = () => {
-  authEmail.value = '';
-  authPassword.value = '';
-  authUsername.value = '';
-  authRePassword.value = '';
+  if (authEmail) authEmail.value = '';
+  if (authPassword) authPassword.value = '';
+  if (authUsername) authUsername.value = '';
+  if (authRePassword) authRePassword.value = '';
 };
 
 const setAuthMode = (isLogin) => {
   isLoginMode = isLogin;
-  signupFields.style.display = isLogin ? 'none' : 'block';
+  if (signupFields) signupFields.style.display = isLogin ? 'none' : 'block';
   updateAuthTexts();
 };
-
-auth.onAuthStateChanged(user => {
-  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-
-  const loggedIn = !!user;
-
-  landingPage.style.display = loggedIn ? 'none' : 'grid';
-  appContent.style.display = loggedIn ? 'grid' : 'none';
-  authActions.style.display = loggedIn ? 'none' : 'flex';
-  userInfo.style.display = loggedIn ? 'flex' : 'none';
-  authSection.style.display = 'none';
-  if (dashboardControls) {
-    dashboardControls.hidden = !loggedIn;
-  }
-
-  if (loggedIn) {
-    tileSystem.refreshLabels();
-    resetFilters();
-    const displayName = user.displayName || user.email || '';
-    const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
-    const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
-    const welcomeText = getTranslation(welcomeTextKey);
-    welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
-
-    userName.textContent = displayName;
-
-    logCollection = db.collection('users').doc(user.uid).collection('logs');
-    unsubscribe = logCollection.orderBy('timestamp', 'desc').onSnapshot(renderEntries);
-  } else {
-    tileSystem.exitReorganizeMode(false);
-    userName.textContent = '';
-    welcomeMessage.textContent = '';
-    latestSnapshot = null;
-    tbody.innerHTML = '';
-    emptyState.style.display = 'block';
-    logCollection = null;
-    allEntries = [];
-    resetFilters();
-    updateStats();
-    setAuthMode(true);
-    resetAuthFields();
-  }
-});
 
 const handleAuthSubmit = async () => {
   const email = authEmail.value.trim();
@@ -864,16 +869,16 @@ const handleAuthSubmit = async () => {
   authSubmit.disabled = true;
   try {
     if (isLoginMode) {
-      await auth.signInWithEmailAndPassword(email, password);
+      await signInWithEmailAndPassword(auth, email, password);
     } else {
       const username = authUsername.value.trim();
-      const { user: newUser } = await auth.createUserWithEmailAndPassword(email, password);
-      await newUser.updateProfile({ displayName: username });
-      await db.collection('users').doc(newUser.uid).set({
+      const { user: newUser } = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(newUser, { displayName: username });
+      await updateDoc(doc(db, 'users', newUser.uid), {
         displayName: username,
         email,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
+        createdAt: serverTimestamp()
+      });
     }
     authSection.style.display = 'none';
     resetAuthFields();
@@ -889,7 +894,7 @@ const signOut = (event) => {
   if (event) {
     event.preventDefault();
   }
-  auth.signOut().catch((error) => {
+  fbSignOut(auth).catch((error) => {
     console.error('Error signing out:', error);
   });
 };
@@ -901,152 +906,253 @@ const openDonationPage = () => {
   }
 };
 
-// Event Listeners
-addBtn.addEventListener('click', addEntry);
-tbody.addEventListener('click', handleLogAction);
-exportBtn.addEventListener('click', exportToCsv);
+// Setup event listeners function
+const setupEventListeners = (tileSystem) => {
+  // Theme toggle
+  if (themeToggle) {
+    themeToggle.addEventListener('click', toggleTheme);
+    themeToggle.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleTheme();
+      }
+    });
+  }
 
-if (logSearchInput) {
-  logSearchInput.addEventListener('input', (event) => {
-    searchTerm = event.target.value.trim().toLowerCase();
-    applyFilters();
+  // Main app functionality
+  if (addBtn) addBtn.addEventListener('click', addEntry);
+  if (tbody) tbody.addEventListener('click', handleLogAction);
+  if (exportBtn) exportBtn.addEventListener('click', exportToCsv);
+
+  // Search and filters
+  if (logSearchInput) {
+    logSearchInput.addEventListener('input', (event) => {
+      searchTerm = event.target.value.trim().toLowerCase();
+      applyFilters();
+    });
+  }
+
+  filterButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const { filter } = button.dataset;
+      if (!filter) return;
+      activeFilter = filter;
+      filterButtons.forEach(btn => btn.classList.toggle('is-active', btn === button));
+      applyFilters();
+    });
   });
-}
 
-filterButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    const { filter } = button.dataset;
-    if (!filter) return;
-    activeFilter = filter;
-    filterButtons.forEach(btn => btn.classList.toggle('is-active', btn === button));
-    applyFilters();
+  // Auth buttons
+  if (loginBtn) loginBtn.addEventListener('click', () => { 
+    resetAuthFields(); 
+    authSection.style.display = 'block'; 
+    setAuthMode(true); 
   });
-});
+  if (signupBtn) signupBtn.addEventListener('click', () => { 
+    resetAuthFields(); 
+    authSection.style.display = 'block'; 
+    setAuthMode(false); 
+  });
+  if (authToggle) authToggle.addEventListener('click', () => setAuthMode(!isLoginMode));
+  if (authSubmit) authSubmit.addEventListener('click', handleAuthSubmit);
 
-loginBtn.addEventListener('click', () => { resetAuthFields(); authSection.style.display = 'block'; setAuthMode(true); });
-signupBtn.addEventListener('click', () => { resetAuthFields(); authSection.style.display = 'block'; setAuthMode(false); });
-authToggle.addEventListener('click', () => setAuthMode(!isLoginMode));
-authSubmit.addEventListener('click', handleAuthSubmit);
+  if (googleSigninBtn) {
+    googleSigninBtn.addEventListener('click', () => {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider).catch(err => {
+        alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
+        console.error('Google sign-in error:', err);
+      });
+    });
+  }
 
-googleSigninBtn.addEventListener('click', () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => {
-  alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
-  console.error('Google sign-in error:', err);
-}));
+  // Logout buttons
+  if (logoutBtn) logoutBtn.addEventListener('click', signOut);
+  if (logoutBtnMain) logoutBtnMain.addEventListener('click', signOut);
 
-if (logoutBtn) {
-  logoutBtn.addEventListener('click', signOut);
-}
+  // Donation buttons
+  if (donateBtn) donateBtn.addEventListener('click', openDonationPage);
+  if (supportCard) supportCard.addEventListener('click', openDonationPage);
 
-if (logoutBtnMain) {
-  logoutBtnMain.addEventListener('click', signOut);
-}
+  // Language toggle
+  if (langToggle) {
+    langToggle.addEventListener('click', toggleLanguage);
+    langToggle.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleLanguage();
+      }
+    });
+  }
 
-if (donateBtn) {
-  donateBtn.addEventListener('click', openDonationPage);
-}
+  // Menu controls
+  if (menuOpenBtn && sidebar && scrim) {
+    menuOpenBtn.addEventListener('click', () => { 
+      sidebar.classList.add('open'); 
+      scrim.classList.add('show'); 
+    });
+  }
+  if (menuCloseBtn && sidebar && scrim) {
+    menuCloseBtn.addEventListener('click', () => { 
+      sidebar.classList.remove('open'); 
+      scrim.classList.remove('show'); 
+    });
+  }
+  if (scrim && sidebar) {
+    scrim.addEventListener('click', () => { 
+      sidebar.classList.remove('open'); 
+      scrim.classList.remove('show'); 
+    });
+  }
 
-if (supportTileBtn) {
-  supportTileBtn.addEventListener('click', openDonationPage);
-}
+  // Sidebar actions -> modals
+  if (sidebar) {
+    sidebar.addEventListener('click', (event) => {
+      const button = event.target.closest('.sb-item-btn');
+      if (!button) return;
+      const action = button.dataset.action;
 
-langToggle.addEventListener('click', toggleLanguage);
-langToggle.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter' || event.key === ' ') {
-    event.preventDefault();
-    toggleLanguage();
+      if (action === 'manifesto') {
+        manifestoModal.classList.add('show');
+      } else if (action === 'history') {
+        if (!logCollectionRef) return;
+        const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
+        getDocs(q).then(renderHistory);
+        historyModal.classList.add('show');
+      }
+      // Close sidebar after action
+      sidebar.classList.remove('open');
+      scrim.classList.remove('show');
+    });
+  }
+
+  // Logo card and instructions modal
+  if (logoCard && instructionsModal) {
+    logoCard.addEventListener('click', () => {
+      if (!tileSystem.isReorganizeMode()) {
+        instructionsModal.classList.add('show');
+      }
+    });
+  }
+
+  // Manifesto card click
+  if (manifestoCard) {
+    manifestoCard.addEventListener('click', () => {
+      if (!tileSystem.isReorganizeMode()) {
+        manifestoModal.classList.add('show');
+      }
+    });
+  }
+
+  // Modal close buttons
+  if (closeInstructionsBtn && instructionsModal) {
+    closeInstructionsBtn.addEventListener('click', () => instructionsModal.classList.remove('show'));
+  }
+  if (closeManifestoBtn) {
+    closeManifestoBtn.addEventListener('click', () => manifestoModal.classList.remove('show'));
+  }
+  if (closeHistoryBtn) {
+    closeHistoryBtn.addEventListener('click', () => historyModal.classList.remove('show'));
+  }
+
+  // Legal links
+  if (impressumLink) {
+    impressumLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      legalTitle.textContent = getTranslation('impressum');
+      legalContent.innerHTML = lang === 'de' ? legalDocs.de.impressum : legalDocs.en.impressum;
+      legalModal.classList.add('show');
+    });
+  }
+
+  if (privacyLink) {
+    privacyLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      legalTitle.textContent = getTranslation('privacyPolicy');
+      legalContent.innerHTML = lang === 'de' ? legalDocs.de.privacyPolicy : legalDocs.en.privacyPolicy;
+      legalModal.classList.add('show');
+    });
+  }
+
+  if (closeLegalBtn) {
+    closeLegalBtn.addEventListener('click', () => legalModal.classList.remove('show'));
+  }
+
+  // PWA install
+  if (pwaInstallBtn) {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      pwaInstallBtn.style.display = 'inline-flex';
+    });
+
+    pwaInstallBtn.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      showInstallBanner(getTranslation(outcome === 'accepted' ? 'installSuccess' : 'installDismissed'));
+      deferredInstallPrompt = null;
+      pwaInstallBtn.style.display = 'none';
+    });
+
+    window.addEventListener('appinstalled', () => {
+      showInstallBanner(getTranslation('installSuccess'));
+      deferredInstallPrompt = null;
+      pwaInstallBtn.style.display = 'none';
+    });
+  }
+};
+
+// Auth state listener
+onAuthStateChanged(auth, user => {
+  if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+
+  const loggedIn = !!user;
+
+  if (landingPage) landingPage.style.display = loggedIn ? 'none' : 'grid';
+  if (appContent) appContent.style.display = loggedIn ? 'grid' : 'none';
+  if (authActions) authActions.style.display = loggedIn ? 'none' : 'flex';
+  if (userInfo) userInfo.style.display = loggedIn ? 'flex' : 'none';
+  if (authSection) authSection.style.display = 'none';
+  if (dashboardControls) {
+    dashboardControls.hidden = !loggedIn;
+  }
+
+  if (loggedIn) {
+    resetFilters();
+    const displayName = user.displayName || user.email || '';
+    const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
+    const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
+    const welcomeText = getTranslation(welcomeTextKey);
+    if (welcomeMessage) {
+      welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
+    }
+
+    if (userName) userName.textContent = displayName;
+
+    logCollectionRef = collection(db, 'users', user.uid, 'logs');
+    const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
+    unsubscribe = onSnapshot(q, renderEntries);
+  } else {
+    if (userName) userName.textContent = '';
+    if (welcomeMessage) welcomeMessage.textContent = '';
+    latestSnapshot = null;
+    if (tbody) tbody.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
+    logCollectionRef = null;
+    allEntries = [];
+    resetFilters();
+    updateStats();
+    setAuthMode(true);
+    resetAuthFields();
   }
 });
 
-menuOpenBtn.addEventListener('click', () => { sidebar.classList.add('open'); scrim.classList.add('show'); });
-menuCloseBtn.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
-scrim.addEventListener('click', () => { sidebar.classList.remove('open'); scrim.classList.remove('show'); });
-
-// Sidebar actions -> modals
-sidebar.addEventListener('click', (event) => {
-  const button = event.target.closest('.sb-item-btn');
-  if (!button) return;
-  const action = button.dataset.action;
-
-  if (action === 'manifesto') {
-    manifestoModal.classList.add('show');
-  } else if (action === 'history') {
-    if (!logCollection) return;
-    logCollection.orderBy('timestamp', 'desc').get().then(renderHistory);
-    historyModal.classList.add('show');
-  }
-  // Close sidebar after action
-  sidebar.classList.remove('open');
-  scrim.classList.remove('show');
-});
-
-if (logoCard && instructionsModal) {
-  logoCard.addEventListener('click', () => {
-    if (!tileSystem.isReorganizeMode()) {
-      instructionsModal.classList.add('show');
-    }
-  });
-}
-
-// Manifesto card click
-const manifestoCard = document.getElementById('manifesto-card');
-if (manifestoCard) {
-  manifestoCard.addEventListener('click', () => {
-    if (!tileSystem.isReorganizeMode()) {
-      manifestoModal.classList.add('show');
-    }
-  });
-}
-
-if (closeInstructionsBtn && instructionsModal) {
-  closeInstructionsBtn.addEventListener('click', () => instructionsModal.classList.remove('show'));
-}
-
-closeManifestoBtn.addEventListener('click', () => manifestoModal.classList.remove('show'));
-closeHistoryBtn.addEventListener('click', () => historyModal.classList.remove('show'));
-
-impressumLink.addEventListener('click', (e) => {
-  e.preventDefault();
-  legalTitle.textContent = getTranslation('impressum');
-  legalContent.innerHTML = lang === 'de' ? legalDocs.de.impressum : legalDocs.en.impressum;
-  legalModal.classList.add('show');
-});
-
-privacyLink.addEventListener('click', (e) => {
-  e.preventDefault();
-  legalTitle.textContent = getTranslation('privacyPolicy');
-  legalContent.innerHTML = lang === 'de' ? legalDocs.de.privacyPolicy : legalDocs.en.privacyPolicy;
-  legalModal.classList.add('show');
-});
-
-closeLegalBtn.addEventListener('click', () => legalModal.classList.remove('show'));
-
-// PWA install
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  pwaInstallBtn.style.display = 'inline-flex';
-});
-
-pwaInstallBtn.addEventListener('click', async () => {
-  if (!deferredInstallPrompt) return;
-  deferredInstallPrompt.prompt();
-  const { outcome } = await deferredInstallPrompt.userChoice;
-  showInstallBanner(getTranslation(outcome === 'accepted' ? 'installSuccess' : 'installDismissed'));
-  deferredInstallPrompt = null;
-  pwaInstallBtn.style.display = 'none';
-});
-
-window.addEventListener('appinstalled', () => {
-  showInstallBanner(getTranslation('installSuccess'));
-  deferredInstallPrompt = null;
-  pwaInstallBtn.style.display = 'none';
-});
-
-// SW
+// Service Worker
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js').catch(err => console.error('SW registration failed:', err)));
+  window.addEventListener('load', () => 
+    navigator.serviceWorker.register('service-worker.js').catch(err => 
+      console.error('SW registration failed:', err)
+    )
+  );
 }
-
-// Boot
-setLanguage('en');
-
