@@ -1,7 +1,7 @@
 const recentLogTile = {
   id: 'recent-log',
   elementId: 'log-section',
-  classNames: ['span-2'],
+  classNames: ['span-2', 'tile--recent-log'],
   ariaLabelledBy: 'recentLog',
   span: true,
   template: `
