@@ -25,18 +25,22 @@ const recentLogTile = {
           <button type="button" class="filter-btn" data-filter="during-meals" data-i18n="filterMeals">At mealtimes</button>
         </div>
       </div>
-      <table class="table" aria-describedby="recentLog">
-        <thead>
-          <tr>
-            <th data-i18n="thItem">Item</th>
-            <th data-i18n="thTime">Time</th>
-            <th data-i18n="thDairy">Dairy</th>
-            <th data-i18n="thOutsideMeals">Outside of mealtimes</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="log-body"></tbody>
-      </table>
+      <div class="log-table" role="region" aria-live="polite">
+        <div class="log-table-inner">
+          <table class="table" aria-describedby="recentLog">
+            <thead>
+              <tr>
+                <th data-i18n="thItem">Item</th>
+                <th data-i18n="thTime">Time</th>
+                <th data-i18n="thDairy">Dairy</th>
+                <th data-i18n="thOutsideMeals">Outside of mealtimes</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="log-body"></tbody>
+          </table>
+        </div>
+      </div>
       <div id="empty-state" class="info-text" style="display:none" data-i18n="emptyState">No items yet. Add your first item above.</div>
       <div id="no-results" class="info-text" style="display:none" data-i18n="noResults">No entries match your filters yet.</div>
     `
