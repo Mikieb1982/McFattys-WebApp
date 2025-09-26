@@ -1,31 +1,27 @@
 // app.js (ES module)
 import { renderTiles, initTileSystem } from './tiles.js';
 
-// Firebase v9+ (modular)
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import {
-  getAuth,
-  onAuthStateChanged,
-  signOut as fbSignOut,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile,
-  GoogleAuthProvider,
-  signInWithPopup
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {
-  getFirestore,
-  collection,
-  doc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  onSnapshot,
-  getDocs,
-  query,
-  orderBy,
-  serverTimestamp
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+// Firebase (loaded dynamically to allow graceful offline fallback)
+let initializeApp;
+let getAuth;
+let onAuthStateChanged;
+let fbSignOut;
+let signInWithEmailAndPassword;
+let createUserWithEmailAndPassword;
+let updateProfile;
+let GoogleAuthProvider;
+let signInWithPopup;
+let getFirestore;
+let collection;
+let doc;
+let addDoc;
+let updateDoc;
+let deleteDoc;
+let onSnapshot;
+let getDocs;
+let query;
+let orderBy;
+let serverTimestamp;
 
 const firebaseConfig = {
   apiKey: "AIzaSyC1qN3ksU0uYhXRXYNmYlmGX0iyUa-BJFQ",
@@ -37,10 +33,11 @@ const firebaseConfig = {
   measurementId: "G-KQX4BQ71VK"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// Firebase state (populated asynchronously)
+let app = null;
+let auth = null;
+let db = null;
+let firebaseReady = false;
 
 // Constants
 const MAX_RECENT_ROWS = 10;
@@ -69,8 +66,50 @@ let instructionsModal, closeInstructionsBtn, logoCard, manifestoCard, supportCar
 let authSection, loginBtn, signupBtn, authSubmit, authActions, signupFields, authTitle, authToggle;
 let authEmail, authPassword, authUsername, authRePassword;
 
+const loadFirebaseModules = async () => {
+  try {
+    const [appModule, authModule, firestoreModule] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
+    ]);
+
+    ({ initializeApp } = appModule);
+    ({
+      getAuth,
+      onAuthStateChanged,
+      signOut: fbSignOut,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      updateProfile,
+      GoogleAuthProvider,
+      signInWithPopup
+    } = authModule);
+    ({
+      getFirestore,
+      collection,
+      doc,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      onSnapshot,
+      getDocs,
+      query,
+      orderBy,
+      serverTimestamp
+    } = firestoreModule);
+
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    firebaseReady = true;
+  } catch (error) {
+    console.warn('Firebase modules failed to load. Running in offline mode.', error);
+  }
+};
+
 // DOM Content Loaded - Initialize element references
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // Main app elements
   appContent = document.getElementById('app-content');
   nameInput = document.getElementById('food-name');
@@ -172,6 +211,9 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Set up event listeners after elements are available
   setupEventListeners(tileSystem);
+
+  await loadFirebaseModules();
+  initializeAuthListener();
 });
 
 // --- Translations ---
@@ -198,16 +240,16 @@ const translations = {
     statOutsideMeals: 'Outside of mealtimes',
     statLastEntry: 'Last entry',
     quickAddTitle: 'Quick add',
-    quickAddHint: 'Log what you're eating right now—no pressure, no judgement.',
+    quickAddHint: 'Log what you’re eating right now—no pressure, no judgement.',
     growthTitle: 'Room to grow',
     growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
-    supportBadge: 'Keep McFatty's free',
+    supportBadge: 'Keep McFatty’s free',
     supportTitle: 'Support us',
     supportCopy: 'Chip in to cover hosting and keep the tracker open for everyone.',
     recentLogTitle: 'Recent log',
     organizeTiles: 'Organize tiles',
     doneOrganizing: 'Done',
-    reorderHint: 'Drag tiles to reorder. Tap Done when you're finished.',
+    reorderHint: 'Drag tiles to reorder. Tap Done when you’re finished.',
     logSearchLabel: 'Search log',
     logSearchPlaceholder: 'Search entries',
     filterGroupLabel: 'Filters',
@@ -223,7 +265,7 @@ const translations = {
     addBtn: 'Add to log',
     dairyLabel: 'Contains dairy',
     outsideMealsLabel: 'Outside of mealtimes',
-    logTitle: 'Today's log',
+    logTitle: 'Today’s log',
     exportBtn: 'Export',
     thItem: 'Item',
     thTime: 'Time',
@@ -255,7 +297,7 @@ const translations = {
     passwordLabel: 'Password',
     usernameLabel: 'Username',
     rePasswordLabel: 'Re-type Password',
-    installSuccess: 'App installed! Find McFatty's on your home screen.',
+    installSuccess: 'App installed! Find McFatty’s on your home screen.',
     installDismissed: 'Install dismissed.',
     yes: 'Yes',
     no: 'No',
@@ -266,6 +308,7 @@ const translations = {
     authMissingFields: 'Please enter an email and password.',
     authMissingUsername: 'Please choose a username.',
     authPasswordMismatch: 'Passwords do not match.',
+    authUnavailable: 'Authentication is currently unavailable. Please try again later.',
     addError: 'Sorry, there was an error adding your entry.',
     deleteError: 'Sorry, there was an error removing your entry.',
     updateError: 'Sorry, there was an error updating your entry.',
@@ -294,9 +337,9 @@ const translations = {
     manifestoTitle: 'McFettys Manifest',
     manifestoP1: 'Bei McFettys Food Tracker geht es nicht um Kalorien, Einschränkungen oder Schuldgefühle. Wenn du Chips willst, iss sie. Keine Scham, keine Bestrafung. Schreib es einfach auf. Das Aufzeichnen ohne Urteil ist der entscheidende Akt.',
     manifestoP2: 'Diese App ist kostenlos. Keine Abonnements, keine Upsells, keine Lifestyle-Pakete. Wir lehnen die Idee ab, dass uns Essen und Gesundheit zurückverkauft werden sollten. Essen sollte kein Geschäftsmodell sein.',
-    manifestoP3: 'Stattdessen hilft Ihnen McFatty's, innezuhalten, auf Ihren Körper zu hören und Ihre Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht Ihnen das einfache Protokollieren, Muster zu erkennen und Ihre Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt für Ihre Entscheidungen verwurzelt sein.',
+    manifestoP3: 'Stattdessen hilft Ihnen McFatty’s, innezuhalten, auf Ihren Körper zu hören und Ihre Gewohnheiten zu bemerken. Bewusst oder unbewusst ermöglicht Ihnen das einfache Protokollieren, Muster zu erkennen und Ihre Beziehung zum Essen langsam zu verändern. Veränderung sollte kein Wettlauf sein. Sie sollte langsam, sanft und in Respekt für Ihre Entscheidungen verwurzelt sein.',
     manifestoP4: 'Wir sind gegen Kreisläufe von Schuld, Scham und unmöglichen Versprechungen. Wir werden den als Selbstfürsorge getarnten Konsum nicht feiern. Wir glauben, die radikale Wahl ist, zu verlangsamen, auf sich selbst zu hören und zu Ihren eigenen Bedingungen zu essen.',
-    manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty's wird niemals von Ihrer Schuld profitieren.',
+    manifestoP5: 'Die App wird immer kostenlos sein. Es gibt einen Spenden-Button für diejenigen, die unterstützen möchten, denn obwohl die Welt frei sein sollte, ist sie es nicht. Aber McFatty’s wird niemals von Ihrer Schuld profitieren.',
     donateBtn: 'Spenden',
     welcome: 'Willkommen',
     welcomeBack: 'Willkommen zurück',
@@ -309,7 +352,7 @@ const translations = {
     quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
     growthTitle: 'Platz für mehr',
     growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
-    supportBadge: 'McFatty's kostenlos halten',
+    supportBadge: 'McFatty’s kostenlos halten',
     supportTitle: 'Unterstütze uns',
     supportCopy: 'Hilf mit, die Hosting-Kosten zu decken und den Tracker für alle offen zu halten.',
     recentLogTitle: 'Aktuelles Protokoll',
@@ -363,7 +406,7 @@ const translations = {
     passwordLabel: 'Passwort',
     usernameLabel: 'Benutzername',
     rePasswordLabel: 'Passwort erneut eingeben',
-    installSuccess: 'App installiert! McFatty's ist jetzt auf deinem Startbildschirm.',
+    installSuccess: 'App installiert! McFatty’s ist jetzt auf deinem Startbildschirm.',
     installDismissed: 'Installation abgebrochen.',
     yes: 'Ja',
     no: 'Nein',
@@ -374,6 +417,7 @@ const translations = {
     authMissingFields: 'Bitte E-Mail und Passwort eingeben.',
     authMissingUsername: 'Bitte einen Benutzernamen wählen.',
     authPasswordMismatch: 'Passwörter stimmen nicht überein.',
+    authUnavailable: 'Die Anmeldung ist derzeit nicht verfügbar. Bitte versuche es später erneut.',
     addError: 'Beim Hinzufügen deines Eintrags ist ein Fehler aufgetreten.',
     deleteError: 'Beim Entfernen deines Eintrags ist ein Fehler aufgetreten.',
     updateError: 'Beim Aktualisieren deines Eintrags ist ein Fehler aufgetreten.',
@@ -523,7 +567,7 @@ const setLanguage = (newLang) => {
     el.placeholder = getTranslation(key);
   });
 
-  const user = auth.currentUser;
+  const user = firebaseReady && auth ? auth.currentUser : null;
   if (user) {
     const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
     const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
@@ -866,6 +910,11 @@ const handleAuthSubmit = async () => {
     }
   }
 
+  if (!firebaseReady || !auth || typeof signInWithEmailAndPassword !== 'function' || typeof createUserWithEmailAndPassword !== 'function') {
+    alert(getTranslation('authUnavailable'));
+    return;
+  }
+
   authSubmit.disabled = true;
   try {
     if (isLoginMode) {
@@ -893,6 +942,10 @@ const handleAuthSubmit = async () => {
 const signOut = (event) => {
   if (event) {
     event.preventDefault();
+  }
+  if (!firebaseReady || !auth || typeof fbSignOut !== 'function') {
+    console.warn('Sign out unavailable: Firebase not initialized.');
+    return;
   }
   fbSignOut(auth).catch((error) => {
     console.error('Error signing out:', error);
@@ -958,6 +1011,10 @@ const setupEventListeners = (tileSystem) => {
 
   if (googleSigninBtn) {
     googleSigninBtn.addEventListener('click', () => {
+      if (!firebaseReady || !auth || typeof GoogleAuthProvider !== 'function' || typeof signInWithPopup !== 'function') {
+        alert(getTranslation('authUnavailable'));
+        return;
+      }
       const provider = new GoogleAuthProvider();
       signInWithPopup(auth, provider).catch(err => {
         alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
@@ -1103,8 +1160,7 @@ const setupEventListeners = (tileSystem) => {
   }
 };
 
-// Auth state listener
-onAuthStateChanged(auth, user => {
+const handleAuthStateChange = (user) => {
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
 
   const loggedIn = !!user;
@@ -1146,7 +1202,15 @@ onAuthStateChanged(auth, user => {
     setAuthMode(true);
     resetAuthFields();
   }
-});
+};
+
+const initializeAuthListener = () => {
+  if (firebaseReady && typeof onAuthStateChanged === 'function' && auth) {
+    onAuthStateChanged(auth, handleAuthStateChange);
+  } else {
+    handleAuthStateChange(null);
+  }
+};
 
 // Service Worker
 if ('serviceWorker' in navigator) {
