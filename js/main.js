@@ -112,6 +112,10 @@ const loadFirebaseModules = async () => {
 document.addEventListener('DOMContentLoaded', async () => {
   // Main app elements
   appContent = document.getElementById('app-content');
+
+  // Render dashboard tiles before querying for tile-specific elements
+  renderTiles(appContent);
+
   nameInput = document.getElementById('food-name');
   dairyCheckbox = document.getElementById('contains-dairy');
   outsideMealsCheckbox = document.getElementById('outside-meals');
