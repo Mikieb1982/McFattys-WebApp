@@ -1033,7 +1033,12 @@ const setupEventListeners = (tileSystem) => {
 
   // Donation buttons
   if (donateBtn) donateBtn.addEventListener('click', openDonationPage);
-  if (supportCard) supportCard.addEventListener('click', openDonationPage);
+  if (supportCard) {
+    supportCard.addEventListener('click', () => {
+      if (tileSystem.isReorganizeMode()) return;
+      openDonationPage();
+    });
+  }
 
   // Language toggle
   if (langToggle) {
