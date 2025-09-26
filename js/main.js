@@ -247,8 +247,6 @@ const translations = {
     quickAddHint: 'Log what you’re eating right now—no pressure, no judgement.',
     growthTitle: 'Room to grow',
     growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
-    supportBadge: 'Keep McFatty’s free',
-    supportTitle: 'Support us',
     supportCopy: 'Chip in to cover hosting and keep the tracker open for everyone.',
     recentLogTitle: 'Recent log',
     organizeTiles: 'Organize tiles',
@@ -328,7 +326,6 @@ const translations = {
     historyTitle: 'Log History',
     impressum: 'Legal Notice',
     privacyPolicy: 'Privacy Policy',
-    supportTitle: 'Support Us',
     supportCopy: 'If you find this app useful, please consider a small donation.',
   },
   de: {
@@ -356,8 +353,6 @@ const translations = {
     quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
     growthTitle: 'Platz für mehr',
     growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
-    supportBadge: 'McFatty’s kostenlos halten',
-    supportTitle: 'Unterstütze uns',
     supportCopy: 'Hilf mit, die Hosting-Kosten zu decken und den Tracker für alle offen zu halten.',
     recentLogTitle: 'Aktuelles Protokoll',
     organizeTiles: 'Kacheln anordnen',
@@ -437,7 +432,6 @@ const translations = {
     historyTitle: 'Protokollverlauf',
     impressum: 'Impressum',
     privacyPolicy: 'Datenschutzerklärung',
-    supportTitle: 'Unterstütze uns',
     supportCopy: 'Wenn du diese App nützlich findest, ziehe bitte eine kleine Spende in Betracht.',
   }
 };
@@ -1033,7 +1027,12 @@ const setupEventListeners = (tileSystem) => {
 
   // Donation buttons
   if (donateBtn) donateBtn.addEventListener('click', openDonationPage);
-  if (supportCard) supportCard.addEventListener('click', openDonationPage);
+  if (supportCard) {
+    supportCard.addEventListener('click', () => {
+      if (tileSystem.isReorganizeMode()) return;
+      openDonationPage();
+    });
+  }
 
   // Language toggle
   if (langToggle) {
