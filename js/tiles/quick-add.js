@@ -26,6 +26,21 @@ const quickAddTile = {
           <button id="add-button" class="btn btn-primary" type="button" data-i18n="addBtn">Add to log</button>
         </div>
       </div>
+      <div id="context-followup" class="context-followup" hidden>
+        <p class="context-question" data-i18n="contextPrompt">How did that feel?</p>
+        <div class="context-feelings" role="group" aria-label="Select how you felt">
+          <button type="button" class="btn context-feeling" data-feeling="energized" data-i18n="contextFeelingEnergized">Energized</button>
+          <button type="button" class="btn context-feeling" data-feeling="satisfied" data-i18n="contextFeelingSatisfied">Satisfied</button>
+          <button type="button" class="btn context-feeling" data-feeling="sluggish" data-i18n="contextFeelingSluggish">Sluggish</button>
+        </div>
+        <label for="context-setting" class="label" data-i18n="contextSettingLabel">Where were you?</label>
+        <input id="context-setting" class="input" type="text" placeholder="At my desk" data-i18n-placeholder="contextSettingPlaceholder">
+        <div class="context-actions">
+          <button id="save-context" class="btn btn-primary" type="button" data-i18n="contextSave" disabled>Save</button>
+          <button id="skip-context" class="btn btn-secondary" type="button" data-i18n="contextSkip">Skip</button>
+        </div>
+        <p id="context-status" class="context-status" aria-live="polite"></p>
+      </div>
     `
 };
 
