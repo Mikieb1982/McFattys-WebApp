@@ -1,5 +1,7 @@
 // app.js (ES module)
 import { renderTiles, initTileSystem } from './tiles.js';
+import { createContextFeature } from './features/context.js';
+import { createIntentionFeature } from './features/intention.js';
 
 // Firebase (loaded dynamically to allow graceful offline fallback)
 let initializeApp;
@@ -54,6 +56,8 @@ let isLoginMode = true;
 let allEntries = [];
 let activeFilter = 'all';
 let searchTerm = '';
+let contextFeature;
+let intentionFeature;
 
 // Element refs (assigned on DOMContentLoaded)
 let appContent, nameInput, dairyCheckbox, outsideMealsCheckbox, addBtn, tbody, emptyState, installBanner;
@@ -125,7 +129,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   tbody = document.getElementById('log-body');
   emptyState = document.getElementById('empty-state');
   installBanner = document.getElementById('install-banner');
-  
+  const contextFollowup = document.getElementById('context-followup');
+  const contextFeelingButtons = Array.from(document.querySelectorAll('.context-feeling'));
+  const contextSettingInput = document.getElementById('context-setting');
+  const contextSaveBtn = document.getElementById('save-context');
+  const contextSkipBtn = document.getElementById('skip-context');
+  const contextStatus = document.getElementById('context-status');
+
+  contextFeature?.assignElements({
+    followup: contextFollowup,
+    feelingButtons: contextFeelingButtons,
+    settingInput: contextSettingInput,
+    saveBtn: contextSaveBtn,
+    skipBtn: contextSkipBtn,
+    status: contextStatus,
+    tbody
+  });
+
   // Navigation and UI
   sidebar = document.getElementById('sidebar');
   scrim = document.getElementById('scrim');
@@ -202,6 +222,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   authPassword = document.getElementById('auth-password');
   authUsername = document.getElementById('auth-username');
   authRePassword = document.getElementById('auth-re-password');
+  const intentionFormEl = document.getElementById('intention-form');
+  const intentionTextareaEl = document.getElementById('intention-text');
+  const intentionSaveBtnEl = document.getElementById('intention-save');
+  const intentionDisplayEl = document.getElementById('intention-display');
+  const intentionCurrentEl = intentionDisplayEl ? intentionDisplayEl.querySelector('.intention-current') : null;
+  const intentionDateEl = intentionDisplayEl ? intentionDisplayEl.querySelector('.intention-date') : null;
+  const intentionEditBtnEl = document.getElementById('intention-edit');
+  const intentionStatusEl = document.getElementById('intention-status');
+
+  intentionFeature?.assignElements({
+    form: intentionFormEl,
+    textarea: intentionTextareaEl,
+    saveBtn: intentionSaveBtnEl,
+    display: intentionDisplayEl,
+    current: intentionCurrentEl,
+    date: intentionDateEl,
+    editBtn: intentionEditBtnEl,
+    status: intentionStatusEl
+  });
 
   // Initialize tile system after elements are available
   const tileSystem = initTileSystem({
@@ -247,8 +286,32 @@ const translations = {
     statLastEntry: 'Last entry',
     quickAddTitle: 'Quick add',
     quickAddHint: 'Log what you’re eating right now—no pressure, no judgement.',
-    growthTitle: 'Room to grow',
-    growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
+    contextPrompt: 'How did that feel?',
+    contextFeelingEnergized: 'Energized',
+    contextFeelingSatisfied: 'Satisfied',
+    contextFeelingSluggish: 'Sluggish',
+    contextSettingLabel: 'Where were you?',
+    contextSettingPlaceholder: 'At my desk',
+    contextSave: 'Save',
+    contextSkip: 'Skip',
+    contextSaved: 'Reflection added.',
+    contextError: 'Sorry, we couldn’t save that reflection.',
+    contextView: 'View context',
+    contextHide: 'Hide context',
+    contextEmpty: 'No reflections yet.',
+    contextLoading: 'Loading reflections...',
+    contextAddedTime: 'Logged at',
+    intentionTitle: 'Daily intention',
+    intentionLabel: 'What’s your focus today?',
+    intentionPlaceholder: 'Pause, notice, breathe',
+    intentionExamples: 'Try: “Pause between bites”, “Notice fullness cues”.',
+    intentionSave: 'Save intention',
+    intentionEdit: 'Edit intention',
+    intentionSaved: 'Intention saved.',
+    intentionError: 'Sorry, we couldn’t save your intention.',
+    intentionToday: 'Set on {date}',
+    intentionEmpty: 'Set an intention to guide your day.',
+    intentionRequired: 'Please enter an intention before saving.',
     supportBadge: 'Keep McFatty\u2019s free',
     supportTitle: 'Support us',
     supportCopy: 'Chip in to cover hosting and keep the tracker open for everyone.',
@@ -277,6 +340,7 @@ const translations = {
     thTime: 'Time',
     thDairy: 'Dairy',
     thOutsideMeals: 'Outside of mealtimes',
+    thActions: 'Actions',
     emptyState: 'No items yet. Add your first item above.',
     confirmTitle: 'Are you sure?',
     cancelBtn: 'Cancel',
@@ -354,8 +418,32 @@ const translations = {
     statLastEntry: 'Letzter Eintrag',
     quickAddTitle: 'Schnell hinzufügen',
     quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
-    growthTitle: 'Platz für mehr',
-    growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
+    contextPrompt: 'Wie hat sich das angefühlt?',
+    contextFeelingEnergized: 'Energiegeladen',
+    contextFeelingSatisfied: 'Zufrieden',
+    contextFeelingSluggish: 'Träge',
+    contextSettingLabel: 'Wo warst du?',
+    contextSettingPlaceholder: 'An meinem Schreibtisch',
+    contextSave: 'Speichern',
+    contextSkip: 'Überspringen',
+    contextSaved: 'Reflexion gespeichert.',
+    contextError: 'Leider konnte die Reflexion nicht gespeichert werden.',
+    contextView: 'Kontext anzeigen',
+    contextHide: 'Kontext verbergen',
+    contextEmpty: 'Noch keine Reflexionen.',
+    contextLoading: 'Reflexionen werden geladen …',
+    contextAddedTime: 'Erfasst um',
+    intentionTitle: 'Tägliche Intention',
+    intentionLabel: 'Worauf möchtest du dich heute konzentrieren?',
+    intentionPlaceholder: 'Pause, wahrnehmen, atmen',
+    intentionExamples: 'Zum Beispiel: „Zwischen den Bissen pausieren“, „Sättigung wahrnehmen“.',
+    intentionSave: 'Intention speichern',
+    intentionEdit: 'Intention bearbeiten',
+    intentionSaved: 'Intention gespeichert.',
+    intentionError: 'Deine Intention konnte leider nicht gespeichert werden.',
+    intentionToday: 'Festgelegt am {date}',
+    intentionEmpty: 'Lege eine Intention fest, um deinen Tag zu begleiten.',
+    intentionRequired: 'Bitte gib eine Intention ein, bevor du speicherst.',
     supportBadge: 'Halte McFatty’s kostenlos',
     supportTitle: 'Unterstütze uns',
     supportCopy: 'Hilf mit, die Hosting-Kosten zu decken und den Tracker für alle offen zu halten.',
@@ -384,6 +472,7 @@ const translations = {
     thTime: 'Uhrzeit',
     thDairy: 'Milchprodukte',
     thOutsideMeals: 'Außerhalb der Mahlzeiten',
+    thActions: 'Aktionen',
     emptyState: 'Noch keine Einträge. Fügen Sie oben Ihren ersten Eintrag hinzu.',
     confirmTitle: 'Sind Sie sicher?',
     cancelBtn: 'Abbrechen',
@@ -489,6 +578,20 @@ const getTranslation = (key) => {
   return (dictionary && dictionary[key]) || translations.en[key] || '';
 };
 
+contextFeature = createContextFeature({
+  getTranslation: (key) => getTranslation(key),
+  getLang: () => lang,
+  getFirebase: () => ({ firebaseReady, auth, db }),
+  getFirestore: () => ({ collection, getDocs, orderBy, query, addDoc, serverTimestamp })
+});
+
+intentionFeature = createIntentionFeature({
+  getTranslation: (key) => getTranslation(key),
+  getLang: () => lang,
+  getFirebase: () => ({ firebaseReady, auth, db }),
+  getFirestore: () => ({ doc, setDoc, onSnapshot, serverTimestamp })
+});
+
 // Theme
 const THEME_STORAGE_KEY = 'preferred-theme';
 const themeColors = { light: '#fdfaf3', dark: '#1a1a1a' };
@@ -589,26 +692,36 @@ const setLanguage = (newLang) => {
 
   updateAuthTexts();
   if (latestSnapshot) renderEntries(latestSnapshot);
+  contextFeature?.onLanguageChange();
+  intentionFeature?.onLanguageChange();
 };
 
-const addEntry = () => {
+
+
+const addEntry = async () => {
+  if (!nameInput || !dairyCheckbox || !outsideMealsCheckbox) return;
   const name = nameInput.value.trim();
   if (!name || !logCollectionRef) return;
 
-  addDoc(logCollectionRef, {
-    name,
-    dairy: dairyCheckbox.checked,
-    outsideMeals: outsideMealsCheckbox.checked,
-    timestamp: serverTimestamp()
-  }).then(() => {
+  if (addBtn) addBtn.disabled = true;
+  try {
+    const docRef = await addDoc(logCollectionRef, {
+      name,
+      dairy: dairyCheckbox.checked,
+      outsideMeals: outsideMealsCheckbox.checked,
+      timestamp: serverTimestamp()
+    });
     nameInput.value = '';
     dairyCheckbox.checked = false;
     outsideMealsCheckbox.checked = false;
     nameInput.focus();
-  }).catch((error) => {
+    contextFeature?.showPrompt(docRef.id);
+  } catch (error) {
     console.error('Error adding document: ', error);
     alert(getTranslation('addError'));
-  });
+  } finally {
+    if (addBtn) addBtn.disabled = false;
+  }
 };
 
 const getEntryDate = (entry) => {
@@ -658,13 +771,16 @@ const renderRows = (entries) => {
 
   entries.forEach(entry => {
     const tr = document.createElement('tr');
+    tr.dataset.entryId = entry.id;
 
     const nameCell = document.createElement('td');
     nameCell.textContent = entry.name || '';
+    nameCell.dataset.label = getTranslation('thItem');
 
     const timeCell = document.createElement('td');
     const date = getEntryDate(entry);
     timeCell.textContent = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : getTranslation('notAvailable');
+    timeCell.dataset.label = getTranslation('thTime');
 
     const dairyCell = document.createElement('td');
     const hasDairy = Boolean(entry.dairy);
@@ -672,6 +788,7 @@ const renderRows = (entries) => {
     dairyPill.className = `pill ${hasDairy ? 'pill-yes' : 'pill-no'}`;
     dairyPill.textContent = hasDairy ? getTranslation('yes') : getTranslation('no');
     dairyCell.appendChild(dairyPill);
+    dairyCell.dataset.label = getTranslation('thDairy');
 
     const outsideCell = document.createElement('td');
     const outsideValue = Boolean(entry.outsideMeals);
@@ -679,9 +796,19 @@ const renderRows = (entries) => {
     outsidePill.className = `pill ${outsideValue ? 'pill-yes' : 'pill-no'}`;
     outsidePill.textContent = outsideValue ? getTranslation('yes') : getTranslation('no');
     outsideCell.appendChild(outsidePill);
+    outsideCell.dataset.label = getTranslation('thOutsideMeals');
 
     const actionsCell = document.createElement('td');
     actionsCell.className = 'row-actions actions';
+    actionsCell.dataset.label = getTranslation('thActions');
+
+    const contextBtn = document.createElement('button');
+    contextBtn.className = 'btn btn-secondary context-entry';
+    contextBtn.type = 'button';
+    contextBtn.dataset.id = entry.id;
+    contextBtn.textContent = getTranslation('contextView');
+    contextBtn.setAttribute('aria-expanded', 'false');
+    contextBtn.setAttribute('aria-controls', `context-${entry.id}`);
 
     const editBtn = document.createElement('button');
     editBtn.className = 'btn btn-secondary edit-entry';
@@ -697,6 +824,7 @@ const renderRows = (entries) => {
     removeBtn.textContent = getTranslation('removeBtn');
     removeBtn.setAttribute('aria-label', `${getTranslation('removeEntryAria')} ${entry.name || ''}`.trim());
 
+    actionsCell.appendChild(contextBtn);
     actionsCell.appendChild(editBtn);
     actionsCell.appendChild(removeBtn);
 
@@ -706,6 +834,22 @@ const renderRows = (entries) => {
     tr.appendChild(outsideCell);
     tr.appendChild(actionsCell);
     tbody.appendChild(tr);
+
+    const contextRow = document.createElement('tr');
+    contextRow.className = 'context-row';
+    contextRow.dataset.entryId = entry.id;
+    contextRow.hidden = true;
+
+    const contextCell = document.createElement('td');
+    contextCell.colSpan = 5;
+    contextCell.id = `context-${entry.id}`;
+
+    const contextContent = document.createElement('div');
+    contextContent.className = 'context-content';
+    contextCell.appendChild(contextContent);
+
+    contextRow.appendChild(contextCell);
+    tbody.appendChild(contextRow);
   });
 };
 
@@ -837,7 +981,7 @@ const renderHistory = (snapshot) => {
   historyContent.innerHTML = html || `<p>${getTranslation('emptyState')}</p>`;
 };
 
-const handleLogAction = (event) => {
+const handleLogAction = async (event) => {
   if (!logCollectionRef) return;
   const button = event.target.closest('button');
   if (!button) return;
@@ -845,7 +989,14 @@ const handleLogAction = (event) => {
   const { id } = button.dataset;
   if (!id) return;
 
+  if (button.classList.contains('context-entry')) {
+    event.preventDefault();
+    await contextFeature?.toggleRow(id, button);
+    return;
+  }
+
   if (button.classList.contains('remove-entry')) {
+    contextFeature?.clearCacheForEntry(id);
     deleteDoc(doc(logCollectionRef, id)).catch(error => {
       console.error('Error removing document: ', error);
       alert(getTranslation('deleteError'));
@@ -1010,6 +1161,8 @@ const setupEventListeners = (tileSystem) => {
 
   // Main app functionality
   if (addBtn) addBtn.addEventListener('click', addEntry);
+  contextFeature?.attachListeners(tileSystem);
+  intentionFeature?.attachListeners(tileSystem);
   if (tbody) tbody.addEventListener('click', handleLogAction);
   if (exportBtn) exportBtn.addEventListener('click', exportToCsv);
 
@@ -1237,6 +1390,7 @@ const handleAuthStateChange = (user) => {
 
   if (loggedIn) {
     resetFilters();
+    contextFeature?.clearAll();
     const displayName = user.displayName || user.email || '';
     const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
     const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
@@ -1250,6 +1404,7 @@ const handleAuthStateChange = (user) => {
     logCollectionRef = collection(db, 'users', user.uid, 'logs');
     const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
     unsubscribe = onSnapshot(q, renderEntries);
+    intentionFeature?.subscribe(user.uid);
   } else {
     if (userName) userName.textContent = '';
     if (welcomeMessage) welcomeMessage.textContent = '';
@@ -1258,10 +1413,12 @@ const handleAuthStateChange = (user) => {
     if (emptyState) emptyState.style.display = 'block';
     logCollectionRef = null;
     allEntries = [];
+    contextFeature?.clearAll();
     resetFilters();
     updateStats();
     setAuthMode(true);
     resetAuthFields();
+    intentionFeature?.reset();
   }
 };
 

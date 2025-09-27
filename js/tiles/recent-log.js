@@ -34,7 +34,7 @@ const recentLogTile = {
                 <th data-i18n="thTime">Time</th>
                 <th data-i18n="thDairy">Dairy</th>
                 <th data-i18n="thOutsideMeals">Outside of mealtimes</th>
-                <th></th>
+                <th data-i18n="thActions" class="actions-heading">Actions</th>
               </tr>
             </thead>
             <tbody id="log-body"></tbody>
