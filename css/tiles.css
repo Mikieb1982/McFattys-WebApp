@@ -202,7 +202,7 @@
   --table-row-divider: rgba(255, 255, 255, 0.2);
 }
 
-.tile--growth {
+.tile--intention {
   --tile-gradient: linear-gradient(135deg, #1f8a70 0%, #72c4a3 100%);
   --tile-text: #f4fff7;
   --tile-surface: rgba(255, 255, 255, 0.18);
@@ -530,6 +530,48 @@
   background: rgba(255, 255, 255, 0.72);
   border-radius: 14px;
   padding: 12px 16px;
+}
+
+.tile--recent-log .context-row td {
+  padding: 0;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.tile--recent-log .context-content {
+  margin: clamp(10px, 2vw, 18px);
+  padding: clamp(14px, 3vw, 20px);
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 18px;
+  border: 1px solid rgba(19, 51, 39, 0.12);
+  box-shadow: 0 10px 24px rgba(19, 51, 39, 0.14);
+  display: grid;
+  gap: 0.75rem;
+  color: var(--tile-text);
+}
+
+.tile--recent-log .context-list {
+  gap: 0.75rem;
+}
+
+.tile--recent-log .context-list-item {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.tile--recent-log .context-list-item + .context-list-item {
+  border-top: 1px solid rgba(19, 51, 39, 0.1);
+  padding-top: 0.75rem;
+}
+
+.tile--recent-log .context-list-item small {
+  color: rgba(19, 51, 39, 0.6);
+}
+
+.tile--recent-log .context-line {
+  gap: 0.5rem;
 }
 
 @media (max-width: 600px) {
