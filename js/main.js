@@ -22,6 +22,7 @@ let getDocs;
 let query;
 let orderBy;
 let serverTimestamp;
+let setDoc;
 
 const firebaseConfig = {
   apiKey: "AIzaSyC1qN3ksU0uYhXRXYNmYlmGX0iyUa-BJFQ",
@@ -41,6 +42,11 @@ let firebaseReady = false;
 
 // Constants
 const MAX_RECENT_ROWS = 10;
+const TRACKER_STORAGE_KEY = 'connected-trackers-v1';
+const trackerProviderLabels = {
+  withings: 'trackerProviderWithings',
+  'google-fit': 'trackerProviderGoogleFit'
+};
 
 // State
 let logCollectionRef = null;
@@ -53,6 +59,7 @@ let isLoginMode = true;
 let allEntries = [];
 let activeFilter = 'all';
 let searchTerm = '';
+let connectedTrackers = [];
 
 // Element refs (assigned on DOMContentLoaded)
 let appContent, nameInput, dairyCheckbox, outsideMealsCheckbox, addBtn, tbody, emptyState, installBanner;
@@ -62,7 +69,8 @@ let statTotal, statDairy, statOutside, statLast, statLastSubtext, logSearchInput
 let dashboardControls, reorderToggle, reorderHint, themeToggle, themeToggleIcon, themeToggleLabel, themeColorMeta;
 let manifestoModal, closeManifestoBtn, historyModal, closeHistoryBtn, historyContent;
 let legalModal, legalTitle, legalContent, closeLegalBtn, impressumLink, privacyLink;
-let instructionsModal, closeInstructionsBtn, logoCard, manifestoCard, supportCard;
+let instructionsModal, closeInstructionsBtn, logoCard, manifestoCard, supportCard, trackerManageBtn, trackerSummary;
+let trackerModal, closeTrackerModalBtn, trackerForm, trackerProviderSelect, trackerEmailInput, trackerTokenInput, trackerStatus, trackerConnectionsList;
 let authSection, loginBtn, signupBtn, authSubmit, authActions, signupFields, authTitle, authToggle;
 let authEmail, authPassword, authUsername, authRePassword;
 
@@ -96,7 +104,8 @@ const loadFirebaseModules = async () => {
       getDocs,
       query,
       orderBy,
-      serverTimestamp
+      serverTimestamp,
+      setDoc
     } = firestoreModule);
 
     app = initializeApp(firebaseConfig);
@@ -181,11 +190,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   privacyLink = document.getElementById('privacy-link');
   instructionsModal = document.getElementById('instructions-modal');
   closeInstructionsBtn = document.getElementById('close-instructions');
+  trackerModal = document.getElementById('tracker-modal');
+  closeTrackerModalBtn = document.getElementById('close-tracker-modal');
+  trackerForm = document.getElementById('tracker-form');
+  trackerProviderSelect = document.getElementById('tracker-provider');
+  trackerEmailInput = document.getElementById('tracker-email');
+  trackerTokenInput = document.getElementById('tracker-token');
+  trackerStatus = document.getElementById('tracker-status');
+  trackerConnectionsList = document.getElementById('tracker-connections');
   
   // Cards
   logoCard = document.getElementById('logo-card');
   manifestoCard = document.getElementById('manifesto-card');
   supportCard = document.getElementById('support-button');
+  trackerSummary = document.getElementById('tracker-summary');
+  trackerManageBtn = document.getElementById('manage-trackers');
   
   // Auth elements
   authSection = document.getElementById('auth-section');
@@ -211,6 +230,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Initialize theme and other setup
   initializeTheme();
+  loadConnectedTrackers();
+  renderTrackerSummary();
+  renderTrackerConnections();
   setLanguage('en');
   
   // Set up event listeners after elements are available
@@ -247,7 +269,35 @@ const translations = {
     quickAddHint: 'Log what you’re eating right now—no pressure, no judgement.',
     growthTitle: 'Room to grow',
     growthCopy: 'This space is ready for habits, reflections, or whatever else you need next.',
+    supportBadge: 'Keep McFatty\u2019s free',
+    supportTitle: 'Support us',
     supportCopy: 'Chip in to cover hosting and keep the tracker open for everyone.',
+    trackerTitle: 'Connect trackers',
+    trackerCopy: 'Link fitness and wellness apps to keep a gentle pulse on movement and rest alongside your food log.',
+    manageTrackers: 'Manage connections',
+    trackerSummaryEmpty: 'No trackers connected yet.',
+    trackerSummaryCount: 'Connected trackers',
+    trackerModalTitle: 'Connect fitness trackers',
+    trackerModalCopy: 'Bring in high-level activity, sleep, or weight data from services like Withings and Google Fit. We keep the details stored locally until full integrations launch.',
+    trackerProviderLabel: 'Tracker',
+    trackerEmailLabel: 'Account email',
+    trackerEmailPlaceholder: 'you@example.com',
+    trackerTokenLabel: 'API token or link code',
+    trackerTokenPlaceholder: 'Paste a short-lived code',
+    trackerInstructions: 'Use a temporary access code from your provider. Details never leave this device.',
+    trackerFormSubmit: 'Save connection',
+    trackerFormMissing: 'Enter your account email and access code to connect.',
+    trackerUnsupported: 'This tracker is not supported yet.',
+    trackerConnected: 'Connected to',
+    trackerUpdated: 'Updated connection for',
+    trackerDisconnected: 'Disconnected from',
+    trackerListTitle: 'Connected trackers',
+    trackerDisconnect: 'Disconnect',
+    trackerListEmpty: 'No trackers saved yet.',
+    trackerLastSync: 'Last sync',
+    trackerNeverSynced: 'Not synced yet',
+    trackerProviderWithings: 'Withings Health Mate',
+    trackerProviderGoogleFit: 'Google Fit',
     recentLogTitle: 'Recent log',
     organizeTiles: 'Organize tiles',
     doneOrganizing: 'Done',
@@ -326,7 +376,6 @@ const translations = {
     historyTitle: 'Log History',
     impressum: 'Legal Notice',
     privacyPolicy: 'Privacy Policy',
-    supportCopy: 'If you find this app useful, please consider a small donation.',
   },
   de: {
     loginBtn: 'Anmelden',
@@ -353,7 +402,35 @@ const translations = {
     quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
     growthTitle: 'Platz für mehr',
     growthCopy: 'Hier ist Raum für Gewohnheiten, Reflexionen oder alles, was du als Nächstes brauchst.',
+    supportBadge: 'Halte McFatty’s kostenlos',
+    supportTitle: 'Unterstütze uns',
     supportCopy: 'Hilf mit, die Hosting-Kosten zu decken und den Tracker für alle offen zu halten.',
+    trackerTitle: 'Tracker verbinden',
+    trackerCopy: 'Verknüpfe Fitness- und Wellness-Apps, um Bewegung und Ruhe neben deinem Essensprotokoll im Blick zu behalten.',
+    manageTrackers: 'Verbindungen verwalten',
+    trackerSummaryEmpty: 'Noch keine Tracker verbunden.',
+    trackerSummaryCount: 'Verbundene Tracker',
+    trackerModalTitle: 'Fitness-Tracker verbinden',
+    trackerModalCopy: 'Hole grundlegende Aktivitäts-, Schlaf- oder Gewichts-Daten von Diensten wie Withings oder Google Fit herein. Wir speichern die Details lokal, bis die vollständigen Integrationen fertig sind.',
+    trackerProviderLabel: 'Tracker',
+    trackerEmailLabel: 'Konto-E-Mail',
+    trackerEmailPlaceholder: 'du@example.com',
+    trackerTokenLabel: 'API-Token oder Link-Code',
+    trackerTokenPlaceholder: 'Füge einen temporären Code ein',
+    trackerInstructions: 'Verwende einen temporären Zugriffscode deines Anbieters. Die Angaben verlassen dieses Gerät nicht.',
+    trackerFormSubmit: 'Verbindung speichern',
+    trackerFormMissing: 'Bitte E-Mail und Zugriffscode eingeben, um den Tracker zu verbinden.',
+    trackerUnsupported: 'Dieser Tracker wird noch nicht unterstützt.',
+    trackerConnected: 'Verbunden mit',
+    trackerUpdated: 'Verbindung aktualisiert für',
+    trackerDisconnected: 'Getrennt von',
+    trackerListTitle: 'Verbundene Tracker',
+    trackerDisconnect: 'Trennen',
+    trackerListEmpty: 'Noch keine Verbindungen gespeichert.',
+    trackerLastSync: 'Letzte Synchronisierung',
+    trackerNeverSynced: 'Noch nicht synchronisiert',
+    trackerProviderWithings: 'Withings Health Mate',
+    trackerProviderGoogleFit: 'Google Fit',
     recentLogTitle: 'Aktuelles Protokoll',
     organizeTiles: 'Kacheln anordnen',
     doneOrganizing: 'Fertig',
@@ -432,9 +509,217 @@ const translations = {
     historyTitle: 'Protokollverlauf',
     impressum: 'Impressum',
     privacyPolicy: 'Datenschutzerklärung',
-    supportCopy: 'Wenn du diese App nützlich findest, ziehe bitte eine kleine Spende in Betracht.',
   }
 };
+
+function loadConnectedTrackers() {
+  connectedTrackers = [];
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+  try {
+    const storedValue = localStorage.getItem(TRACKER_STORAGE_KEY);
+    if (!storedValue) {
+      return;
+    }
+    const parsed = JSON.parse(storedValue);
+    if (!Array.isArray(parsed)) {
+      return;
+    }
+    connectedTrackers = parsed.filter((entry) => {
+      if (!entry || typeof entry !== 'object') return false;
+      if (typeof entry.provider !== 'string' || !trackerProviderLabels[entry.provider]) return false;
+      return true;
+    }).map((entry) => ({
+      provider: entry.provider,
+      email: typeof entry.email === 'string' ? entry.email : '',
+      lastSync: typeof entry.lastSync === 'string' ? entry.lastSync : null
+    }));
+  } catch (error) {
+    connectedTrackers = [];
+  }
+}
+
+function persistConnectedTrackers() {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+  try {
+    localStorage.setItem(TRACKER_STORAGE_KEY, JSON.stringify(connectedTrackers));
+  } catch (error) {
+    console.warn('Unable to persist tracker connections', error);
+  }
+}
+
+function getTrackerLabel(provider) {
+  const key = trackerProviderLabels[provider];
+  return key ? getTranslation(key) || provider : provider;
+}
+
+function renderTrackerSummary() {
+  if (!trackerSummary) return;
+  trackerSummary.innerHTML = '';
+
+  if (!connectedTrackers.length) {
+    const emptyItem = document.createElement('li');
+    emptyItem.className = 'tracker-summary__empty';
+    emptyItem.textContent = getTranslation('trackerSummaryEmpty');
+    trackerSummary.appendChild(emptyItem);
+    return;
+  }
+
+  const countItem = document.createElement('li');
+  countItem.textContent = `${getTranslation('trackerSummaryCount')}: ${connectedTrackers.length}`;
+  trackerSummary.appendChild(countItem);
+
+  connectedTrackers.forEach((connection) => {
+    const item = document.createElement('li');
+    item.textContent = getTrackerLabel(connection.provider);
+    trackerSummary.appendChild(item);
+  });
+}
+
+function renderTrackerConnections() {
+  if (!trackerConnectionsList) return;
+  trackerConnectionsList.innerHTML = '';
+
+  if (!connectedTrackers.length) {
+    const empty = document.createElement('li');
+    empty.className = 'tracker-connection tracker-connection--empty';
+    empty.textContent = getTranslation('trackerListEmpty');
+    trackerConnectionsList.appendChild(empty);
+    return;
+  }
+
+  const locale = lang === 'de' ? 'de-DE' : 'en-US';
+
+  connectedTrackers.forEach((connection) => {
+    const item = document.createElement('li');
+    item.className = 'tracker-connection';
+    item.dataset.provider = connection.provider;
+    item.dataset.email = connection.email || '';
+
+    const header = document.createElement('div');
+    header.className = 'tracker-connection__header';
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'tracker-connection__name';
+    nameEl.textContent = getTrackerLabel(connection.provider);
+
+    const disconnectBtn = document.createElement('button');
+    disconnectBtn.type = 'button';
+    disconnectBtn.className = 'btn btn-secondary tracker-disconnect';
+    disconnectBtn.dataset.provider = connection.provider;
+    disconnectBtn.textContent = getTranslation('trackerDisconnect');
+
+    header.appendChild(nameEl);
+    header.appendChild(disconnectBtn);
+
+    const details = document.createElement('div');
+    details.className = 'tracker-connection__details';
+
+    const emailLine = document.createElement('span');
+    const emailValue = connection.email ? connection.email : getTranslation('notAvailable');
+    emailLine.textContent = `${getTranslation('trackerEmailLabel')}: ${emailValue}`;
+
+    const lastSyncLine = document.createElement('span');
+    const lastSyncDate = connection.lastSync ? new Date(connection.lastSync) : null;
+    const hasSyncDate = lastSyncDate && !Number.isNaN(lastSyncDate.getTime());
+    const syncText = hasSyncDate ? lastSyncDate.toLocaleString(locale, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }) : getTranslation('trackerNeverSynced');
+    lastSyncLine.textContent = `${getTranslation('trackerLastSync')}: ${syncText}`;
+
+    details.appendChild(emailLine);
+    details.appendChild(lastSyncLine);
+
+    item.appendChild(header);
+    item.appendChild(details);
+
+    trackerConnectionsList.appendChild(item);
+  });
+}
+
+function showTrackerStatus(message, isError = false) {
+  if (!trackerStatus) return;
+  trackerStatus.textContent = message || '';
+  trackerStatus.classList.toggle('error', Boolean(isError && message));
+}
+
+function openTrackerModal() {
+  if (!trackerModal) return;
+  renderTrackerConnections();
+  showTrackerStatus('');
+  trackerModal.classList.add('show');
+  if (trackerProviderSelect) {
+    trackerProviderSelect.focus();
+  }
+}
+
+function closeTrackerModal() {
+  if (!trackerModal) return;
+  trackerModal.classList.remove('show');
+  showTrackerStatus('');
+  if (trackerForm) {
+    trackerForm.reset();
+  }
+}
+
+function handleTrackerFormSubmit(event) {
+  event.preventDefault();
+  if (!trackerProviderSelect || !trackerEmailInput) return;
+
+  const provider = trackerProviderSelect.value;
+  const email = trackerEmailInput.value.trim();
+  const token = trackerTokenInput ? trackerTokenInput.value.trim() : '';
+
+  if (!provider || !email || !token) {
+    showTrackerStatus(getTranslation('trackerFormMissing'), true);
+    return;
+  }
+
+  if (!trackerProviderLabels[provider]) {
+    showTrackerStatus(getTranslation('trackerUnsupported'), true);
+    return;
+  }
+
+  const existingIndex = connectedTrackers.findIndex((entry) => entry.provider === provider);
+  const payload = {
+    provider,
+    email,
+    lastSync: new Date().toISOString()
+  };
+
+  if (existingIndex >= 0) {
+    connectedTrackers[existingIndex] = payload;
+  } else {
+    connectedTrackers.push(payload);
+  }
+
+  persistConnectedTrackers();
+  renderTrackerSummary();
+  renderTrackerConnections();
+
+  if (trackerForm) {
+    trackerForm.reset();
+  }
+  if (trackerProviderSelect) {
+    trackerProviderSelect.value = provider;
+  }
+  if (trackerEmailInput) {
+    trackerEmailInput.value = email;
+  }
+  if (trackerTokenInput) {
+    trackerTokenInput.value = '';
+  }
+
+  const successKey = existingIndex >= 0 ? 'trackerUpdated' : 'trackerConnected';
+  showTrackerStatus(`${getTranslation(successKey)} ${getTrackerLabel(provider)}.`);
+}
 
 const legalDocs = {
   en: {
@@ -534,6 +819,7 @@ const toggleTheme = () => {
 };
 
 const updateAuthTexts = () => {
+  if (!authTitle || !authSubmit || !authToggle) return;
   const titleKey = isLoginMode ? 'loginTitle' : 'signupTitle';
   const actionKey = isLoginMode ? 'loginAction' : 'signupAction';
   const toggleKey = isLoginMode ? 'authToggleToSignup' : 'authToggleToLogin';
@@ -543,17 +829,25 @@ const updateAuthTexts = () => {
 };
 
 const showInstallBanner = (message) => {
-  if (!message) return;
+  if (!message || !installBanner) return;
   installBanner.textContent = message;
   installBanner.classList.add('show');
   clearTimeout(installBannerTimeout);
-  installBannerTimeout = setTimeout(() => installBanner.classList.remove('show'), 4000);
+  installBannerTimeout = setTimeout(() => {
+    if (installBanner) {
+      installBanner.classList.remove('show');
+    }
+  }, 4000);
 };
 
 const setLanguage = (newLang) => {
   lang = newLang;
-  langToggle.setAttribute('aria-pressed', newLang === 'de' ? 'true' : 'false');
-  switchEl.classList.toggle('active', newLang === 'de');
+  if (langToggle) {
+    langToggle.setAttribute('aria-pressed', newLang === 'de' ? 'true' : 'false');
+  }
+  if (switchEl) {
+    switchEl.classList.toggle('active', newLang === 'de');
+  }
   document.documentElement.lang = newLang;
 
   document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -565,8 +859,12 @@ const setLanguage = (newLang) => {
     el.placeholder = getTranslation(key);
   });
 
+  renderTrackerSummary();
+  renderTrackerConnections();
+  showTrackerStatus('');
+
   const user = firebaseReady && auth ? auth.currentUser : null;
-  if (user) {
+  if (user && welcomeMessage) {
     const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
     const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
     const welcomeText = getTranslation(welcomeTextKey);
@@ -640,6 +938,7 @@ const updateStats = () => {
 };
 
 const renderRows = (entries) => {
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   entries.forEach(entry => {
@@ -711,6 +1010,7 @@ const toggleNoResults = (show) => {
 };
 
 const applyFilters = () => {
+  if (!tbody) return;
   if (!allEntries.length) {
     tbody.innerHTML = '';
     toggleNoResults(false);
@@ -745,6 +1045,15 @@ const applyFilters = () => {
 
 const renderEntries = (snapshot) => {
   latestSnapshot = snapshot;
+
+  if (!snapshot) {
+    allEntries = [];
+    updateStats();
+    if (tbody) tbody.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
+    return;
+  }
+
   allEntries = snapshot.docs.map(doc => {
     const data = doc.data();
     return {
@@ -756,6 +1065,10 @@ const renderEntries = (snapshot) => {
   });
 
   updateStats();
+
+  if (!tbody || !emptyState) {
+    return;
+  }
 
   if (!allEntries.length) {
     tbody.innerHTML = '';
@@ -769,6 +1082,7 @@ const renderEntries = (snapshot) => {
 };
 
 const renderHistory = (snapshot) => {
+  if (!historyContent) return;
   historyContent.innerHTML = '';
   if (!snapshot || snapshot.empty) {
     historyContent.innerHTML = `<p>${getTranslation('emptyState')}</p>`;
@@ -888,6 +1202,11 @@ const setAuthMode = (isLogin) => {
 };
 
 const handleAuthSubmit = async () => {
+  if (!authEmail || !authPassword || !authSubmit) {
+    console.warn('Auth form elements are not available.');
+    return;
+  }
+
   const email = authEmail.value.trim();
   const password = authPassword.value.trim();
 
@@ -896,6 +1215,10 @@ const handleAuthSubmit = async () => {
     return;
   }
   if (!isLoginMode) {
+    if (!authUsername || !authRePassword) {
+      alert(getTranslation('authUnavailable'));
+      return;
+    }
     const username = authUsername.value.trim();
     const confirmPassword = authRePassword.value.trim();
     if (!username) {
@@ -908,7 +1231,7 @@ const handleAuthSubmit = async () => {
     }
   }
 
-  if (!firebaseReady || !auth || typeof signInWithEmailAndPassword !== 'function' || typeof createUserWithEmailAndPassword !== 'function') {
+  if (!firebaseReady || !auth || !db || typeof signInWithEmailAndPassword !== 'function' || typeof createUserWithEmailAndPassword !== 'function' || typeof setDoc !== 'function') {
     alert(getTranslation('authUnavailable'));
     return;
   }
@@ -921,13 +1244,13 @@ const handleAuthSubmit = async () => {
       const username = authUsername.value.trim();
       const { user: newUser } = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(newUser, { displayName: username });
-      await updateDoc(doc(db, 'users', newUser.uid), {
+      await setDoc(doc(db, 'users', newUser.uid), {
         displayName: username,
         email,
         createdAt: serverTimestamp()
       });
     }
-    authSection.style.display = 'none';
+    if (authSection) authSection.style.display = 'none';
     resetAuthFields();
   } catch (error) {
     alert(`${getTranslation('authErrorPrefix')} ${error.message}`);
@@ -994,15 +1317,15 @@ const setupEventListeners = (tileSystem) => {
   });
 
   // Auth buttons
-  if (loginBtn) loginBtn.addEventListener('click', () => { 
-    resetAuthFields(); 
-    authSection.style.display = 'block'; 
-    setAuthMode(true); 
+  if (loginBtn) loginBtn.addEventListener('click', () => {
+    resetAuthFields();
+    if (authSection) authSection.style.display = 'block';
+    setAuthMode(true);
   });
-  if (signupBtn) signupBtn.addEventListener('click', () => { 
-    resetAuthFields(); 
-    authSection.style.display = 'block'; 
-    setAuthMode(false); 
+  if (signupBtn) signupBtn.addEventListener('click', () => {
+    resetAuthFields();
+    if (authSection) authSection.style.display = 'block';
+    setAuthMode(false);
   });
   if (authToggle) authToggle.addEventListener('click', () => setAuthMode(!isLoginMode));
   if (authSubmit) authSubmit.addEventListener('click', handleAuthSubmit);
@@ -1033,6 +1356,66 @@ const setupEventListeners = (tileSystem) => {
       openDonationPage();
     });
   }
+
+  if (trackerManageBtn) {
+    trackerManageBtn.addEventListener('click', () => {
+      if (tileSystem.isReorganizeMode()) return;
+      openTrackerModal();
+    });
+  }
+
+  if (closeTrackerModalBtn) {
+    closeTrackerModalBtn.addEventListener('click', closeTrackerModal);
+  }
+
+  if (trackerModal) {
+    trackerModal.addEventListener('click', (event) => {
+      if (event.target === trackerModal) {
+        closeTrackerModal();
+      }
+    });
+  }
+
+  if (trackerForm) {
+    trackerForm.addEventListener('submit', handleTrackerFormSubmit);
+  }
+
+  if (trackerConnectionsList) {
+    trackerConnectionsList.addEventListener('click', (event) => {
+      const disconnectBtn = event.target.closest('.tracker-disconnect');
+      if (disconnectBtn) {
+        const { provider } = disconnectBtn.dataset;
+        if (!provider) return;
+        connectedTrackers = connectedTrackers.filter((entry) => entry.provider !== provider);
+        persistConnectedTrackers();
+        renderTrackerSummary();
+        renderTrackerConnections();
+        showTrackerStatus(`${getTranslation('trackerDisconnected')} ${getTrackerLabel(provider)}.`);
+        return;
+      }
+
+      const item = event.target.closest('.tracker-connection');
+      if (!item || item.classList.contains('tracker-connection--empty')) return;
+      const provider = item.dataset.provider;
+      const email = item.dataset.email || '';
+      if (trackerProviderSelect && provider) {
+        trackerProviderSelect.value = provider;
+      }
+      if (trackerEmailInput) {
+        trackerEmailInput.value = email;
+      }
+      if (trackerTokenInput) {
+        trackerTokenInput.value = '';
+      }
+      showTrackerStatus('');
+    });
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && trackerModal && trackerModal.classList.contains('show')) {
+      closeTrackerModal();
+    }
+  });
 
   // Language toggle
   if (langToggle) {
@@ -1073,16 +1456,20 @@ const setupEventListeners = (tileSystem) => {
       const action = button.dataset.action;
 
       if (action === 'manifesto') {
-        manifestoModal.classList.add('show');
+        if (manifestoModal) {
+          manifestoModal.classList.add('show');
+        }
       } else if (action === 'history') {
         if (!logCollectionRef) return;
         const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
         getDocs(q).then(renderHistory);
-        historyModal.classList.add('show');
+        if (historyModal) {
+          historyModal.classList.add('show');
+        }
       }
       // Close sidebar after action
       sidebar.classList.remove('open');
-      scrim.classList.remove('show');
+      if (scrim) scrim.classList.remove('show');
     });
   }
 
@@ -1099,7 +1486,9 @@ const setupEventListeners = (tileSystem) => {
   if (manifestoCard) {
     manifestoCard.addEventListener('click', () => {
       if (!tileSystem.isReorganizeMode()) {
-        manifestoModal.classList.add('show');
+        if (manifestoModal) {
+          manifestoModal.classList.add('show');
+        }
       }
     });
   }
@@ -1109,16 +1498,25 @@ const setupEventListeners = (tileSystem) => {
     closeInstructionsBtn.addEventListener('click', () => instructionsModal.classList.remove('show'));
   }
   if (closeManifestoBtn) {
-    closeManifestoBtn.addEventListener('click', () => manifestoModal.classList.remove('show'));
+    closeManifestoBtn.addEventListener('click', () => {
+      if (manifestoModal) {
+        manifestoModal.classList.remove('show');
+      }
+    });
   }
   if (closeHistoryBtn) {
-    closeHistoryBtn.addEventListener('click', () => historyModal.classList.remove('show'));
+    closeHistoryBtn.addEventListener('click', () => {
+      if (historyModal) {
+        historyModal.classList.remove('show');
+      }
+    });
   }
 
   // Legal links
   if (impressumLink) {
     impressumLink.addEventListener('click', (e) => {
       e.preventDefault();
+      if (!legalTitle || !legalContent || !legalModal) return;
       legalTitle.textContent = getTranslation('impressum');
       legalContent.innerHTML = lang === 'de' ? legalDocs.de.impressum : legalDocs.en.impressum;
       legalModal.classList.add('show');
@@ -1128,6 +1526,7 @@ const setupEventListeners = (tileSystem) => {
   if (privacyLink) {
     privacyLink.addEventListener('click', (e) => {
       e.preventDefault();
+      if (!legalTitle || !legalContent || !legalModal) return;
       legalTitle.textContent = getTranslation('privacyPolicy');
       legalContent.innerHTML = lang === 'de' ? legalDocs.de.privacyPolicy : legalDocs.en.privacyPolicy;
       legalModal.classList.add('show');
@@ -1135,7 +1534,11 @@ const setupEventListeners = (tileSystem) => {
   }
 
   if (closeLegalBtn) {
-    closeLegalBtn.addEventListener('click', () => legalModal.classList.remove('show'));
+    closeLegalBtn.addEventListener('click', () => {
+      if (legalModal) {
+        legalModal.classList.remove('show');
+      }
+    });
   }
 
   // PWA install
