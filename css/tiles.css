@@ -202,6 +202,132 @@
   --table-row-divider: rgba(255, 255, 255, 0.2);
 }
 
+
+.tile--tracker {
+  --tile-gradient: linear-gradient(135deg, #e3ecff 0%, #f8fbff 100%);
+  --tile-text: #122552;
+  --tile-surface: rgba(255, 255, 255, 0.68);
+  --tile-border: rgba(18, 37, 82, 0.14);
+  --tile-shadow: 0 26px 48px rgba(12, 33, 74, 0.16);
+}
+
+.tile--tracker .tracker-card-inner {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.9fr) 1fr;
+  gap: clamp(18px, 4vw, 32px);
+  align-items: center;
+}
+
+.tracker-card-visual {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.tracker-logo-cloud {
+  position: relative;
+  width: clamp(140px, 22vw, 180px);
+  aspect-ratio: 1 / 1;
+  border-radius: 36px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(18, 37, 82, 0.12), 0 20px 36px rgba(18, 37, 82, 0.18);
+  overflow: hidden;
+}
+
+.tracker-logo-cloud::before,
+.tracker-logo-cloud::after {
+  content: "";
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(0.5px);
+}
+
+.tracker-logo-cloud::before {
+  inset: 12%;
+  background: radial-gradient(circle at 25% 25%, rgba(102, 156, 255, 0.4), transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(120, 216, 197, 0.4), transparent 65%),
+    rgba(255, 255, 255, 0.6);
+}
+
+.tracker-logo-cloud::after {
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(57, 123, 255, 0.18));
+  mix-blend-mode: screen;
+}
+
+.tracker-logo {
+  position: absolute;
+  width: clamp(48px, 11vw, 74px);
+  height: auto;
+  filter: drop-shadow(0 12px 18px rgba(18, 37, 82, 0.28));
+}
+
+.tracker-logo--google {
+  top: 20%;
+  left: 16%;
+}
+
+.tracker-logo--withings {
+  bottom: 18%;
+  right: 14%;
+}
+
+.tracker-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.tracker-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.tracker-summary li {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(35, 66, 129, 0.1);
+  font-weight: 600;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+  color: inherit;
+}
+
+.tracker-summary__empty {
+  padding: 0;
+  border: none;
+  background: none;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+.tracker-manage-btn {
+  align-self: flex-start;
+  padding-inline: 22px;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  .tile--tracker .tracker-card-inner {
+    grid-template-columns: 1fr;
+  }
+
+  .tracker-card-visual {
+    order: -1;
+    justify-content: flex-start;
+  }
+
+  .tracker-logo-cloud {
+    width: clamp(120px, 38vw, 168px);
+  }
+}
+
 .tile--growth {
   --tile-gradient: linear-gradient(135deg, #1f8a70 0%, #72c4a3 100%);
   --tile-text: #f4fff7;

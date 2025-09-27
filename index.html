@@ -221,10 +221,36 @@
           <li><strong>Quick stats:</strong> Shows a summary of your food entries for the current day.</li>
           <li><strong>Quick add:</strong> The main form for logging what you've eaten.</li>
           <li><strong>Recent log:</strong> A table of your recent entries with search and filter options.</li>
+          <li><strong>Connect trackers:</strong> Launch OAuth connections for trackers like Withings or Google Fit and manage their status.</li>
         </ul>
       </div>
       <div class="modal-actions">
         <button id="close-instructions" class="btn btn-primary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="tracker-modal" role="dialog" aria-modal="true" aria-labelledby="tracker-modal-title">
+    <div class="modal tracker-modal">
+      <button id="close-tracker-modal" class="modal-close" aria-label="Close">&times;</button>
+      <h3 id="tracker-modal-title" data-i18n="trackerModalTitle">Connect fitness trackers</h3>
+      <p data-i18n="trackerModalCopy">Link your favourite wellness apps. We keep the details on this device while full integrations are in progress.</p>
+      <p class="info-text" data-i18n="trackerOAuthInstructions">Choose a service below to start a secure OAuth connection.</p>
+      <div class="tracker-connect-options" id="tracker-connection-options">
+        <button type="button" class="tracker-oauth-btn tracker-oauth-btn--google" data-provider="google-fit">
+          <img src="icons/google-fit.svg" alt="" class="tracker-oauth-btn__icon" loading="lazy">
+          <span class="tracker-oauth-btn__label" data-i18n="trackerConnectGoogle">Connect with Google Fit</span>
+        </button>
+        <button type="button" class="tracker-oauth-btn tracker-oauth-btn--withings" data-provider="withings">
+          <img src="icons/withings.svg" alt="" class="tracker-oauth-btn__icon" loading="lazy">
+          <span class="tracker-oauth-btn__label" data-i18n="trackerConnectWithings">Connect with Withings</span>
+        </button>
+      </div>
+      <p class="info-text" data-i18n="trackerOAuthHint">We’ll redirect you to your tracker to approve access, then bring you back here.</p>
+      <div class="tracker-status" id="tracker-status" role="status" aria-live="polite"></div>
+      <div class="tracker-connections">
+        <h4 data-i18n="trackerListTitle">Connected trackers</h4>
+        <ul id="tracker-connections" class="tracker-connections-list"></ul>
       </div>
     </div>
   </div>
