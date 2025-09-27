@@ -6,7 +6,6 @@ import supportTile from './tiles/support.js';
 import statsTile from './tiles/stats.js';
 import quickAddTile from './tiles/quick-add.js';
 import recentLogTile from './tiles/recent-log.js';
-import trackerTile from './tiles/tracker-connect.js';
 
 // To add or remove tiles, create or delete a file in js/tiles and update this list.
 export const tileDefinitions = [
@@ -15,7 +14,6 @@ export const tileDefinitions = [
   welcomeTile,
   growthTile,
   supportTile,
-  trackerTile,
   statsTile,
   quickAddTile,
   recentLogTile
