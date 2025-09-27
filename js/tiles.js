@@ -1,7 +1,7 @@
 import logoTile from './tiles/logo.js';
 import manifestoTile from './tiles/manifesto.js';
 import welcomeTile from './tiles/welcome.js';
-import growthTile from './tiles/growth.js';
+import intentionTile from './tiles/intention.js';
 import supportTile from './tiles/support.js';
 import statsTile from './tiles/stats.js';
 import quickAddTile from './tiles/quick-add.js';
@@ -12,7 +12,7 @@ export const tileDefinitions = [
   logoTile,
   manifestoTile,
   welcomeTile,
-  growthTile,
+  intentionTile,
   supportTile,
   statsTile,
   quickAddTile,
