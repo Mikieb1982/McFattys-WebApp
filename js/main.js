@@ -298,6 +298,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadFirebaseModules();
   await handleGoogleRedirectResult();
   initializeAuthListener();
+  await handleGoogleRedirectResult();
 });
 
 // --- Translations ---
@@ -1667,8 +1668,19 @@ const handleGoogleRedirectResult = async () => {
   try {
     await getRedirectResult(auth);
   } catch (error) {
+    const errorCode = error?.code;
+    if (errorCode === 'auth/no-auth-event' || errorCode === 'auth/cancelled-popup-request') {
+      return;
+    }
+
+    if (errorCode === 'auth/web-storage-unsupported' || errorCode === 'auth/operation-not-allowed') {
+      alert(getTranslation('googleSigninBlocked'));
+    } else {
+      const message = error?.message || 'Unknown error';
+      alert(`${getTranslation('authErrorPrefix')} ${message}`);
+    }
     console.error('Google redirect sign-in error:', error);
-    alert(getTranslation('googleSigninBlocked'));
+
   }
 };
 
@@ -1920,7 +1932,14 @@ const setupEventListeners = (tileSystem) => {
         getDocs(q).then(renderHistory);
         if (historyModal) {
           historyModal.classList.add('show');
+          handled = true
+      } else if (action === 'account') {
+        if (auth && auth.currentUser) {
+          openAccountModal();
           handled = true;
+        } else {
+          alert(getTranslation('authUnavailable'));
+
         }
       } else if (action === 'account') {
         if (auth && auth.currentUser) {
@@ -1935,6 +1954,12 @@ const setupEventListeners = (tileSystem) => {
         sidebar.classList.remove('open');
         if (scrim) scrim.classList.remove('show');
       }
+
+      if (handled) {
+        sidebar.classList.remove('open');
+        if (scrim) scrim.classList.remove('show');
+      }
+
     });
   }
 
