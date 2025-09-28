@@ -1,16 +1,17 @@
 :root {
   color-scheme: light;
-  --primary: #d6a551;
-  --danger: #c44742;
-  --info: #3a8ea2;
+  --primary: #D4A24E;
+  --danger: #C74B46;
+  --info: #8A9A5B;
   --text-0: #1f1c16;
   --text-1: #6e6655;
   --bg-0: #fdfaf3;
   --bg-1: #f3ede0;
-  --card: #ffffff;
+  --card: #fdfaf3; /* Changed from #ffffff */
   --border: #dfd5c1;
   --wallpaper-overlay: rgba(253, 250, 243, 0.82);
 
+  /* Spacing, fonts, etc. remain the same */
   --sp-4: 4px;
   --sp-8: 8px;
   --sp-12: 12px;
@@ -31,6 +32,8 @@
   --shadow-tile: 0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 15px rgba(0, 0, 0, 0.1);
   --tile-highlight: rgba(255, 255, 255, 0.6);
   --safe-top: env(safe-area-inset-top, 0px);
+}
+
 }
 
 [data-theme="dark"] {
