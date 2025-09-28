@@ -46,6 +46,8 @@ let app = null;
 let auth = null;
 let db = null;
 let firebaseReady = false;
+let authListenerReady = false;
+let authListenerUnsubscribe = null;
 
 // Constants
 const MAX_RECENT_ROWS = 10;
@@ -1666,7 +1668,11 @@ const handleGoogleRedirectResult = async () => {
   }
 
   try {
-    await getRedirectResult(auth);
+    const result = await getRedirectResult(auth);
+
+    if (result?.user && !authListenerReady) {
+      await handleAuthStateChange(result.user);
+    }
   } catch (error) {
     const errorCode = error?.code;
     if (errorCode === 'auth/no-auth-event' || errorCode === 'auth/cancelled-popup-request') {
@@ -1932,14 +1938,7 @@ const setupEventListeners = (tileSystem) => {
         getDocs(q).then(renderHistory);
         if (historyModal) {
           historyModal.classList.add('show');
-          handled = true
-      } else if (action === 'account') {
-        if (auth && auth.currentUser) {
-          openAccountModal();
           handled = true;
-        } else {
-          alert(getTranslation('authUnavailable'));
-
         }
       } else if (action === 'account') {
         if (auth && auth.currentUser) {
@@ -1948,11 +1947,6 @@ const setupEventListeners = (tileSystem) => {
         } else {
           alert(getTranslation('authUnavailable'));
         }
-      }
-
-      if (handled) {
-        sidebar.classList.remove('open');
-        if (scrim) scrim.classList.remove('show');
       }
 
       if (handled) {
@@ -2134,9 +2128,16 @@ const handleAuthStateChange = async (user) => {
 };
 
 const initializeAuthListener = () => {
+  if (authListenerUnsubscribe) {
+    authListenerUnsubscribe();
+    authListenerUnsubscribe = null;
+  }
+
   if (firebaseReady && typeof onAuthStateChanged === 'function' && auth) {
-    onAuthStateChanged(auth, handleAuthStateChange);
+    authListenerUnsubscribe = onAuthStateChanged(auth, handleAuthStateChange);
+    authListenerReady = true;
   } else {
+    authListenerReady = false;
     handleAuthStateChange(null);
   }
 };
