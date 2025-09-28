@@ -56,6 +56,9 @@ let isLoginMode = true;
 let allEntries = [];
 let activeFilter = 'all';
 let searchTerm = '';
+let todaysIntention = null;
+let intentionUnsubscribe = null;
+let isEditingIntention = false;
 let contextFeature;
 let intentionFeature;
 let tileSystemInstance = null;
@@ -134,12 +137,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   emptyState = document.getElementById('empty-state');
   installBanner = document.getElementById('install-banner');
 
-  const contextFollowup = document.getElementById('context-followup');
-  const contextFeelingButtons = Array.from(document.querySelectorAll('.context-feeling'));
-  const contextSettingInput = document.getElementById('context-setting');
-  const contextSaveBtn = document.getElementById('save-context');
-  const contextSkipBtn = document.getElementById('skip-context');
-  const contextStatus = document.getElementById('context-status');
+  contextFollowup = document.getElementById('context-followup');
+  contextFeelingButtons = Array.from(document.querySelectorAll('.context-feeling'));
+  contextSettingInput = document.getElementById('context-setting');
+  contextSaveBtn = document.getElementById('save-context');
+  contextSkipBtn = document.getElementById('skip-context');
+  contextStatus = document.getElementById('context-status');
 
   contextFeature?.assignElements({
     followup: contextFollowup,
@@ -227,24 +230,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   authPassword = document.getElementById('auth-password');
   authUsername = document.getElementById('auth-username');
   authRePassword = document.getElementById('auth-re-password');
-  const intentionFormEl = document.getElementById('intention-form');
-  const intentionTextareaEl = document.getElementById('intention-text');
-  const intentionSaveBtnEl = document.getElementById('intention-save');
-  const intentionDisplayEl = document.getElementById('intention-display');
-  const intentionCurrentEl = intentionDisplayEl ? intentionDisplayEl.querySelector('.intention-current') : null;
-  const intentionDateEl = intentionDisplayEl ? intentionDisplayEl.querySelector('.intention-date') : null;
-  const intentionEditBtnEl = document.getElementById('intention-edit');
-  const intentionStatusEl = document.getElementById('intention-status');
+  intentionForm = document.getElementById('intention-form');
+  intentionTextarea = document.getElementById('intention-text');
+  intentionSaveBtn = document.getElementById('intention-save');
+  intentionDisplay = document.getElementById('intention-display');
+  intentionCurrent = intentionDisplay ? intentionDisplay.querySelector('.intention-current') : null;
+  intentionDate = intentionDisplay ? intentionDisplay.querySelector('.intention-date') : null;
+  intentionEditBtn = document.getElementById('intention-edit');
+  intentionStatus = document.getElementById('intention-status');
 
   intentionFeature?.assignElements({
-    form: intentionFormEl,
-    textarea: intentionTextareaEl,
-    saveBtn: intentionSaveBtnEl,
-    display: intentionDisplayEl,
-    current: intentionCurrentEl,
-    date: intentionDateEl,
-    editBtn: intentionEditBtnEl,
-    status: intentionStatusEl
+    form: intentionForm,
+    textarea: intentionTextarea,
+    saveBtn: intentionSaveBtn,
+    display: intentionDisplay,
+    current: intentionCurrent,
+    date: intentionDate,
+    editBtn: intentionEditBtn,
+    status: intentionStatus
   });
 
   // Initialize tile system after elements are available
@@ -1186,14 +1189,6 @@ const renderRows = (entries) => {
     contextBtn.setAttribute('aria-expanded', 'false');
     contextBtn.setAttribute('aria-controls', `context-${entry.id}`);
 
-    const contextBtn = document.createElement('button');
-    contextBtn.className = 'btn btn-secondary context-entry';
-    contextBtn.type = 'button';
-    contextBtn.dataset.id = entry.id;
-    contextBtn.textContent = getTranslation('contextView');
-    contextBtn.setAttribute('aria-expanded', 'false');
-    contextBtn.setAttribute('aria-controls', `context-${entry.id}`);
-
     const editBtn = document.createElement('button');
     editBtn.className = 'btn btn-secondary edit-entry';
     editBtn.type = 'button';
@@ -1806,7 +1801,6 @@ const handleAuthStateChange = (user) => {
     allEntries = [];
 
     contextFeature?.clearAll();
-mpt();
 
     resetFilters();
     updateStats();
