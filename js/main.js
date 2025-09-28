@@ -13,6 +13,10 @@ let createUserWithEmailAndPassword;
 let updateProfile;
 let GoogleAuthProvider;
 let signInWithPopup;
+let signInWithRedirect;
+let getRedirectResult;
+let setPersistence;
+let browserLocalPersistence;
 let getFirestore;
 let collection;
 let doc;
@@ -21,6 +25,7 @@ let updateDoc;
 let deleteDoc;
 let onSnapshot;
 let getDocs;
+let getDoc;
 let query;
 let orderBy;
 let serverTimestamp;
@@ -62,6 +67,8 @@ let isEditingIntention = false;
 let contextFeature;
 let intentionFeature;
 let tileSystemInstance = null;
+let currentUserProfile = null;
+let currentWelcomeKey = 'welcome';
 
 
 // Element refs (assigned on DOMContentLoaded)
@@ -77,6 +84,7 @@ let authSection, loginBtn, signupBtn, authSubmit, authActions, signupFields, aut
 let authEmail, authPassword, authUsername, authRePassword;
 let contextFollowup, contextFeelingButtons, contextSettingInput, contextSaveBtn, contextSkipBtn, contextStatus;
 let intentionForm, intentionTextarea, intentionSaveBtn, intentionDisplay, intentionCurrent, intentionDate, intentionEditBtn, intentionStatus;
+let accountModal, accountNameInput, accountNicknameInput, accountEmailInput, accountSaveBtn, accountCancelBtn;
 
 const loadFirebaseModules = async () => {
   try {
@@ -95,7 +103,11 @@ const loadFirebaseModules = async () => {
       createUserWithEmailAndPassword,
       updateProfile,
       GoogleAuthProvider,
-      signInWithPopup
+      signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult,
+      setPersistence,
+      browserLocalPersistence
     } = authModule);
     ({
       getFirestore,
@@ -106,6 +118,7 @@ const loadFirebaseModules = async () => {
       deleteDoc,
       onSnapshot,
       getDocs,
+      getDoc,
       query,
       orderBy,
       serverTimestamp,
@@ -114,6 +127,14 @@ const loadFirebaseModules = async () => {
 
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
+
+    if (typeof setPersistence === 'function' && browserLocalPersistence) {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+      } catch (error) {
+        console.warn('Unable to set Firebase auth persistence:', error);
+      }
+    }
     db = getFirestore(app);
     firebaseReady = true;
   } catch (error) {
@@ -216,7 +237,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   logoCard = document.getElementById('logo-card');
   manifestoCard = document.getElementById('manifesto-card');
   supportCard = document.getElementById('support-button');
-  
+
+  // Account modal
+  accountModal = document.getElementById('account-modal');
+  accountNameInput = document.getElementById('account-name');
+  accountNicknameInput = document.getElementById('account-nickname');
+  accountEmailInput = document.getElementById('account-email');
+  accountSaveBtn = document.getElementById('save-account');
+  accountCancelBtn = document.getElementById('cancel-account');
+
   // Auth elements
   authSection = document.getElementById('auth-section');
   loginBtn = document.getElementById('login-btn');
@@ -267,6 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners(tileSystem);
 
   await loadFirebaseModules();
+  await handleGoogleRedirectResult();
   initializeAuthListener();
 });
 
@@ -357,7 +387,10 @@ const translations = {
     confirmClearBtn: 'Confirm',
     accountModalTitle: 'Edit Account',
     nameLabel: 'Name',
+    nicknameLabel: 'Nickname',
     emailLabel: 'Email',
+    accountMissingName: 'Please enter your full name before saving.',
+    accountSaveError: 'Sorry, we couldn’t update your profile.',
     deleteAccountBtn: 'Delete Account',
     saveBtn: 'Save',
     menuTitle: 'Menu',
@@ -388,6 +421,7 @@ const translations = {
     authMissingUsername: 'Please choose a username.',
     authPasswordMismatch: 'Passwords do not match.',
     authUnavailable: 'Authentication is currently unavailable. Please try again later.',
+    googleSigninBlocked: 'Google sign-in couldn’t finish because this browser blocked the login session. Try again in your default browser and ensure cookies are enabled.',
     addError: 'Sorry, there was an error adding your entry.',
     deleteError: 'Sorry, there was an error removing your entry.',
     updateError: 'Sorry, there was an error updating your entry.',
@@ -489,7 +523,10 @@ const translations = {
     confirmClearBtn: 'Bestätigen',
     accountModalTitle: 'Konto bearbeiten',
     nameLabel: 'Name',
+    nicknameLabel: 'Spitzname',
     emailLabel: 'Email',
+    accountMissingName: 'Bitte gib deinen vollständigen Namen ein, bevor du speicherst.',
+    accountSaveError: 'Dein Profil konnte leider nicht aktualisiert werden.',
     deleteAccountBtn: 'Konto löschen',
     saveBtn: 'Speichern',
     menuTitle: 'Menü',
@@ -520,6 +557,7 @@ const translations = {
     authMissingUsername: 'Bitte einen Benutzernamen wählen.',
     authPasswordMismatch: 'Passwörter stimmen nicht überein.',
     authUnavailable: 'Die Anmeldung ist derzeit nicht verfügbar. Bitte versuche es später erneut.',
+    googleSigninBlocked: 'Die Google-Anmeldung konnte nicht abgeschlossen werden, weil der Browser die Sitzung blockiert hat. Versuche es im Standardbrowser erneut und stelle sicher, dass Cookies erlaubt sind.',
     addError: 'Beim Hinzufügen deines Eintrags ist ein Fehler aufgetreten.',
     deleteError: 'Beim Entfernen deines Eintrags ist ein Fehler aufgetreten.',
     updateError: 'Beim Aktualisieren deines Eintrags ist ein Fehler aufgetreten.',
@@ -671,6 +709,46 @@ const showInstallBanner = (message) => {
   }, 4000);
 };
 
+const deriveNickname = (name) => {
+  if (typeof name !== 'string') return '';
+  const trimmed = name.trim();
+  if (!trimmed) return '';
+  return trimmed.split(/\s+/)[0];
+};
+
+const getResolvedNames = (user, profile = currentUserProfile) => {
+  if (!user) return { fullName: '', nickname: '' };
+  const profileDisplay = typeof profile?.displayName === 'string' ? profile.displayName.trim() : '';
+  const userDisplay = typeof user.displayName === 'string' ? user.displayName.trim() : '';
+  const email = typeof user.email === 'string' ? user.email : '';
+  const fullName = profileDisplay || userDisplay || email;
+  const nickname = typeof profile?.nickname === 'string' ? profile.nickname.trim() : '';
+  return { fullName, nickname };
+};
+
+const applyUserIdentity = (user, profile = currentUserProfile, welcomeKeyOverride) => {
+  if (!user) {
+    currentWelcomeKey = 'welcome';
+    if (userName) userName.textContent = '';
+    if (welcomeMessage) welcomeMessage.textContent = '';
+    return;
+  }
+
+  if (welcomeKeyOverride) {
+    currentWelcomeKey = welcomeKeyOverride;
+  }
+
+  const { fullName, nickname } = getResolvedNames(user, profile);
+  if (userName) {
+    userName.textContent = nickname || fullName || '';
+  }
+  if (welcomeMessage) {
+    const welcomeKey = currentWelcomeKey || 'welcome';
+    const welcomeText = getTranslation(welcomeKey);
+    welcomeMessage.textContent = fullName ? `${welcomeText}, ${fullName}!` : getTranslation('welcome');
+  }
+};
+
 const setLanguage = (newLang) => {
   lang = newLang;
   if (langToggle) {
@@ -691,13 +769,7 @@ const setLanguage = (newLang) => {
   });
 
   const user = firebaseReady && auth ? auth.currentUser : null;
-  if (user && welcomeMessage) {
-    const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
-    const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
-    const welcomeText = getTranslation(welcomeTextKey);
-    const displayName = user.displayName || user.email || '';
-    welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
-  }
+  applyUserIdentity(user, currentUserProfile);
 
   updateAuthTexts();
   if (latestSnapshot) renderEntries(latestSnapshot);
@@ -714,6 +786,138 @@ const setLanguage = (newLang) => {
   updateIntentionUI();
   if (intentionStatus && intentionStatus.dataset.statusKey) {
     intentionStatus.textContent = getTranslation(intentionStatus.dataset.statusKey);
+  }
+};
+
+const loadUserProfile = async (user) => {
+  if (!user || !firebaseReady || !db || typeof doc !== 'function' || typeof getDoc !== 'function') {
+    return currentUserProfile;
+  }
+
+  try {
+    const userRef = doc(db, 'users', user.uid);
+    const snapshot = await getDoc(userRef);
+
+    if (snapshot && snapshot.exists()) {
+      const data = snapshot.data() || {};
+      const resolved = { ...data };
+      const updates = {};
+
+      if (!resolved.displayName && typeof user.displayName === 'string') {
+        resolved.displayName = user.displayName;
+        updates.displayName = user.displayName;
+      }
+
+      if (!resolved.email && typeof user.email === 'string') {
+        resolved.email = user.email;
+        updates.email = user.email;
+      }
+
+      if (resolved.nickname === undefined || resolved.nickname === null) {
+        const nickname = deriveNickname(resolved.displayName || user.displayName || '');
+        resolved.nickname = nickname;
+        updates.nickname = nickname;
+      }
+
+      if (Object.keys(updates).length && typeof setDoc === 'function') {
+        await setDoc(userRef, updates, { merge: true });
+      }
+
+      currentUserProfile = resolved;
+      return resolved;
+    }
+
+    const displayName = typeof user.displayName === 'string' ? user.displayName : '';
+    const profile = {
+      displayName,
+      email: typeof user.email === 'string' ? user.email : '',
+      nickname: deriveNickname(displayName)
+    };
+
+    if (typeof setDoc === 'function') {
+      const payload = { ...profile };
+      if (typeof serverTimestamp === 'function') {
+        payload.createdAt = serverTimestamp();
+      }
+      await setDoc(userRef, payload, { merge: true });
+    }
+
+    currentUserProfile = profile;
+    return profile;
+  } catch (error) {
+    console.error('Failed to load user profile:', error);
+    return currentUserProfile;
+  }
+};
+
+const openAccountModal = () => {
+  if (!accountModal || !firebaseReady || !auth || !auth.currentUser) return;
+  const user = auth.currentUser;
+  const { fullName, nickname } = getResolvedNames(user);
+
+  if (accountNameInput) {
+    accountNameInput.value = fullName || '';
+  }
+  if (accountNicknameInput) {
+    accountNicknameInput.value = nickname || '';
+  }
+  if (accountEmailInput) {
+    accountEmailInput.value = typeof user.email === 'string' ? user.email : '';
+  }
+
+  accountModal.classList.add('show');
+  if (accountNameInput) {
+    accountNameInput.focus();
+  }
+};
+
+const handleAccountSave = async () => {
+  if (!accountNameInput || !firebaseReady || !auth || !auth.currentUser || !db || typeof doc !== 'function' || typeof setDoc !== 'function') {
+    alert(getTranslation('authUnavailable'));
+    return;
+  }
+
+  const fullName = accountNameInput.value.trim();
+  const nickname = accountNicknameInput ? accountNicknameInput.value.trim() : '';
+
+  if (!fullName) {
+    alert(getTranslation('accountMissingName'));
+    return;
+  }
+
+  const user = auth.currentUser;
+  if (accountSaveBtn) accountSaveBtn.disabled = true;
+
+  try {
+    if (typeof updateProfile === 'function') {
+      await updateProfile(user, { displayName: fullName });
+    }
+
+    const userRef = doc(db, 'users', user.uid);
+    const payload = {
+      displayName: fullName,
+      nickname,
+      email: typeof user.email === 'string' ? user.email : ''
+    };
+
+    if (typeof serverTimestamp === 'function') {
+      payload.updatedAt = serverTimestamp();
+    }
+
+    await setDoc(userRef, payload, { merge: true });
+
+    currentUserProfile = { ...(currentUserProfile || {}), ...payload };
+    applyUserIdentity(user, currentUserProfile);
+
+    if (accountModal) {
+      accountModal.classList.remove('show');
+    }
+  } catch (error) {
+    console.error('Failed to update profile:', error);
+    const message = error && error.message ? ` ${error.message}` : '';
+    alert(`${getTranslation('accountSaveError')}${message}`.trim());
+  } finally {
+    if (accountSaveBtn) accountSaveBtn.disabled = false;
   }
 };
 
@@ -1444,6 +1648,30 @@ const resetAuthFields = () => {
   if (authRePassword) authRePassword.value = '';
 };
 
+const shouldUseRedirectForGoogleSignIn = () => {
+  const isStandalone = (() => {
+    if (typeof window === 'undefined') return false;
+    const mq = window.matchMedia?.('(display-mode: standalone)');
+    return Boolean(mq?.matches || window.navigator?.standalone);
+  })();
+  const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(userAgent);
+  return isStandalone || isMobile;
+};
+
+const handleGoogleRedirectResult = async () => {
+  if (!firebaseReady || !auth || typeof getRedirectResult !== 'function') {
+    return;
+  }
+
+  try {
+    await getRedirectResult(auth);
+  } catch (error) {
+    console.error('Google redirect sign-in error:', error);
+    alert(getTranslation('googleSigninBlocked'));
+  }
+};
+
 const setAuthMode = (isLogin) => {
   isLoginMode = isLogin;
   if (signupFields) signupFields.style.display = isLogin ? 'none' : 'block';
@@ -1495,6 +1723,7 @@ const handleAuthSubmit = async () => {
       await updateProfile(newUser, { displayName: username });
       await setDoc(doc(db, 'users', newUser.uid), {
         displayName: username,
+        nickname: deriveNickname(username),
         email,
         createdAt: serverTimestamp()
       });
@@ -1583,16 +1812,47 @@ const setupEventListeners = (tileSystem) => {
   if (authSubmit) authSubmit.addEventListener('click', handleAuthSubmit);
 
   if (googleSigninBtn) {
-    googleSigninBtn.addEventListener('click', () => {
-      if (!firebaseReady || !auth || typeof GoogleAuthProvider !== 'function' || typeof signInWithPopup !== 'function') {
+    googleSigninBtn.addEventListener('click', async () => {
+      if (!firebaseReady || !auth || typeof GoogleAuthProvider !== 'function') {
         alert(getTranslation('authUnavailable'));
         return;
       }
+
       const provider = new GoogleAuthProvider();
-      signInWithPopup(auth, provider).catch(err => {
-        alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
+      const preferRedirect = shouldUseRedirectForGoogleSignIn();
+      const canRedirect = preferRedirect && typeof signInWithRedirect === 'function';
+      const canPopup = typeof signInWithPopup === 'function';
+
+      try {
+        googleSigninBtn.disabled = true;
+
+        if (canRedirect) {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+
+        if (canPopup) {
+          await signInWithPopup(auth, provider);
+          return;
+        }
+
+        if (typeof signInWithRedirect === 'function') {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+
+        throw new Error('Google sign-in is not available in this browser.');
+      } catch (err) {
+        if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+          return;
+        }
+
+        const message = err?.message || 'Unknown error';
+        alert(`${getTranslation('authErrorPrefix')} ${message}`);
         console.error('Google sign-in error:', err);
-      });
+      } finally {
+        googleSigninBtn.disabled = false;
+      }
     });
   }
 
@@ -1647,9 +1907,12 @@ const setupEventListeners = (tileSystem) => {
       if (!button) return;
       const action = button.dataset.action;
 
+      let handled = false;
+
       if (action === 'manifesto') {
         if (manifestoModal) {
           manifestoModal.classList.add('show');
+          handled = true;
         }
       } else if (action === 'history') {
         if (!logCollectionRef) return;
@@ -1657,11 +1920,21 @@ const setupEventListeners = (tileSystem) => {
         getDocs(q).then(renderHistory);
         if (historyModal) {
           historyModal.classList.add('show');
+          handled = true;
+        }
+      } else if (action === 'account') {
+        if (auth && auth.currentUser) {
+          openAccountModal();
+          handled = true;
+        } else {
+          alert(getTranslation('authUnavailable'));
         }
       }
-      // Close sidebar after action
-      sidebar.classList.remove('open');
-      if (scrim) scrim.classList.remove('show');
+
+      if (handled) {
+        sidebar.classList.remove('open');
+        if (scrim) scrim.classList.remove('show');
+      }
     });
   }
 
@@ -1700,6 +1973,20 @@ const setupEventListeners = (tileSystem) => {
     closeHistoryBtn.addEventListener('click', () => {
       if (historyModal) {
         historyModal.classList.remove('show');
+      }
+    });
+  }
+
+  if (accountSaveBtn) {
+    accountSaveBtn.addEventListener('click', handleAccountSave);
+  }
+  if (accountCancelBtn && accountModal) {
+    accountCancelBtn.addEventListener('click', () => accountModal.classList.remove('show'));
+  }
+  if (accountModal) {
+    accountModal.addEventListener('click', (event) => {
+      if (event.target === accountModal) {
+        accountModal.classList.remove('show');
       }
     });
   }
@@ -1758,7 +2045,7 @@ const setupEventListeners = (tileSystem) => {
   }
 };
 
-const handleAuthStateChange = (user) => {
+const handleAuthStateChange = async (user) => {
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
 
   const loggedIn = !!user;
@@ -1775,16 +2062,21 @@ const handleAuthStateChange = (user) => {
   if (loggedIn) {
     resetFilters();
     contextFeature?.clearAll();
-
-    const displayName = user.displayName || user.email || '';
+    currentUserProfile = null;
     const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
-    const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
-    const welcomeText = getTranslation(welcomeTextKey);
-    if (welcomeMessage) {
-      welcomeMessage.textContent = displayName ? `${welcomeText}, ${displayName}!` : getTranslation('welcome');
+    currentWelcomeKey = isNewUser ? 'welcome' : 'welcomeBack';
+    applyUserIdentity(user, null, currentWelcomeKey);
+
+    if (accountEmailInput) {
+      accountEmailInput.value = typeof user.email === 'string' ? user.email : '';
     }
 
-    if (userName) userName.textContent = displayName;
+    try {
+      const profile = await loadUserProfile(user);
+      applyUserIdentity(user, profile);
+    } catch (error) {
+      console.error('Unable to hydrate user profile:', error);
+    }
 
     logCollectionRef = collection(db, 'users', user.uid, 'logs');
     const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
@@ -1792,8 +2084,12 @@ const handleAuthStateChange = (user) => {
     intentionFeature?.subscribe(user.uid);
 
   } else {
-    if (userName) userName.textContent = '';
-    if (welcomeMessage) welcomeMessage.textContent = '';
+    applyUserIdentity(null);
+    currentUserProfile = null;
+    currentWelcomeKey = 'welcome';
+    if (accountNameInput) accountNameInput.value = '';
+    if (accountNicknameInput) accountNicknameInput.value = '';
+    if (accountEmailInput) accountEmailInput.value = '';
     latestSnapshot = null;
     if (tbody) tbody.innerHTML = '';
     if (emptyState) emptyState.style.display = 'block';
