@@ -46,6 +46,8 @@ let app = null;
 let auth = null;
 let db = null;
 let firebaseReady = false;
+let authListenerReady = false;
+let authListenerUnsubscribe = null;
 
 // Constants
 const MAX_RECENT_ROWS = 10;
@@ -70,6 +72,10 @@ let tileSystemInstance = null;
 let currentUserProfile = null;
 let currentWelcomeKey = 'welcome';
 
+// Local state used by context helpers (prevents ReferenceErrors if invoked)
+let pendingContextLogId = null;
+let selectedFeeling = '';
+const contextCache = new Map();
 
 // Element refs (assigned on DOMContentLoaded)
 let appContent, nameInput, dairyCheckbox, outsideMealsCheckbox, addBtn, tbody, emptyState, installBanner;
@@ -296,6 +302,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners(tileSystem);
 
   await loadFirebaseModules();
+
+  // Handle Google redirect result once, then initialize auth listener with possible prefetched user
   const redirectResult = await handleGoogleRedirectResult();
   initializeAuthListener(redirectResult?.user || null);
 });
@@ -1226,7 +1234,6 @@ const saveIntention = async () => {
   } finally {
     if (intentionSaveBtn) intentionSaveBtn.disabled = false;
     if (succeeded) {
-      // The onSnapshot subscription will update todaysIntention; ensure UI reflects state immediately.
       if (!todaysIntention) {
         todaysIntention = { text, date: todayId };
       } else {
@@ -1343,7 +1350,8 @@ const updateStats = () => {
     statLast.textContent = latestDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
     statLastSubtext.textContent = latestDate.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' });
   } else {
-    statLast.textContent = '—';
+    // Use a plain hyphen instead of an em dash to match user preference
+    statLast.textContent = '-';
     statLastSubtext.textContent = '';
   }
 };
@@ -1847,6 +1855,7 @@ const setupEventListeners = (tileSystem) => {
       try {
         googleSigninBtn.disabled = true;
 
+        // Desktop default: popup; Mobile/PWA: redirect
         if (!preferRedirect && canPopup) {
           await signInWithPopup(auth, provider);
           return;
@@ -2051,7 +2060,6 @@ const setupEventListeners = (tileSystem) => {
       legalModal.classList.add('show');
     });
   }
-
   if (privacyLink) {
     privacyLink.addEventListener('click', (e) => {
       e.preventDefault();
@@ -2098,6 +2106,7 @@ const setupEventListeners = (tileSystem) => {
 const handleAuthStateChange = async (user) => {
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
 
+
   try {
     const loggedIn = !!user;
 
@@ -2115,6 +2124,7 @@ const handleAuthStateChange = async (user) => {
       contextFeature?.clearAll();
       currentUserProfile = null;
 
+
       const metadata = user?.metadata || {};
       const creationTime = metadata.creationTime;
       const lastSignInTime = metadata.lastSignInTime;
@@ -2122,9 +2132,11 @@ const handleAuthStateChange = async (user) => {
       currentWelcomeKey = isNewUser ? 'welcome' : 'welcomeBack';
       applyUserIdentity(user, null, currentWelcomeKey);
 
+
       if (accountEmailInput) {
         accountEmailInput.value = typeof user.email === 'string' ? user.email : '';
       }
+
 
       try {
         const profile = await loadUserProfile(user);
@@ -2187,6 +2199,7 @@ const handleAuthStateChange = async (user) => {
   }
 };
 
+
 const initializeAuthListener = (prefetchedUser = null) => {
   if (prefetchedUser) {
     handleAuthStateChange(prefetchedUser).catch((error) => {
@@ -2206,6 +2219,7 @@ const initializeAuthListener = (prefetchedUser = null) => {
     handleAuthStateChange(null).catch((error) => {
       console.error('Unable to initialize auth state:', error);
     });
+
   }
 };
 
