@@ -1,5 +1,7 @@
 // app.js (ES module)
 import { renderTiles, initTileSystem } from './tiles.js';
+import { createContextFeature } from './features/context.js';
+import { createIntentionFeature } from './features/intention.js';
 
 // Firebase (loaded dynamically to allow graceful offline fallback)
 let initializeApp;
@@ -54,12 +56,10 @@ let isLoginMode = true;
 let allEntries = [];
 let activeFilter = 'all';
 let searchTerm = '';
-let pendingContextLogId = null;
-let selectedFeeling = '';
-const contextCache = new Map();
-let todaysIntention = null;
-let intentionUnsubscribe = null;
-let isEditingIntention = false;
+let contextFeature;
+let intentionFeature;
+let tileSystemInstance = null;
+
 
 // Element refs (assigned on DOMContentLoaded)
 let appContent, nameInput, dairyCheckbox, outsideMealsCheckbox, addBtn, tbody, emptyState, installBanner;
@@ -133,12 +133,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   tbody = document.getElementById('log-body');
   emptyState = document.getElementById('empty-state');
   installBanner = document.getElementById('install-banner');
-  contextFollowup = document.getElementById('context-followup');
-  contextFeelingButtons = Array.from(document.querySelectorAll('.context-feeling'));
-  contextSettingInput = document.getElementById('context-setting');
-  contextSaveBtn = document.getElementById('save-context');
-  contextSkipBtn = document.getElementById('skip-context');
-  contextStatus = document.getElementById('context-status');
+
+  const contextFollowup = document.getElementById('context-followup');
+  const contextFeelingButtons = Array.from(document.querySelectorAll('.context-feeling'));
+  const contextSettingInput = document.getElementById('context-setting');
+  const contextSaveBtn = document.getElementById('save-context');
+  const contextSkipBtn = document.getElementById('skip-context');
+  const contextStatus = document.getElementById('context-status');
+
+  contextFeature?.assignElements({
+    followup: contextFollowup,
+    feelingButtons: contextFeelingButtons,
+    settingInput: contextSettingInput,
+    saveBtn: contextSaveBtn,
+    skipBtn: contextSkipBtn,
+    status: contextStatus,
+    tbody
+  });
 
   // Navigation and UI
   sidebar = document.getElementById('sidebar');
@@ -216,14 +227,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   authPassword = document.getElementById('auth-password');
   authUsername = document.getElementById('auth-username');
   authRePassword = document.getElementById('auth-re-password');
-  intentionForm = document.getElementById('intention-form');
-  intentionTextarea = document.getElementById('intention-text');
-  intentionSaveBtn = document.getElementById('intention-save');
-  intentionDisplay = document.getElementById('intention-display');
-  intentionCurrent = intentionDisplay ? intentionDisplay.querySelector('.intention-current') : null;
-  intentionDate = intentionDisplay ? intentionDisplay.querySelector('.intention-date') : null;
-  intentionEditBtn = document.getElementById('intention-edit');
-  intentionStatus = document.getElementById('intention-status');
+  const intentionFormEl = document.getElementById('intention-form');
+  const intentionTextareaEl = document.getElementById('intention-text');
+  const intentionSaveBtnEl = document.getElementById('intention-save');
+  const intentionDisplayEl = document.getElementById('intention-display');
+  const intentionCurrentEl = intentionDisplayEl ? intentionDisplayEl.querySelector('.intention-current') : null;
+  const intentionDateEl = intentionDisplayEl ? intentionDisplayEl.querySelector('.intention-date') : null;
+  const intentionEditBtnEl = document.getElementById('intention-edit');
+  const intentionStatusEl = document.getElementById('intention-status');
+
+  intentionFeature?.assignElements({
+    form: intentionFormEl,
+    textarea: intentionTextareaEl,
+    saveBtn: intentionSaveBtnEl,
+    display: intentionDisplayEl,
+    current: intentionCurrentEl,
+    date: intentionDateEl,
+    editBtn: intentionEditBtnEl,
+    status: intentionStatusEl
+  });
 
   // Initialize tile system after elements are available
   const tileSystem = initTileSystem({
@@ -232,6 +254,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     reorderHint,
     getTranslation
   });
+  tileSystemInstance = tileSystem;
 
   // Initialize theme and other setup
   initializeTheme();
@@ -323,6 +346,7 @@ const translations = {
     thTime: 'Time',
     thDairy: 'Dairy',
     thOutsideMeals: 'Outside of mealtimes',
+    thActions: 'Actions',
     emptyState: 'No items yet. Add your first item above.',
     confirmTitle: 'Are you sure?',
     cancelBtn: 'Cancel',
@@ -454,6 +478,7 @@ const translations = {
     thTime: 'Uhrzeit',
     thDairy: 'Milchprodukte',
     thOutsideMeals: 'Außerhalb der Mahlzeiten',
+    thActions: 'Aktionen',
     emptyState: 'Noch keine Einträge. Fügen Sie oben Ihren ersten Eintrag hinzu.',
     confirmTitle: 'Sind Sie sicher?',
     cancelBtn: 'Abbrechen',
@@ -559,6 +584,20 @@ const getTranslation = (key) => {
   return (dictionary && dictionary[key]) || translations.en[key] || '';
 };
 
+contextFeature = createContextFeature({
+  getTranslation: (key) => getTranslation(key),
+  getLang: () => lang,
+  getFirebase: () => ({ firebaseReady, auth, db }),
+  getFirestore: () => ({ collection, getDocs, orderBy, query, addDoc, serverTimestamp })
+});
+
+intentionFeature = createIntentionFeature({
+  getTranslation: (key) => getTranslation(key),
+  getLang: () => lang,
+  getFirebase: () => ({ firebaseReady, auth, db }),
+  getFirestore: () => ({ doc, setDoc, onSnapshot, serverTimestamp })
+});
+
 // Theme
 const THEME_STORAGE_KEY = 'preferred-theme';
 const themeColors = { light: '#fdfaf3', dark: '#1a1a1a' };
@@ -659,6 +698,7 @@ const setLanguage = (newLang) => {
 
   updateAuthTexts();
   if (latestSnapshot) renderEntries(latestSnapshot);
+
   if (contextFollowup) {
     const feelingsGroup = contextFollowup.querySelector('.context-feelings');
     if (feelingsGroup) {
@@ -1049,7 +1089,9 @@ const addEntry = async () => {
     dairyCheckbox.checked = false;
     outsideMealsCheckbox.checked = false;
     nameInput.focus();
-    showContextPrompt(docRef.id);
+
+    contextFeature?.showPrompt(docRef.id);
+
   } catch (error) {
     console.error('Error adding document: ', error);
     alert(getTranslation('addError'));
@@ -1109,10 +1151,12 @@ const renderRows = (entries) => {
 
     const nameCell = document.createElement('td');
     nameCell.textContent = entry.name || '';
+    nameCell.dataset.label = getTranslation('thItem');
 
     const timeCell = document.createElement('td');
     const date = getEntryDate(entry);
     timeCell.textContent = date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : getTranslation('notAvailable');
+    timeCell.dataset.label = getTranslation('thTime');
 
     const dairyCell = document.createElement('td');
     const hasDairy = Boolean(entry.dairy);
@@ -1120,6 +1164,7 @@ const renderRows = (entries) => {
     dairyPill.className = `pill ${hasDairy ? 'pill-yes' : 'pill-no'}`;
     dairyPill.textContent = hasDairy ? getTranslation('yes') : getTranslation('no');
     dairyCell.appendChild(dairyPill);
+    dairyCell.dataset.label = getTranslation('thDairy');
 
     const outsideCell = document.createElement('td');
     const outsideValue = Boolean(entry.outsideMeals);
@@ -1127,9 +1172,19 @@ const renderRows = (entries) => {
     outsidePill.className = `pill ${outsideValue ? 'pill-yes' : 'pill-no'}`;
     outsidePill.textContent = outsideValue ? getTranslation('yes') : getTranslation('no');
     outsideCell.appendChild(outsidePill);
+    outsideCell.dataset.label = getTranslation('thOutsideMeals');
 
     const actionsCell = document.createElement('td');
     actionsCell.className = 'row-actions actions';
+    actionsCell.dataset.label = getTranslation('thActions');
+
+    const contextBtn = document.createElement('button');
+    contextBtn.className = 'btn btn-secondary context-entry';
+    contextBtn.type = 'button';
+    contextBtn.dataset.id = entry.id;
+    contextBtn.textContent = getTranslation('contextView');
+    contextBtn.setAttribute('aria-expanded', 'false');
+    contextBtn.setAttribute('aria-controls', `context-${entry.id}`);
 
     const contextBtn = document.createElement('button');
     contextBtn.className = 'btn btn-secondary context-entry';
@@ -1320,12 +1375,16 @@ const handleLogAction = async (event) => {
 
   if (button.classList.contains('context-entry')) {
     event.preventDefault();
-    await toggleContextForRow(id, button);
+
+    await contextFeature?.toggleRow(id, button);
+
     return;
   }
 
   if (button.classList.contains('remove-entry')) {
-    contextCache.delete(id);
+
+    contextFeature?.clearCacheForEntry(id);
+
     deleteDoc(doc(logCollectionRef, id)).catch(error => {
       console.error('Error removing document: ', error);
       alert(getTranslation('deleteError'));
@@ -1490,48 +1549,9 @@ const setupEventListeners = (tileSystem) => {
 
   // Main app functionality
   if (addBtn) addBtn.addEventListener('click', addEntry);
-  if (contextFeelingButtons && contextFeelingButtons.length) {
-    contextFeelingButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        if (tileSystem && typeof tileSystem.isReorganizeMode === 'function' && tileSystem.isReorganizeMode()) return;
-        handleFeelingSelection(button);
-      });
-    });
-  }
-  if (contextSettingInput) {
-    contextSettingInput.addEventListener('input', updateContextSaveState);
-  }
-  if (contextSaveBtn) {
-    contextSaveBtn.addEventListener('click', () => {
-      if (tileSystem && typeof tileSystem.isReorganizeMode === 'function' && tileSystem.isReorganizeMode()) return;
-      saveContextEntry();
-    });
-  }
-  if (contextSkipBtn) {
-    contextSkipBtn.addEventListener('click', () => {
-      if (tileSystem && typeof tileSystem.isReorganizeMode === 'function' && tileSystem.isReorganizeMode()) return;
-      skipContextEntry();
-    });
-  }
-  if (intentionSaveBtn) {
-    intentionSaveBtn.addEventListener('click', () => {
-      if (tileSystem && typeof tileSystem.isReorganizeMode === 'function' && tileSystem.isReorganizeMode()) return;
-      saveIntention();
-    });
-  }
-  if (intentionEditBtn) {
-    intentionEditBtn.addEventListener('click', () => {
-      if (tileSystem && typeof tileSystem.isReorganizeMode === 'function' && tileSystem.isReorganizeMode()) return;
-      editIntention();
-    });
-  }
-  if (intentionTextarea) {
-    intentionTextarea.addEventListener('input', () => {
-      if (intentionStatus && (intentionStatus.dataset.statusKey === 'intentionError' || intentionStatus.dataset.statusKey === 'intentionRequired')) {
-        setIntentionStatus(null);
-      }
-    });
-  }
+  contextFeature?.attachListeners(tileSystem);
+  intentionFeature?.attachListeners(tileSystem);
+
   if (tbody) tbody.addEventListener('click', handleLogAction);
   if (exportBtn) exportBtn.addEventListener('click', exportToCsv);
 
@@ -1759,8 +1779,8 @@ const handleAuthStateChange = (user) => {
 
   if (loggedIn) {
     resetFilters();
-    contextCache.clear();
-    hideContextPrompt();
+    contextFeature?.clearAll();
+
     const displayName = user.displayName || user.email || '';
     const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
     const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
@@ -1774,7 +1794,8 @@ const handleAuthStateChange = (user) => {
     logCollectionRef = collection(db, 'users', user.uid, 'logs');
     const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
     unsubscribe = onSnapshot(q, renderEntries);
-    subscribeToIntention(user.uid);
+    intentionFeature?.subscribe(user.uid);
+
   } else {
     if (userName) userName.textContent = '';
     if (welcomeMessage) welcomeMessage.textContent = '';
@@ -1783,13 +1804,17 @@ const handleAuthStateChange = (user) => {
     if (emptyState) emptyState.style.display = 'block';
     logCollectionRef = null;
     allEntries = [];
-    contextCache.clear();
-    hideContextPrompt();
+
+    contextFeature?.clearAll();
+mpt();
+
     resetFilters();
     updateStats();
     setAuthMode(true);
     resetAuthFields();
-    resetIntentionState();
+
+    intentionFeature?.reset();
+
   }
 };
 
