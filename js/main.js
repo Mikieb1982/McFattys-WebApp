@@ -13,6 +13,10 @@ let createUserWithEmailAndPassword;
 let updateProfile;
 let GoogleAuthProvider;
 let signInWithPopup;
+let signInWithRedirect;
+let getRedirectResult;
+let setPersistence;
+let browserLocalPersistence;
 let getFirestore;
 let collection;
 let doc;
@@ -99,7 +103,11 @@ const loadFirebaseModules = async () => {
       createUserWithEmailAndPassword,
       updateProfile,
       GoogleAuthProvider,
-      signInWithPopup
+      signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult,
+      setPersistence,
+      browserLocalPersistence
     } = authModule);
     ({
       getFirestore,
@@ -119,6 +127,14 @@ const loadFirebaseModules = async () => {
 
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
+
+    if (typeof setPersistence === 'function' && browserLocalPersistence) {
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+      } catch (error) {
+        console.warn('Unable to set Firebase auth persistence:', error);
+      }
+    }
     db = getFirestore(app);
     firebaseReady = true;
   } catch (error) {
@@ -280,6 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners(tileSystem);
 
   await loadFirebaseModules();
+  await handleGoogleRedirectResult();
   initializeAuthListener();
 });
 
@@ -404,6 +421,7 @@ const translations = {
     authMissingUsername: 'Please choose a username.',
     authPasswordMismatch: 'Passwords do not match.',
     authUnavailable: 'Authentication is currently unavailable. Please try again later.',
+    googleSigninBlocked: 'Google sign-in couldn’t finish because this browser blocked the login session. Try again in your default browser and ensure cookies are enabled.',
     addError: 'Sorry, there was an error adding your entry.',
     deleteError: 'Sorry, there was an error removing your entry.',
     updateError: 'Sorry, there was an error updating your entry.',
@@ -539,6 +557,7 @@ const translations = {
     authMissingUsername: 'Bitte einen Benutzernamen wählen.',
     authPasswordMismatch: 'Passwörter stimmen nicht überein.',
     authUnavailable: 'Die Anmeldung ist derzeit nicht verfügbar. Bitte versuche es später erneut.',
+    googleSigninBlocked: 'Die Google-Anmeldung konnte nicht abgeschlossen werden, weil der Browser die Sitzung blockiert hat. Versuche es im Standardbrowser erneut und stelle sicher, dass Cookies erlaubt sind.',
     addError: 'Beim Hinzufügen deines Eintrags ist ein Fehler aufgetreten.',
     deleteError: 'Beim Entfernen deines Eintrags ist ein Fehler aufgetreten.',
     updateError: 'Beim Aktualisieren deines Eintrags ist ein Fehler aufgetreten.',
@@ -1629,6 +1648,30 @@ const resetAuthFields = () => {
   if (authRePassword) authRePassword.value = '';
 };
 
+const shouldUseRedirectForGoogleSignIn = () => {
+  const isStandalone = (() => {
+    if (typeof window === 'undefined') return false;
+    const mq = window.matchMedia?.('(display-mode: standalone)');
+    return Boolean(mq?.matches || window.navigator?.standalone);
+  })();
+  const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(userAgent);
+  return isStandalone || isMobile;
+};
+
+const handleGoogleRedirectResult = async () => {
+  if (!firebaseReady || !auth || typeof getRedirectResult !== 'function') {
+    return;
+  }
+
+  try {
+    await getRedirectResult(auth);
+  } catch (error) {
+    console.error('Google redirect sign-in error:', error);
+    alert(getTranslation('googleSigninBlocked'));
+  }
+};
+
 const setAuthMode = (isLogin) => {
   isLoginMode = isLogin;
   if (signupFields) signupFields.style.display = isLogin ? 'none' : 'block';
@@ -1769,16 +1812,47 @@ const setupEventListeners = (tileSystem) => {
   if (authSubmit) authSubmit.addEventListener('click', handleAuthSubmit);
 
   if (googleSigninBtn) {
-    googleSigninBtn.addEventListener('click', () => {
-      if (!firebaseReady || !auth || typeof GoogleAuthProvider !== 'function' || typeof signInWithPopup !== 'function') {
+    googleSigninBtn.addEventListener('click', async () => {
+      if (!firebaseReady || !auth || typeof GoogleAuthProvider !== 'function') {
         alert(getTranslation('authUnavailable'));
         return;
       }
+
       const provider = new GoogleAuthProvider();
-      signInWithPopup(auth, provider).catch(err => {
-        alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
+      const preferRedirect = shouldUseRedirectForGoogleSignIn();
+      const canRedirect = preferRedirect && typeof signInWithRedirect === 'function';
+      const canPopup = typeof signInWithPopup === 'function';
+
+      try {
+        googleSigninBtn.disabled = true;
+
+        if (canRedirect) {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+
+        if (canPopup) {
+          await signInWithPopup(auth, provider);
+          return;
+        }
+
+        if (typeof signInWithRedirect === 'function') {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+
+        throw new Error('Google sign-in is not available in this browser.');
+      } catch (err) {
+        if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+          return;
+        }
+
+        const message = err?.message || 'Unknown error';
+        alert(`${getTranslation('authErrorPrefix')} ${message}`);
         console.error('Google sign-in error:', err);
-      });
+      } finally {
+        googleSigninBtn.disabled = false;
+      }
     });
   }
 
