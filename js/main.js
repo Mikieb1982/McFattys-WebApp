@@ -296,6 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners(tileSystem);
 
   await loadFirebaseModules();
+  await handleGoogleRedirectResult();
   initializeAuthListener();
   await handleGoogleRedirectResult();
 });
@@ -1679,6 +1680,7 @@ const handleGoogleRedirectResult = async () => {
       alert(`${getTranslation('authErrorPrefix')} ${message}`);
     }
     console.error('Google redirect sign-in error:', error);
+
   }
 };
 
@@ -1930,7 +1932,14 @@ const setupEventListeners = (tileSystem) => {
         getDocs(q).then(renderHistory);
         if (historyModal) {
           historyModal.classList.add('show');
+          handled = true
+      } else if (action === 'account') {
+        if (auth && auth.currentUser) {
+          openAccountModal();
           handled = true;
+        } else {
+          alert(getTranslation('authUnavailable'));
+
         }
       } else if (action === 'account') {
         if (auth && auth.currentUser) {
@@ -1945,6 +1954,12 @@ const setupEventListeners = (tileSystem) => {
         sidebar.classList.remove('open');
         if (scrim) scrim.classList.remove('show');
       }
+
+      if (handled) {
+        sidebar.classList.remove('open');
+        if (scrim) scrim.classList.remove('show');
+      }
+
     });
   }
 
