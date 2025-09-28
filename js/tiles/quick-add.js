@@ -39,8 +39,10 @@ const quickAddTile = {
           <button id="save-context" class="btn btn-primary" type="button" data-i18n="contextSave" disabled>Save</button>
           <button id="skip-context" class="btn btn-secondary" type="button" data-i18n="contextSkip">Skip</button>
         </div>
+
       </div>
       <p id="context-status" class="context-status" aria-live="polite"></p>
+
     `
 };
 

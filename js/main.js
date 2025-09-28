@@ -60,6 +60,7 @@ let contextFeature;
 let intentionFeature;
 let tileSystemInstance = null;
 
+
 // Element refs (assigned on DOMContentLoaded)
 let appContent, nameInput, dairyCheckbox, outsideMealsCheckbox, addBtn, tbody, emptyState, installBanner;
 let sidebar, scrim, welcomeMessage, landingPage, donateBtn, langToggle, switchEl, googleSigninBtn, pwaInstallBtn;
@@ -71,6 +72,8 @@ let legalModal, legalTitle, legalContent, closeLegalBtn, impressumLink, privacyL
 let instructionsModal, closeInstructionsBtn, logoCard, manifestoCard, supportCard;
 let authSection, loginBtn, signupBtn, authSubmit, authActions, signupFields, authTitle, authToggle;
 let authEmail, authPassword, authUsername, authRePassword;
+let contextFollowup, contextFeelingButtons, contextSettingInput, contextSaveBtn, contextSkipBtn, contextStatus;
+let intentionForm, intentionTextarea, intentionSaveBtn, intentionDisplay, intentionCurrent, intentionDate, intentionEditBtn, intentionStatus;
 
 const loadFirebaseModules = async () => {
   try {
@@ -130,6 +133,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   tbody = document.getElementById('log-body');
   emptyState = document.getElementById('empty-state');
   installBanner = document.getElementById('install-banner');
+
   const contextFollowup = document.getElementById('context-followup');
   const contextFeelingButtons = Array.from(document.querySelectorAll('.context-feeling'));
   const contextSettingInput = document.getElementById('context-setting');
@@ -694,12 +698,379 @@ const setLanguage = (newLang) => {
 
   updateAuthTexts();
   if (latestSnapshot) renderEntries(latestSnapshot);
-  contextFeature?.onLanguageChange();
-  intentionFeature?.onLanguageChange();
-  tileSystemInstance?.refreshLabels?.();
+
+  if (contextFollowup) {
+    const feelingsGroup = contextFollowup.querySelector('.context-feelings');
+    if (feelingsGroup) {
+      feelingsGroup.setAttribute('aria-label', getTranslation('contextPrompt'));
+    }
+  }
+  if (contextStatus && contextStatus.dataset.statusKey) {
+    contextStatus.textContent = getTranslation(contextStatus.dataset.statusKey);
+  }
+  updateIntentionUI();
+  if (intentionStatus && intentionStatus.dataset.statusKey) {
+    intentionStatus.textContent = getTranslation(intentionStatus.dataset.statusKey);
+  }
 };
 
+const setContextStatus = (key) => {
+  if (!contextStatus) return;
+  if (!key) {
+    contextStatus.textContent = '';
+    delete contextStatus.dataset.statusKey;
+    return;
+  }
+  contextStatus.textContent = getTranslation(key);
+  contextStatus.dataset.statusKey = key;
+};
 
+const updateContextSaveState = () => {
+  if (!contextSaveBtn) return;
+  const hasFeeling = Boolean(selectedFeeling);
+  const hasSetting = Boolean(contextSettingInput && contextSettingInput.value.trim());
+  const canSave = Boolean(pendingContextLogId) && (hasFeeling || hasSetting);
+  contextSaveBtn.disabled = !canSave;
+};
+
+const showContextPrompt = (logId) => {
+  if (!contextFollowup) return;
+  pendingContextLogId = logId;
+  selectedFeeling = '';
+  contextFollowup.hidden = false;
+  setContextStatus(null);
+  if (contextSettingInput) contextSettingInput.value = '';
+  if (contextFeelingButtons && contextFeelingButtons.length) {
+    contextFeelingButtons.forEach(btn => btn.classList.remove('is-selected'));
+  }
+  updateContextSaveState();
+};
+
+const hideContextPrompt = () => {
+  pendingContextLogId = null;
+  selectedFeeling = '';
+  if (contextFollowup) contextFollowup.hidden = true;
+  setContextStatus(null);
+  if (contextSettingInput) contextSettingInput.value = '';
+  if (contextFeelingButtons && contextFeelingButtons.length) {
+    contextFeelingButtons.forEach(btn => btn.classList.remove('is-selected'));
+  }
+  updateContextSaveState();
+};
+
+const handleFeelingSelection = (button) => {
+  if (!button || !contextFeelingButtons) return;
+  const value = button.dataset.feeling || '';
+  if (selectedFeeling === value) {
+    selectedFeeling = '';
+    button.classList.remove('is-selected');
+  } else {
+    selectedFeeling = value;
+    contextFeelingButtons.forEach(btn => {
+      btn.classList.toggle('is-selected', btn === button);
+    });
+  }
+  updateContextSaveState();
+};
+
+const getFeelingLabel = (value) => {
+  switch (value) {
+    case 'energized':
+      return getTranslation('contextFeelingEnergized');
+    case 'satisfied':
+      return getTranslation('contextFeelingSatisfied');
+    case 'sluggish':
+      return getTranslation('contextFeelingSluggish');
+    default:
+      return value || '';
+  }
+};
+
+const loadContextForEntry = async (entryId, forceRefresh = false) => {
+  if (!entryId || !firebaseReady || !auth || !auth.currentUser || !db) return [];
+  if (!forceRefresh && contextCache.has(entryId)) {
+    return contextCache.get(entryId);
+  }
+  if (typeof collection !== 'function' || typeof getDocs !== 'function' || typeof query !== 'function' || typeof orderBy !== 'function') {
+    return [];
+  }
+  const contextRef = collection(db, 'users', auth.currentUser.uid, 'logs', entryId, 'context');
+  const q = query(contextRef, orderBy('timestamp', 'desc'));
+  const snapshot = await getDocs(q);
+  const entries = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+  contextCache.set(entryId, entries);
+  return entries;
+};
+
+const renderContextContent = (entryId, entries, container) => {
+  if (!container) return;
+  if (!Array.isArray(entries) || !entries.length) {
+    container.innerHTML = `<p>${getTranslation('contextEmpty')}</p>`;
+    return;
+  }
+  const locale = lang === 'de' ? 'de-DE' : 'en-US';
+  const list = document.createElement('ul');
+  list.className = 'context-list';
+  entries.forEach(item => {
+    const li = document.createElement('li');
+    li.className = 'context-list-item';
+    const feelingLabel = getFeelingLabel(item.feeling);
+
+    const line = document.createElement('div');
+    line.className = 'context-line';
+
+    let hasContent = false;
+    if (feelingLabel) {
+      const feelingEl = document.createElement('strong');
+      feelingEl.textContent = feelingLabel;
+      line.appendChild(feelingEl);
+      hasContent = true;
+    }
+
+    if (item.setting) {
+      if (hasContent) {
+        const separator = document.createTextNode(' · ');
+        line.appendChild(separator);
+      }
+      const settingEl = document.createElement('span');
+      settingEl.textContent = item.setting;
+      line.appendChild(settingEl);
+      hasContent = true;
+    }
+
+    if (!hasContent) {
+      const placeholder = document.createElement('span');
+      placeholder.textContent = getTranslation('contextEmpty');
+      line.appendChild(placeholder);
+    }
+
+    li.appendChild(line);
+
+    const time = item.timestamp && typeof item.timestamp.toDate === 'function'
+      ? item.timestamp.toDate().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+      : '';
+    if (time) {
+      const timeEl = document.createElement('small');
+      timeEl.textContent = `${getTranslation('contextAddedTime')} ${time}`;
+      li.appendChild(timeEl);
+    }
+
+    list.appendChild(li);
+  });
+  container.innerHTML = '';
+  container.appendChild(list);
+};
+
+const toggleContextForRow = async (entryId, button) => {
+  if (!tbody || !entryId || !button) return;
+  const contextRow = tbody.querySelector(`tr.context-row[data-entry-id="${entryId}"]`);
+  if (!contextRow) return;
+  const isExpanded = button.getAttribute('aria-expanded') === 'true';
+  if (isExpanded) {
+    contextRow.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+    button.textContent = getTranslation('contextView');
+    return;
+  }
+  contextRow.hidden = false;
+  button.setAttribute('aria-expanded', 'true');
+  button.textContent = getTranslation('contextHide');
+  const container = contextRow.querySelector('.context-content');
+  if (!container) return;
+  container.innerHTML = `<p>${getTranslation('contextLoading')}</p>`;
+  try {
+    const entries = await loadContextForEntry(entryId);
+    renderContextContent(entryId, entries, container);
+  } catch (error) {
+    console.error('Error loading context:', error);
+    container.innerHTML = `<p>${getTranslation('contextError')}</p>`;
+  }
+};
+
+const saveContextEntry = async () => {
+  if (!pendingContextLogId || !firebaseReady || !auth || !auth.currentUser || !db) return;
+  const feeling = selectedFeeling;
+  const setting = contextSettingInput ? contextSettingInput.value.trim() : '';
+  if (!feeling && !setting) return;
+  setContextStatus(null);
+  if (contextSaveBtn) contextSaveBtn.disabled = true;
+  try {
+    const contextRef = collection(db, 'users', auth.currentUser.uid, 'logs', pendingContextLogId, 'context');
+    await addDoc(contextRef, {
+      feeling: feeling || null,
+      setting: setting || null,
+      timestamp: serverTimestamp()
+    });
+    setContextStatus('contextSaved');
+    if (contextSettingInput) contextSettingInput.value = '';
+    if (contextFeelingButtons && contextFeelingButtons.length) {
+      contextFeelingButtons.forEach(btn => btn.classList.remove('is-selected'));
+    }
+    selectedFeeling = '';
+    contextCache.delete(pendingContextLogId);
+    updateContextSaveState();
+    const contextRow = tbody ? tbody.querySelector(`tr.context-row[data-entry-id="${pendingContextLogId}"]`) : null;
+    if (contextRow && !contextRow.hidden) {
+      const container = contextRow.querySelector('.context-content');
+      if (container) {
+        const entries = await loadContextForEntry(pendingContextLogId, true);
+        renderContextContent(pendingContextLogId, entries, container);
+      }
+    }
+  } catch (error) {
+    console.error('Error saving context:', error);
+    setContextStatus('contextError');
+  } finally {
+    updateContextSaveState();
+  }
+};
+
+const skipContextEntry = () => {
+  hideContextPrompt();
+};
+
+const getTodayId = () => {
+  const today = new Date();
+  return today.toISOString().slice(0, 10);
+};
+
+const setIntentionStatus = (key) => {
+  if (!intentionStatus) return;
+  if (!key) {
+    intentionStatus.textContent = '';
+    delete intentionStatus.dataset.statusKey;
+    return;
+  }
+  intentionStatus.textContent = getTranslation(key);
+  intentionStatus.dataset.statusKey = key;
+};
+
+const getIntentionDateLabel = (intention) => {
+  if (!intention) return '';
+  const locale = lang === 'de' ? 'de-DE' : 'en-US';
+  let date = null;
+  if (intention.date) {
+    const [year, month, day] = intention.date.split('-').map(Number);
+    if (!Number.isNaN(year) && !Number.isNaN(month) && !Number.isNaN(day)) {
+      date = new Date(year, month - 1, day);
+    }
+  } else if (intention.timestamp && typeof intention.timestamp.toDate === 'function') {
+    date = intention.timestamp.toDate();
+  }
+  if (!date || Number.isNaN(date.getTime())) return '';
+  const formatted = date.toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' });
+  return getTranslation('intentionToday').replace('{date}', formatted);
+};
+
+function updateIntentionUI() {
+  if (!intentionForm || !intentionDisplay) return;
+  const hasIntention = Boolean(todaysIntention && todaysIntention.text);
+  const showForm = !hasIntention || isEditingIntention;
+  intentionForm.hidden = !showForm;
+  intentionDisplay.hidden = showForm;
+
+  if (showForm && intentionTextarea && document.activeElement !== intentionTextarea) {
+    intentionTextarea.value = todaysIntention && todaysIntention.text ? todaysIntention.text : '';
+  }
+
+  if (!showForm && intentionCurrent && todaysIntention) {
+    intentionCurrent.textContent = todaysIntention.text;
+  }
+
+  if (!showForm && intentionDate) {
+    intentionDate.textContent = getIntentionDateLabel(todaysIntention);
+  } else if (intentionDate) {
+    intentionDate.textContent = '';
+  }
+
+  if (intentionStatus) {
+    if (!hasIntention && !isEditingIntention && !intentionStatus.dataset.statusKey) {
+      setIntentionStatus('intentionEmpty');
+    } else if ((hasIntention || isEditingIntention) && intentionStatus.dataset.statusKey === 'intentionEmpty') {
+      setIntentionStatus(null);
+    }
+  }
+}
+
+const saveIntention = async () => {
+  if (!intentionTextarea || !firebaseReady || !auth || !auth.currentUser || !db) return;
+  const text = intentionTextarea.value.trim();
+  if (!text) {
+    setIntentionStatus('intentionRequired');
+    return;
+  }
+  if (intentionSaveBtn) intentionSaveBtn.disabled = true;
+  setIntentionStatus(null);
+  let succeeded = false;
+  const todayId = getTodayId();
+  try {
+    const ref = doc(db, 'users', auth.currentUser.uid, 'intentions', todayId);
+    await setDoc(ref, {
+      text,
+      date: todayId,
+      timestamp: serverTimestamp()
+    });
+    setIntentionStatus('intentionSaved');
+    isEditingIntention = false;
+    succeeded = true;
+  } catch (error) {
+    console.error('Error saving intention:', error);
+    setIntentionStatus('intentionError');
+  } finally {
+    if (intentionSaveBtn) intentionSaveBtn.disabled = false;
+    if (succeeded) {
+      // The onSnapshot subscription will update todaysIntention; ensure UI reflects state immediately.
+      if (!todaysIntention) {
+        todaysIntention = { text, date: todayId };
+      } else {
+        todaysIntention = { ...todaysIntention, text, date: todayId };
+      }
+    }
+    updateIntentionUI();
+  }
+};
+
+const editIntention = () => {
+  isEditingIntention = true;
+  setIntentionStatus(null);
+  updateIntentionUI();
+  if (intentionTextarea) {
+    intentionTextarea.focus();
+    intentionTextarea.setSelectionRange(intentionTextarea.value.length, intentionTextarea.value.length);
+  }
+};
+
+const resetIntentionState = () => {
+  if (intentionUnsubscribe) {
+    intentionUnsubscribe();
+    intentionUnsubscribe = null;
+  }
+  todaysIntention = null;
+  isEditingIntention = false;
+  if (intentionTextarea) intentionTextarea.value = '';
+  setIntentionStatus(null);
+  updateIntentionUI();
+};
+
+const subscribeToIntention = (userId) => {
+  resetIntentionState();
+  if (!firebaseReady || !db || typeof doc !== 'function' || typeof onSnapshot !== 'function') {
+    return;
+  }
+  const todayId = getTodayId();
+  const intentionRef = doc(db, 'users', userId, 'intentions', todayId);
+  intentionUnsubscribe = onSnapshot(intentionRef, (snap) => {
+    if (snap.exists()) {
+      todaysIntention = snap.data();
+      isEditingIntention = false;
+    } else {
+      todaysIntention = null;
+    }
+    updateIntentionUI();
+  }, (error) => {
+    console.error('Error listening to intention:', error);
+  });
+};
 
 const addEntry = async () => {
   if (!nameInput || !dairyCheckbox || !outsideMealsCheckbox) return;
@@ -718,7 +1089,9 @@ const addEntry = async () => {
     dairyCheckbox.checked = false;
     outsideMealsCheckbox.checked = false;
     nameInput.focus();
+
     contextFeature?.showPrompt(docRef.id);
+
   } catch (error) {
     console.error('Error adding document: ', error);
     alert(getTranslation('addError'));
@@ -804,6 +1177,14 @@ const renderRows = (entries) => {
     const actionsCell = document.createElement('td');
     actionsCell.className = 'row-actions actions';
     actionsCell.dataset.label = getTranslation('thActions');
+
+    const contextBtn = document.createElement('button');
+    contextBtn.className = 'btn btn-secondary context-entry';
+    contextBtn.type = 'button';
+    contextBtn.dataset.id = entry.id;
+    contextBtn.textContent = getTranslation('contextView');
+    contextBtn.setAttribute('aria-expanded', 'false');
+    contextBtn.setAttribute('aria-controls', `context-${entry.id}`);
 
     const contextBtn = document.createElement('button');
     contextBtn.className = 'btn btn-secondary context-entry';
@@ -994,12 +1375,16 @@ const handleLogAction = async (event) => {
 
   if (button.classList.contains('context-entry')) {
     event.preventDefault();
+
     await contextFeature?.toggleRow(id, button);
+
     return;
   }
 
   if (button.classList.contains('remove-entry')) {
+
     contextFeature?.clearCacheForEntry(id);
+
     deleteDoc(doc(logCollectionRef, id)).catch(error => {
       console.error('Error removing document: ', error);
       alert(getTranslation('deleteError'));
@@ -1166,6 +1551,7 @@ const setupEventListeners = (tileSystem) => {
   if (addBtn) addBtn.addEventListener('click', addEntry);
   contextFeature?.attachListeners(tileSystem);
   intentionFeature?.attachListeners(tileSystem);
+
   if (tbody) tbody.addEventListener('click', handleLogAction);
   if (exportBtn) exportBtn.addEventListener('click', exportToCsv);
 
@@ -1394,6 +1780,7 @@ const handleAuthStateChange = (user) => {
   if (loggedIn) {
     resetFilters();
     contextFeature?.clearAll();
+
     const displayName = user.displayName || user.email || '';
     const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
     const welcomeTextKey = isNewUser ? 'welcome' : 'welcomeBack';
@@ -1408,6 +1795,7 @@ const handleAuthStateChange = (user) => {
     const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
     unsubscribe = onSnapshot(q, renderEntries);
     intentionFeature?.subscribe(user.uid);
+
   } else {
     if (userName) userName.textContent = '';
     if (welcomeMessage) welcomeMessage.textContent = '';
@@ -1416,12 +1804,17 @@ const handleAuthStateChange = (user) => {
     if (emptyState) emptyState.style.display = 'block';
     logCollectionRef = null;
     allEntries = [];
+
     contextFeature?.clearAll();
+mpt();
+
     resetFilters();
     updateStats();
     setAuthMode(true);
     resetAuthFields();
+
     intentionFeature?.reset();
+
   }
 };
 

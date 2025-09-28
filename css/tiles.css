@@ -451,6 +451,7 @@
 
 .tile--recent-log .log-table {
   margin-top: clamp(16px, 3vw, 26px);
+
   padding: clamp(14px, 3vw, 24px);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.72) 100%);
   border-radius: calc(var(--tile-radius) - 8px);
@@ -471,11 +472,13 @@
   scrollbar-gutter: stable both-edges;
   scrollbar-width: thin;
   padding: clamp(4px, 1vw, 6px);
+
 }
 
 .tile--recent-log .table {
   margin: 0;
   width: 100%;
+
   table-layout: auto;
   min-width: 100%;
   border-radius: 0;
@@ -487,10 +490,12 @@
 .tile--recent-log .table thead {
   background: rgba(19, 51, 39, 0.08);
   backdrop-filter: blur(6px);
+
 }
 
 .tile--recent-log .actions-heading {
   text-align: right;
+
 }
 
 .tile--recent-log .table th,
@@ -603,6 +608,7 @@
   gap: 0.5rem;
 }
 
+
 @media (max-width: 900px) {
   .tile--recent-log .log-table {
     padding: clamp(12px, 5vw, 22px);
@@ -702,6 +708,7 @@
     border-radius: 16px;
   }
 }
+
 
 @media (max-width: 600px) {
   .dashboard-card {
