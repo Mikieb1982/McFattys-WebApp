@@ -303,7 +303,7 @@
 }
 
 .support-illustration {
-  width: clamp(300px, 568vw, 500px);
+  width: clamp(400px, 668vw, 600px);
   height: auto;
 }
 
