@@ -1,8 +1,8 @@
-McFatty's Food Tracker
+The Food Mutiny
 A lightweight, single-page web app for mindful food tracking, powered by Firebase. This app allows users to create an account, save their food log to the cloud, and access it from any device.
 
 Core Philosophy
-Slow and steady wins the race. McFatty's is not about calorie counting, restrictions, or guilt. It's about the simple, mindful act of recording what you eat without judgment. This app will always be free, without subscriptions or upsells.
+Slow and steady wins the race. The Food Mutiny is not about calorie counting, restrictions, or guilt. It's about the simple, mindful act of recording what you eat without judgment. This app will always be free, without subscriptions or upsells.
 
 Features
 Mindful Food Logging: Quickly log what you've eaten and add context like whether it contained dairy or was eaten outside of a mealtime.
