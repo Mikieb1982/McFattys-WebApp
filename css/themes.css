@@ -34,22 +34,21 @@
   --safe-top: env(safe-area-inset-top, 0px);
 }
 
-}
-
 [data-theme="dark"] {
   color-scheme: dark;
-  --primary: #f2c56d;
-  --danger: #d9534f;
-  --info: #5bc0de;
-  --text-0: #f7f5e6;
-  --text-1: #b9b6a3;
-  --bg-0: #1a1a1a;
-  --bg-1: #2a2a2a;
-  --card: #333333;
-  --border: #444444;
-  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.35);
-  --shadow-tile: 0 20px 40px rgba(0, 0, 0, 0.5), 0 8px 15px rgba(0, 0, 0, 0.3);
-  --tile-highlight: rgba(255, 255, 255, 0.12);
-  --wallpaper-overlay: rgba(8, 8, 8, 0.7);
+  --primary: #e4b966;
+  --danger: #e06a64;
+  --info: #a7b678;
+  --text-0: #f5f1e7;
+  --text-1: #c9bea6;
+  --bg-0: #1b1812;
+  --bg-1: #262017;
+  --card: #211c14;
+  --border: #3d3525;
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.45);
+  --shadow-tile: 0 20px 40px rgba(0, 0, 0, 0.6), 0 8px 15px rgba(0, 0, 0, 0.4);
+  --tile-highlight: rgba(255, 255, 255, 0.18);
+  --wallpaper-overlay: rgba(12, 10, 7, 0.7);
 }
+
  
