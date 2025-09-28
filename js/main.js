@@ -46,6 +46,8 @@ let app = null;
 let auth = null;
 let db = null;
 let firebaseReady = false;
+let authListenerReady = false;
+let authListenerUnsubscribe = null;
 
 // Constants
 const MAX_RECENT_ROWS = 10;
@@ -1666,7 +1668,11 @@ const handleGoogleRedirectResult = async () => {
   }
 
   try {
-    await getRedirectResult(auth);
+    const result = await getRedirectResult(auth);
+
+    if (result?.user && !authListenerReady) {
+      await handleAuthStateChange(result.user);
+    }
   } catch (error) {
     const errorCode = error?.code;
     if (errorCode === 'auth/no-auth-event' || errorCode === 'auth/cancelled-popup-request') {
@@ -2122,9 +2128,16 @@ const handleAuthStateChange = async (user) => {
 };
 
 const initializeAuthListener = () => {
+  if (authListenerUnsubscribe) {
+    authListenerUnsubscribe();
+    authListenerUnsubscribe = null;
+  }
+
   if (firebaseReady && typeof onAuthStateChanged === 'function' && auth) {
-    onAuthStateChanged(auth, handleAuthStateChange);
+    authListenerUnsubscribe = onAuthStateChanged(auth, handleAuthStateChange);
+    authListenerReady = true;
   } else {
+    authListenerReady = false;
     handleAuthStateChange(null);
   }
 };
