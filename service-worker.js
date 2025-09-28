@@ -29,21 +29,35 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
 
+  // Allow Firebase Auth and other reserved endpoints to bypass the service worker
+  // so that redirect-based providers (like Google Sign-In) can complete successfully
+  const url = new URL(req.url);
+  const isSameOrigin = url.origin === self.location.origin;
+
+  if (!isSameOrigin || url.pathname.startsWith('/__/')) {
+    return;
+  }
+
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req).then(r => {
         const copy = r.clone();
-        caches.open(CACHE).then(c => c.put('./', copy)).catch(()=>{});
+        caches.open(CACHE).then(c => c.put('./', copy)).catch(() => {});
         return r;
       }).catch(() => caches.match('./'))
     );
     return;
   }
 
+  // Only handle GET requests for same-origin assets
+  if (req.method !== 'GET') {
+    return;
+  }
+
   event.respondWith(
     caches.match(req).then(cached => cached || fetch(req).then(r => {
       const copy = r.clone();
-      caches.open(CACHE).then(c => c.put(req, copy)).catch(()=>{});
+      caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
       return r;
     }))
   );
