@@ -303,9 +303,11 @@
 }
 
 .support-illustration {
-  width: clamp(240px, 568vw, 440px);
+  width: clamp(300px, 568vw, 500px);
   height: auto;
 }
+
+
 
 
 [data-theme="light"] .support-badge {
