@@ -46,6 +46,8 @@ let app = null;
 let auth = null;
 let db = null;
 let firebaseReady = false;
+let authListenerReady = false;
+let authListenerUnsubscribe = null;
 
 // Constants
 const MAX_RECENT_ROWS = 10;
@@ -1649,6 +1651,18 @@ const resetAuthFields = () => {
   if (authRePassword) authRePassword.value = '';
 };
 
+const isSessionStorageAvailable = () => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const testKey = '__storage_test__';
+    window.sessionStorage.setItem(testKey, '1');
+    window.sessionStorage.removeItem(testKey);
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
 const shouldUseRedirectForGoogleSignIn = () => {
   const isStandalone = (() => {
     if (typeof window === 'undefined') return false;
@@ -1657,6 +1671,9 @@ const shouldUseRedirectForGoogleSignIn = () => {
   })();
   const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : '';
   const isMobile = /Android|iPhone|iPad|iPod/i.test(userAgent);
+  if (!isSessionStorageAvailable()) {
+    return false;
+  }
   return isStandalone || isMobile;
 };
 
@@ -1666,7 +1683,11 @@ const handleGoogleRedirectResult = async () => {
   }
 
   try {
-    await getRedirectResult(auth);
+    const result = await getRedirectResult(auth);
+
+    if (result?.user && !authListenerReady) {
+      await handleAuthStateChange(result.user);
+    }
   } catch (error) {
     const errorCode = error?.code;
     if (errorCode === 'auth/no-auth-event' || errorCode === 'auth/cancelled-popup-request') {
@@ -1832,26 +1853,50 @@ const setupEventListeners = (tileSystem) => {
 
       const provider = new GoogleAuthProvider();
       const preferRedirect = shouldUseRedirectForGoogleSignIn();
-      const canRedirect = preferRedirect && typeof signInWithRedirect === 'function';
-      const canPopup = typeof signInWithPopup === 'function';
+      const popupSupported = typeof signInWithPopup === 'function';
+      const redirectSupported = typeof signInWithRedirect === 'function';
+
+      const attemptPopup = async () => {
+        if (!popupSupported) return false;
+        try {
+          await signInWithPopup(auth, provider);
+          return true;
+        } catch (err) {
+          if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+            return true;
+          }
+          if (err?.code === 'auth/popup-blocked' || err?.code === 'auth/operation-not-supported-in-this-environment') {
+            return false;
+          }
+          throw err;
+        }
+      };
+
+      const attemptRedirect = async () => {
+        if (!redirectSupported) return false;
+        if (!isSessionStorageAvailable()) {
+          alert(getTranslation('googleSigninBlocked'));
+          return true;
+        }
+        await signInWithRedirect(auth, provider);
+        return true;
+      };
 
       try {
         googleSigninBtn.disabled = true;
 
-        if (canRedirect) {
-          await signInWithRedirect(auth, provider);
-          return;
+        if (!preferRedirect) {
+          const popupHandled = await attemptPopup();
+          if (popupHandled) return;
         }
 
-        if (canPopup) {
-          await signInWithPopup(auth, provider);
-          return;
-        }
+        const redirectHandled = await attemptRedirect();
+        if (redirectHandled) return;
 
-        if (typeof signInWithRedirect === 'function') {
-          await signInWithRedirect(auth, provider);
-          return;
-        }
+        const popupHandled = await attemptPopup();
+        if (popupHandled) return;
+
+        if (await attemptRedirect()) return;
 
         throw new Error('Google sign-in is not available in this browser.');
       } catch (err) {
@@ -1932,14 +1977,7 @@ const setupEventListeners = (tileSystem) => {
         getDocs(q).then(renderHistory);
         if (historyModal) {
           historyModal.classList.add('show');
-          handled = true
-      } else if (action === 'account') {
-        if (auth && auth.currentUser) {
-          openAccountModal();
           handled = true;
-        } else {
-          alert(getTranslation('authUnavailable'));
-
         }
       } else if (action === 'account') {
         if (auth && auth.currentUser) {
@@ -1948,11 +1986,6 @@ const setupEventListeners = (tileSystem) => {
         } else {
           alert(getTranslation('authUnavailable'));
         }
-      }
-
-      if (handled) {
-        sidebar.classList.remove('open');
-        if (scrim) scrim.classList.remove('show');
       }
 
       if (handled) {
@@ -2134,9 +2167,16 @@ const handleAuthStateChange = async (user) => {
 };
 
 const initializeAuthListener = () => {
+  if (authListenerUnsubscribe) {
+    authListenerUnsubscribe();
+    authListenerUnsubscribe = null;
+  }
+
   if (firebaseReady && typeof onAuthStateChanged === 'function' && auth) {
-    onAuthStateChanged(auth, handleAuthStateChange);
+    authListenerUnsubscribe = onAuthStateChanged(auth, handleAuthStateChange);
+    authListenerReady = true;
   } else {
+    authListenerReady = false;
     handleAuthStateChange(null);
   }
 };
