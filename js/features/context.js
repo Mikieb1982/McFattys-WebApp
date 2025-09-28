@@ -16,6 +16,7 @@ export function createContextFeature({ getTranslation, getLang, getFirebase, get
     selectedFeeling: '',
     cache: new Map(),
     statusKey: null,
+    statusTimeout: null,
     listenersBound: false
   };
 
@@ -36,9 +37,25 @@ export function createContextFeature({ getTranslation, getLang, getFirebase, get
     status.dataset.statusKey = state.statusKey;
   };
 
-  const setStatus = (key) => {
+  const clearStatusTimer = () => {
+    if (state.statusTimeout) {
+      clearTimeout(state.statusTimeout);
+      state.statusTimeout = null;
+    }
+  };
+
+  const setStatus = (key, { autoClearMs } = {}) => {
+    clearStatusTimer();
     state.statusKey = key || null;
     applyStatusText();
+
+    if (state.statusKey && typeof autoClearMs === 'number' && autoClearMs > 0) {
+      state.statusTimeout = setTimeout(() => {
+        if (state.statusKey === key) {
+          setStatus(null);
+        }
+      }, autoClearMs);
+    }
   };
 
   const updateSaveState = () => {
@@ -55,14 +72,16 @@ export function createContextFeature({ getTranslation, getLang, getFirebase, get
     state.elements.feelingButtons?.forEach(btn => btn.classList.remove('is-selected'));
   };
 
-  const hidePrompt = () => {
+  const hidePrompt = ({ preserveStatus = false } = {}) => {
     const { followup, settingInput } = state.elements;
     state.pendingLogId = null;
     state.selectedFeeling = '';
     if (followup) followup.hidden = true;
     if (settingInput) settingInput.value = '';
     clearFeelingSelection();
-    setStatus(null);
+    if (!preserveStatus) {
+      setStatus(null);
+    }
     updateSaveState();
   };
 
@@ -237,27 +256,28 @@ export function createContextFeature({ getTranslation, getLang, getFirebase, get
       return;
     }
 
+    const entryId = state.pendingLogId;
     const feeling = state.selectedFeeling;
     const setting = settingInput?.value.trim() || '';
-    if (!feeling && !setting) return;
+    if (!entryId || (!feeling && !setting)) return;
 
     setStatus(null);
     if (saveBtn) saveBtn.disabled = true;
 
     try {
-      const contextRef = collection(db, 'users', auth.currentUser.uid, 'logs', state.pendingLogId, 'context');
+      const contextRef = collection(db, 'users', auth.currentUser.uid, 'logs', entryId, 'context');
       await addDoc(contextRef, {
         feeling: feeling || null,
         setting: setting || null,
         timestamp: serverTimestamp()
       });
-      setStatus('contextSaved');
+      setStatus('contextSaved', { autoClearMs: 4000 });
       if (settingInput) settingInput.value = '';
       clearFeelingSelection();
       state.selectedFeeling = '';
-      state.cache.delete(state.pendingLogId);
-      updateSaveState();
-      await refreshOpenRow(state.pendingLogId);
+      state.cache.delete(entryId);
+      await refreshOpenRow(entryId);
+      hidePrompt({ preserveStatus: true });
     } catch (error) {
       console.error('Error saving context:', error);
       setStatus('contextError');
@@ -351,6 +371,7 @@ export function createContextFeature({ getTranslation, getLang, getFirebase, get
     },
     clearAll() {
       state.cache.clear();
+      clearStatusTimer();
       hidePrompt();
     },
     onLanguageChange: applyLanguage,

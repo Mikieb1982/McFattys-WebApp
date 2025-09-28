@@ -58,6 +58,7 @@ let activeFilter = 'all';
 let searchTerm = '';
 let contextFeature;
 let intentionFeature;
+let tileSystemInstance = null;
 
 // Element refs (assigned on DOMContentLoaded)
 let appContent, nameInput, dairyCheckbox, outsideMealsCheckbox, addBtn, tbody, emptyState, installBanner;
@@ -249,6 +250,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     reorderHint,
     getTranslation
   });
+  tileSystemInstance = tileSystem;
 
   // Initialize theme and other setup
   initializeTheme();
@@ -694,6 +696,7 @@ const setLanguage = (newLang) => {
   if (latestSnapshot) renderEntries(latestSnapshot);
   contextFeature?.onLanguageChange();
   intentionFeature?.onLanguageChange();
+  tileSystemInstance?.refreshLabels?.();
 };
 
 
