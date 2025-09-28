@@ -56,6 +56,9 @@ let isLoginMode = true;
 let allEntries = [];
 let activeFilter = 'all';
 let searchTerm = '';
+let todaysIntention = null;
+let intentionUnsubscribe = null;
+let isEditingIntention = false;
 let contextFeature;
 let intentionFeature;
 let tileSystemInstance = null;
@@ -1186,14 +1189,6 @@ const renderRows = (entries) => {
     contextBtn.setAttribute('aria-expanded', 'false');
     contextBtn.setAttribute('aria-controls', `context-${entry.id}`);
 
-    const contextBtn = document.createElement('button');
-    contextBtn.className = 'btn btn-secondary context-entry';
-    contextBtn.type = 'button';
-    contextBtn.dataset.id = entry.id;
-    contextBtn.textContent = getTranslation('contextView');
-    contextBtn.setAttribute('aria-expanded', 'false');
-    contextBtn.setAttribute('aria-controls', `context-${entry.id}`);
-
     const editBtn = document.createElement('button');
     editBtn.className = 'btn btn-secondary edit-entry';
     editBtn.type = 'button';
@@ -1806,7 +1801,6 @@ const handleAuthStateChange = (user) => {
     allEntries = [];
 
     contextFeature?.clearAll();
-mpt();
 
     resetFilters();
     updateStats();
