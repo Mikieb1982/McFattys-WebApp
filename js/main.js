@@ -1932,14 +1932,7 @@ const setupEventListeners = (tileSystem) => {
         getDocs(q).then(renderHistory);
         if (historyModal) {
           historyModal.classList.add('show');
-          handled = true
-      } else if (action === 'account') {
-        if (auth && auth.currentUser) {
-          openAccountModal();
           handled = true;
-        } else {
-          alert(getTranslation('authUnavailable'));
-
         }
       } else if (action === 'account') {
         if (auth && auth.currentUser) {
@@ -1948,11 +1941,6 @@ const setupEventListeners = (tileSystem) => {
         } else {
           alert(getTranslation('authUnavailable'));
         }
-      }
-
-      if (handled) {
-        sidebar.classList.remove('open');
-        if (scrim) scrim.classList.remove('show');
       }
 
       if (handled) {
