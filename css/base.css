@@ -34,7 +34,7 @@ img {
 }
 
 .container {
-  --container-inline-padding: clamp(var(--sp-8), 1.5vw, var(--sp-20));
+  --container-inline-padding: clamp(var(--sp-12), 4vw, 80px);
   --container-inline-padding-left: calc(var(--container-inline-padding) + env(safe-area-inset-left, 0px));
   --container-inline-padding-right: calc(var(--container-inline-padding) + env(safe-area-inset-right, 0px));
   width: 100%;

@@ -16,6 +16,7 @@
   backdrop-filter: blur(4px);
 }
 
+
 [data-theme="dark"] .utility-bar {
   background: linear-gradient(180deg, rgba(26, 26, 26, 0.95), rgba(26, 26, 26, 0.75) 70%, rgba(26, 26, 26, 0));
 }
@@ -381,7 +382,7 @@
   --masonry-row-size: 14px;
   display: grid;
   gap: var(--sp-16);
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   align-content: start;
 }
 
@@ -520,7 +521,7 @@ body.card-dragging {
 
 @media (max-width: 1024px) {
   .dashboard-grid {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   }
 }
 
