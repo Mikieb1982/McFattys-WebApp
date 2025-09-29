@@ -8,8 +8,20 @@ const recentLogTile = {
       <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
       <button class="close-btn" aria-label="Finish organizing">&times;</button>
       <div class="section-head">
-        <h2 id="recentLog" data-i18n="recentLogTitle">Recent log</h2>
-        <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
+        <div class="section-heading">
+          <span class="tile-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <path fill="currentColor" d="M6 3h12a2 2 0 0 1 2 2v15.5a.5.5 0 0 1-.68.46L12 18.1l-7.32 2.86A.5.5 0 0 1 4 20.5V5a2 2 0 0 1 2-2zm0 2v12.76l6-2.34 6 2.34V5H6z" />
+            </svg>
+          </span>
+          <div class="section-heading-text">
+            <h2 id="recentLog" data-i18n="recentLogTitle">Recent log</h2>
+            <p class="section-subtitle" data-i18n="recentLogSubtitle">Your latest check-ins at a glance.</p>
+          </div>
+        </div>
+        <div class="section-actions">
+          <button id="export-button" class="btn btn-secondary" type="button" data-i18n="exportBtn">Export</button>
+        </div>
       </div>
       <div class="log-controls" role="search">
         <div class="log-search">
