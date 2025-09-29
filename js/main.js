@@ -13,6 +13,8 @@ let createUserWithEmailAndPassword;
 let updateProfile;
 let GoogleAuthProvider;
 let signInWithPopup;
+let signInWithRedirect;
+let getRedirectResult;
 let getFirestore;
 let collection;
 let doc;
@@ -41,6 +43,21 @@ let app = null;
 let auth = null;
 let db = null;
 let firebaseReady = false;
+
+const processRedirectAuthResult = async () => {
+  if (!firebaseReady || !auth || typeof getRedirectResult !== 'function') {
+    return;
+  }
+
+  try {
+    await getRedirectResult(auth);
+  } catch (error) {
+    if (error?.code && error.code !== 'auth/no-auth-event') {
+      console.error('Google redirect sign-in error:', error);
+      alert(`${getTranslation('authErrorPrefix')} ${error.message}`);
+    }
+  }
+};
 
 // Constants
 const MAX_RECENT_ROWS = 10;
@@ -95,7 +112,9 @@ const loadFirebaseModules = async () => {
       createUserWithEmailAndPassword,
       updateProfile,
       GoogleAuthProvider,
-      signInWithPopup
+      signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult
     } = authModule);
     ({
       getFirestore,
@@ -267,6 +286,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners(tileSystem);
 
   await loadFirebaseModules();
+  await processRedirectAuthResult();
   initializeAuthListener();
 });
 
@@ -1532,6 +1552,19 @@ const openDonationPage = () => {
 };
 
 // Setup event listeners function
+const isStandalonePwa = () => {
+  const matchMediaStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  const navigatorStandalone = typeof window.navigator.standalone === 'boolean' && window.navigator.standalone;
+  return matchMediaStandalone || navigatorStandalone;
+};
+
+const shouldUseRedirectAuth = () => {
+  const smallViewport = window.matchMedia('(max-width: 768px)').matches;
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const mobileUserAgent = /iphone|ipod|ipad|android/i.test(navigator.userAgent);
+  return isStandalonePwa() || smallViewport || isTouchDevice || mobileUserAgent;
+};
+
 const setupEventListeners = (tileSystem) => {
   // Theme toggle
   if (themeToggle) {
@@ -1585,16 +1618,38 @@ const setupEventListeners = (tileSystem) => {
   if (authSubmit) authSubmit.addEventListener('click', handleAuthSubmit);
 
   if (googleSigninBtn) {
-    googleSigninBtn.addEventListener('click', () => {
-      if (!firebaseReady || !auth || typeof GoogleAuthProvider !== 'function' || typeof signInWithPopup !== 'function') {
+    googleSigninBtn.addEventListener('click', async () => {
+      if (!firebaseReady || !auth || typeof GoogleAuthProvider !== 'function') {
         alert(getTranslation('authUnavailable'));
         return;
       }
       const provider = new GoogleAuthProvider();
-      signInWithPopup(auth, provider).catch(err => {
-        alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
+      const useRedirect = shouldUseRedirectAuth();
+      try {
+        if (useRedirect && typeof signInWithRedirect === 'function') {
+          await signInWithRedirect(auth, provider);
+        } else if (typeof signInWithPopup === 'function') {
+          await signInWithPopup(auth, provider);
+        } else if (typeof signInWithRedirect === 'function') {
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw new Error('No compatible authentication method available.');
+        }
+      } catch (err) {
+        // Popup-based auth frequently fails on mobile standalone PWAs; fall back to redirect
+        if (err?.code === 'auth/operation-not-supported-in-this-environment' && typeof signInWithRedirect === 'function') {
+          try {
+            await signInWithRedirect(auth, provider);
+            return;
+          } catch (redirectError) {
+            console.error('Google sign-in redirect fallback error:', redirectError);
+            alert(`${getTranslation('authErrorPrefix')} ${redirectError.message}`);
+            return;
+          }
+        }
         console.error('Google sign-in error:', err);
-      });
+        alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
+      }
     });
   }
 
