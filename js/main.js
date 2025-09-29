@@ -13,6 +13,11 @@ let createUserWithEmailAndPassword;
 let updateProfile;
 let GoogleAuthProvider;
 let signInWithPopup;
+let signInWithRedirect;
+let getRedirectResult;
+let setPersistence;
+let browserLocalPersistence;
+let inMemoryPersistence;
 let getFirestore;
 let collection;
 let doc;
@@ -41,6 +46,21 @@ let app = null;
 let auth = null;
 let db = null;
 let firebaseReady = false;
+
+const processRedirectAuthResult = async () => {
+  if (!firebaseReady || !auth || typeof getRedirectResult !== 'function') {
+    return;
+  }
+
+  try {
+    await getRedirectResult(auth);
+  } catch (error) {
+    if (error?.code && error.code !== 'auth/no-auth-event') {
+      console.error('Google redirect sign-in error:', error);
+      alert(`${getTranslation('authErrorPrefix')} ${error.message}`);
+    }
+  }
+};
 
 // Constants
 const MAX_RECENT_ROWS = 10;
@@ -95,7 +115,12 @@ const loadFirebaseModules = async () => {
       createUserWithEmailAndPassword,
       updateProfile,
       GoogleAuthProvider,
-      signInWithPopup
+      signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult,
+      setPersistence,
+      browserLocalPersistence,
+      inMemoryPersistence
     } = authModule);
     ({
       getFirestore,
@@ -114,6 +139,24 @@ const loadFirebaseModules = async () => {
 
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
+
+    if (typeof setPersistence === 'function' && auth) {
+      try {
+        if (browserLocalPersistence) {
+          await setPersistence(auth, browserLocalPersistence);
+        }
+      } catch (persistenceError) {
+        if (inMemoryPersistence) {
+          try {
+            await setPersistence(auth, inMemoryPersistence);
+          } catch (fallbackError) {
+            console.warn('Failed to apply in-memory auth persistence fallback.', fallbackError);
+          }
+        } else {
+          console.warn('Failed to apply auth persistence.', persistenceError);
+        }
+      }
+    }
     db = getFirestore(app);
     firebaseReady = true;
   } catch (error) {
@@ -267,6 +310,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners(tileSystem);
 
   await loadFirebaseModules();
+  await processRedirectAuthResult();
   initializeAuthListener();
 });
 
@@ -325,6 +369,7 @@ const translations = {
     supportTitle: 'Support us',
     supportCopy: 'Chip in to cover hosting and keep the tracker open for everyone.',
     recentLogTitle: 'Recent log',
+    recentLogSubtitle: 'Your latest check-ins at a glance.',
     organizeTiles: 'Organize tiles',
     doneOrganizing: 'Done',
     reorderHint: 'Drag tiles to reorder. Tap Done when you’re finished.',
@@ -388,6 +433,7 @@ const translations = {
     authMissingUsername: 'Please choose a username.',
     authPasswordMismatch: 'Passwords do not match.',
     authUnavailable: 'Authentication is currently unavailable. Please try again later.',
+    authSessionStorageUnsupported: 'This browser cannot complete Google sign-in because session storage is disabled. Please open the app in your default browser.',
     addError: 'Sorry, there was an error adding your entry.',
     deleteError: 'Sorry, there was an error removing your entry.',
     updateError: 'Sorry, there was an error updating your entry.',
@@ -457,6 +503,7 @@ const translations = {
     supportTitle: 'Unterstütze uns',
     supportCopy: 'Hilf mit, die Hosting-Kosten zu decken und den Tracker für alle offen zu halten.',
     recentLogTitle: 'Aktuelles Protokoll',
+    recentLogSubtitle: 'Deine neuesten Einträge auf einen Blick.',
     organizeTiles: 'Kacheln anordnen',
     doneOrganizing: 'Fertig',
     reorderHint: 'Ziehe die Kacheln, um sie neu anzuordnen. Tippe auf „Fertig", wenn du zufrieden bist.',
@@ -520,6 +567,7 @@ const translations = {
     authMissingUsername: 'Bitte einen Benutzernamen wählen.',
     authPasswordMismatch: 'Passwörter stimmen nicht überein.',
     authUnavailable: 'Die Anmeldung ist derzeit nicht verfügbar. Bitte versuche es später erneut.',
+    authSessionStorageUnsupported: 'Diese Anmeldung im Browser kann nicht abgeschlossen werden, weil der Sitzungsspeicher deaktiviert ist. Bitte öffne die App im Standardbrowser.',
     addError: 'Beim Hinzufügen deines Eintrags ist ein Fehler aufgetreten.',
     deleteError: 'Beim Entfernen deines Eintrags ist ein Fehler aufgetreten.',
     updateError: 'Beim Aktualisieren deines Eintrags ist ein Fehler aufgetreten.',
@@ -715,6 +763,8 @@ const setLanguage = (newLang) => {
   if (intentionStatus && intentionStatus.dataset.statusKey) {
     intentionStatus.textContent = getTranslation(intentionStatus.dataset.statusKey);
   }
+
+  tileSystemInstance?.refreshLayout?.();
 };
 
 const setContextStatus = (key) => {
@@ -1530,6 +1580,43 @@ const openDonationPage = () => {
 };
 
 // Setup event listeners function
+const isStandalonePwa = () => {
+  const matchMediaStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  const navigatorStandalone = typeof window.navigator.standalone === 'boolean' && window.navigator.standalone;
+  return matchMediaStandalone || navigatorStandalone;
+};
+
+let sessionStorageAvailableCache = null;
+
+const isSessionStorageAvailable = () => {
+  if (sessionStorageAvailableCache !== null) {
+    return sessionStorageAvailableCache;
+  }
+
+  try {
+    const testKey = '__mutiny_auth_test__';
+    window.sessionStorage.setItem(testKey, '1');
+    window.sessionStorage.removeItem(testKey);
+    sessionStorageAvailableCache = true;
+  } catch (error) {
+    console.warn('Session storage is unavailable; redirect-based auth will be disabled.', error);
+    sessionStorageAvailableCache = false;
+  }
+
+  return sessionStorageAvailableCache;
+};
+
+const shouldUseRedirectAuth = () => {
+  if (!isSessionStorageAvailable()) {
+    return false;
+  }
+
+  const smallViewport = window.matchMedia('(max-width: 768px)').matches;
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const mobileUserAgent = /iphone|ipod|ipad|android/i.test(navigator.userAgent);
+  return isStandalonePwa() || smallViewport || isTouchDevice || mobileUserAgent;
+};
+
 const setupEventListeners = (tileSystem) => {
   // Theme toggle
   if (themeToggle) {
@@ -1583,16 +1670,63 @@ const setupEventListeners = (tileSystem) => {
   if (authSubmit) authSubmit.addEventListener('click', handleAuthSubmit);
 
   if (googleSigninBtn) {
-    googleSigninBtn.addEventListener('click', () => {
-      if (!firebaseReady || !auth || typeof GoogleAuthProvider !== 'function' || typeof signInWithPopup !== 'function') {
+    googleSigninBtn.addEventListener('click', async () => {
+      if (!firebaseReady || !auth || typeof GoogleAuthProvider !== 'function') {
         alert(getTranslation('authUnavailable'));
         return;
       }
+
       const provider = new GoogleAuthProvider();
-      signInWithPopup(auth, provider).catch(err => {
-        alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
+      const sessionStorageAvailable = isSessionStorageAvailable();
+      const useRedirect = shouldUseRedirectAuth();
+      const canUsePopup = typeof signInWithPopup === 'function';
+      const canUseRedirect = sessionStorageAvailable && typeof signInWithRedirect === 'function';
+
+      if (!canUsePopup && !canUseRedirect) {
+        alert(getTranslation('authUnavailable'));
+        return;
+      }
+
+      if (!sessionStorageAvailable && !canUsePopup) {
+        alert(getTranslation('authSessionStorageUnsupported'));
+        return;
+      }
+
+      try {
+        if (useRedirect && canUseRedirect) {
+          await signInWithRedirect(auth, provider);
+        } else if (canUsePopup) {
+          await signInWithPopup(auth, provider);
+        } else if (canUseRedirect) {
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw new Error('No compatible authentication method available.');
+        }
+      } catch (err) {
+        // Popup-based auth frequently fails on mobile standalone PWAs; fall back to redirect
+        if (
+          err?.code === 'auth/operation-not-supported-in-this-environment' &&
+          canUseRedirect
+        ) {
+          try {
+            await signInWithRedirect(auth, provider);
+            return;
+          } catch (redirectError) {
+            console.error('Google sign-in redirect fallback error:', redirectError);
+            alert(`${getTranslation('authErrorPrefix')} ${redirectError.message}`);
+            return;
+          }
+        } else if (
+          err?.code === 'auth/operation-not-supported-in-this-environment' &&
+          !sessionStorageAvailable
+        ) {
+          alert(getTranslation('authSessionStorageUnsupported'));
+          return;
+        }
+
         console.error('Google sign-in error:', err);
-      });
+        alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
+      }
     });
   }
 
@@ -1770,6 +1904,10 @@ const handleAuthStateChange = (user) => {
   if (authSection) authSection.style.display = 'none';
   if (dashboardControls) {
     dashboardControls.hidden = !loggedIn;
+  }
+
+  if (loggedIn) {
+    tileSystemInstance?.refreshLayout?.();
   }
 
   if (loggedIn) {

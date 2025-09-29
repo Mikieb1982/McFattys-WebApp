@@ -25,8 +25,108 @@ let reorderHintRef = null;
 let translationFn = (key) => key;
 let dragState = null;
 let isReorganizeMode = false;
+let masonryObserver = null;
+let masonryRowHeight = 0;
+let masonryRowGap = 0;
+let masonryRefreshFrame = null;
 
 const DASHBOARD_ORDER_KEY = 'dashboard-card-order-v1';
+const DEFAULT_ROW_HEIGHT = 14;
+const DEFAULT_ROW_GAP = 16;
+
+const supportsMasonry = () => typeof window !== 'undefined' && 'ResizeObserver' in window;
+
+const parseNumeric = (value, fallback) => {
+  const parsed = parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+function updateMasonryMetrics() {
+  if (!containerRef || typeof window === 'undefined') return;
+  const styles = window.getComputedStyle(containerRef);
+  masonryRowHeight = parseNumeric(styles.getPropertyValue('--masonry-row-size'), DEFAULT_ROW_HEIGHT);
+  if (!masonryRowHeight || masonryRowHeight <= 0) {
+    masonryRowHeight = DEFAULT_ROW_HEIGHT;
+  }
+  const gapCandidate = styles.rowGap || styles.getPropertyValue('row-gap') || styles.getPropertyValue('gap');
+  masonryRowGap = parseNumeric(gapCandidate, DEFAULT_ROW_GAP);
+  if (masonryRowGap < 0) {
+    masonryRowGap = DEFAULT_ROW_GAP;
+  }
+}
+
+function applyMasonrySpan(card, measuredHeight) {
+  if (!card) return;
+  const height = typeof measuredHeight === 'number' && measuredHeight > 0
+    ? measuredHeight
+    : card.getBoundingClientRect().height;
+  const rowHeight = masonryRowHeight || DEFAULT_ROW_HEIGHT;
+  const rowGap = masonryRowGap ?? DEFAULT_ROW_GAP;
+  const total = rowHeight + rowGap;
+  if (!total) return;
+  const span = Math.max(1, Math.round((height + rowGap) / total));
+  card.style.gridRowEnd = `span ${span}`;
+}
+
+function ensureMasonryObserver() {
+  if (!supportsMasonry()) return null;
+  if (!masonryObserver) {
+    masonryObserver = new ResizeObserver((entries) => {
+      if (isReorganizeMode) return;
+      entries.forEach((entry) => {
+        const target = entry.target;
+        if (!target) return;
+        const measuredHeight = entry.contentRect?.height ?? target.getBoundingClientRect().height;
+        applyMasonrySpan(target, measuredHeight);
+      });
+    });
+  }
+  return masonryObserver;
+}
+
+function refreshMasonrySpans() {
+  if (!containerRef || !masonryObserver) return;
+  updateMasonryMetrics();
+  getDashboardCards().forEach((card) => applyMasonrySpan(card));
+}
+
+function enableMasonry() {
+  if (!containerRef || isReorganizeMode) return;
+  const observer = ensureMasonryObserver();
+  if (!observer) return;
+  updateMasonryMetrics();
+  observer.disconnect();
+  containerRef.classList.add('masonry-enabled');
+  getDashboardCards().forEach((card) => {
+    card.style.removeProperty('grid-row-end');
+    observer.observe(card);
+  });
+  refreshMasonrySpans();
+}
+
+function disableMasonry() {
+  if (masonryObserver) {
+    masonryObserver.disconnect();
+  }
+  if (!containerRef) return;
+  containerRef.classList.remove('masonry-enabled');
+  getDashboardCards().forEach((card) => {
+    card.style.removeProperty('grid-row-end');
+  });
+}
+
+function scheduleMasonryRefresh() {
+  if (!containerRef || isReorganizeMode) return;
+  if (!masonryObserver) {
+    enableMasonry();
+    return;
+  }
+  if (masonryRefreshFrame) return;
+  masonryRefreshFrame = requestAnimationFrame(() => {
+    masonryRefreshFrame = null;
+    refreshMasonrySpans();
+  });
+}
 
 function getNodeIndex(node) {
   if (!node || !node.parentNode) return -1;
@@ -493,6 +593,7 @@ function updateReorderTexts() {
 
 function enterReorganizeMode() {
   if (!containerRef || isReorganizeMode) return;
+  disableMasonry();
   isReorganizeMode = true;
   containerRef.classList.add('reorganize-mode', 'is-reordering');
   getDashboardCards().forEach(card => {
@@ -523,6 +624,8 @@ function exitReorganizeMode(commit = true) {
       handle.removeAttribute('tabindex');
     }
   });
+  enableMasonry();
+  scheduleMasonryRefresh();
   updateReorderTexts();
 
   if (commit) {
@@ -575,10 +678,19 @@ export function initTileSystem({ container, reorderToggle, reorderHint, getTrans
     });
   });
 
+  if (supportsMasonry()) {
+    enableMasonry();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', scheduleMasonryRefresh, { passive: true });
+      window.addEventListener('orientationchange', scheduleMasonryRefresh);
+    }
+  }
+
   return {
     enterReorganizeMode,
     exitReorganizeMode,
     refreshLabels: updateReorderTexts,
+    refreshLayout: scheduleMasonryRefresh,
     isReorganizeMode: () => isReorganizeMode
   };
 }

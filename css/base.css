@@ -35,9 +35,11 @@ img {
 }
 
 .container {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: var(--sp-12) var(--sp-16) var(--sp-24);
+  --container-inline-padding: clamp(var(--sp-12), 4vw, 80px);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: var(--sp-12) var(--container-inline-padding) var(--sp-24);
 }
 
 .stack-16 > * + * {
