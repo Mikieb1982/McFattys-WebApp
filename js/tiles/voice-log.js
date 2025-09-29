@@ -6,7 +6,7 @@ const voiceLogTile = {
   template: `
       <div class="drag-handle" aria-label="Drag to reorder"><span></span><span></span><span></span></div>
       <button class="close-btn" aria-label="Finish organizing">&times;</button>
-      <div class="voice-log-tile">
+      <div class="
         <button
           id="voice-log-trigger"
           class="voice-log-button"
@@ -23,6 +23,7 @@ const voiceLogTile = {
           <span id="voiceLogHint" class="sr-only" data-i18n="voiceLogHint">Tap the mic and speak to log your food.</span>
         </button>
         <p id="voice-log-status" class="voice-log-status" role="status" aria-live="polite"></p>
+
       </div>
     `
 };

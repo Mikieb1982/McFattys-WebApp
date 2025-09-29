@@ -287,11 +287,13 @@
   gap: clamp(8px, 2vw, 12px);
   padding: clamp(16px, 4vw, 26px);
   background: linear-gradient(160deg, rgba(60, 76, 190, 0.2), rgba(60, 76, 190, 0.45));
+
   color: inherit;
   cursor: pointer;
   box-shadow: 0 18px 26px rgba(31, 34, 64, 0.16);
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
+
 
 .voice-log-icon {
   display: grid;
@@ -310,6 +312,7 @@
   font-size: clamp(1rem, 2.4vw, 1.35rem);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+
 }
 
 .voice-log-button:hover,
@@ -324,7 +327,9 @@
 }
 
 .voice-log-button.is-listening {
+
   background: linear-gradient(160deg, rgba(60, 76, 190, 0.35), rgba(60, 76, 190, 0.6));
+
   box-shadow: 0 24px 38px rgba(31, 34, 64, 0.28);
   animation: voice-pulse 1.5s ease-in-out infinite;
 }
@@ -338,12 +343,15 @@
   }
 }
 
+
 .voice-log-status {
   min-height: 1.25em;
   font-size: 0.9rem;
   font-weight: 600;
   color: rgba(31, 34, 64, 0.8);
+micrphone-tile-for-food-logging
   max-width: 22ch;
+
 }
 
 .voice-log-button[disabled] {
