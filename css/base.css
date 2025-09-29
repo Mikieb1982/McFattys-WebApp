@@ -12,7 +12,6 @@ body {
   background-color: var(--bg-0);
 }
 
-```css
 body {
   transition: background-color 0.3s ease, color 0.3s ease;
   background-image: linear-gradient(var(--wallpaper-overlay), var(--wallpaper-overlay)),
@@ -36,10 +35,12 @@ img {
 
 .container {
   --container-inline-padding: clamp(var(--sp-12), 4vw, 80px);
+  --container-inline-padding-left: calc(var(--container-inline-padding) + env(safe-area-inset-left, 0px));
+  --container-inline-padding-right: calc(var(--container-inline-padding) + env(safe-area-inset-right, 0px));
   width: 100%;
   max-width: none;
   margin: 0;
-  padding: var(--sp-12) var(--container-inline-padding) var(--sp-24);
+  padding: var(--sp-12) var(--container-inline-padding-right) var(--sp-24) var(--container-inline-padding-left);
 }
 
 .stack-16 > * + * {
