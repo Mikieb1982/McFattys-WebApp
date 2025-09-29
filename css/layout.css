@@ -3,7 +3,7 @@
   top: 0;
   z-index: 300;
   padding: calc(var(--sp-8) + var(--safe-top)) var(--sp-8) var(--sp-8);
-  margin: 0 calc(-1 * var(--sp-16)) var(--sp-12);
+  margin: 0 calc(-1 * var(--container-inline-padding)) var(--sp-12);
   background: linear-gradient(180deg, rgba(253, 250, 243, 0.96), rgba(253, 250, 243, 0.82) 70%, rgba(253, 250, 243, 0));
   backdrop-filter: blur(4px);
 }

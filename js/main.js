@@ -35,6 +35,7 @@ let signInWithRedirect;
 let getRedirectResult;
 let setPersistence;
 let browserLocalPersistence;
+let inMemoryPersistence;
 let getFirestore;
 let collection;
 let doc;
@@ -95,9 +96,25 @@ async function loadFirebase() {
     serverTimestamp = fsMod.serverTimestamp;
     setDoc = fsMod.setDoc;
 
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
+
+const processRedirectAuthResult = async () => {
+  if (!firebaseReady || !auth || typeof getRedirectResult !== 'function') {
+    return;
+  }
+
+  try {
+    await getRedirectResult(auth);
+  } catch (error) {
+    if (error?.code && error.code !== 'auth/no-auth-event') {
+      console.error('Google redirect sign-in error:', error);
+      alert(`${getTranslation('authErrorPrefix')} ${error.message}`);
+    }
+  }
+};
+
+// Constants
+const MAX_RECENT_ROWS = 10;
+
 
     // Persist auth in local storage for better UX
     try { await setPersistence(auth, browserLocalPersistence); } catch {}
@@ -233,7 +250,223 @@ let isLoginMode = true;
 let allEntries = [];
 let activeFilter = 'all';
 let searchTerm = '';
-let unsubscribe = null;
+let todaysIntention = null;
+let intentionUnsubscribe = null;
+let isEditingIntention = false;
+let contextFeature;
+let intentionFeature;
+let tileSystemInstance = null;
+
+
+// Element refs (assigned on DOMContentLoaded)
+let appContent, nameInput, dairyCheckbox, outsideMealsCheckbox, addBtn, tbody, emptyState, installBanner;
+let sidebar, scrim, welcomeMessage, landingPage, donateBtn, langToggle, switchEl, googleSigninBtn, pwaInstallBtn;
+let menuOpenBtn, menuCloseBtn, logoutBtn, logoutBtnMain, userInfo, userName, exportBtn;
+let statTotal, statDairy, statOutside, statLast, statLastSubtext, logSearchInput, noResultsMessage, filterButtons;
+let dashboardControls, reorderToggle, reorderHint, themeToggle, themeToggleIcon, themeToggleLabel, themeColorMeta;
+let manifestoModal, closeManifestoBtn, historyModal, closeHistoryBtn, historyContent;
+let legalModal, legalTitle, legalContent, closeLegalBtn, impressumLink, privacyLink;
+let instructionsModal, closeInstructionsBtn, logoCard, manifestoCard, supportCard;
+let authSection, loginBtn, signupBtn, authSubmit, authActions, signupFields, authTitle, authToggle;
+let authEmail, authPassword, authUsername, authRePassword;
+let contextFollowup, contextFeelingButtons, contextSettingInput, contextSaveBtn, contextSkipBtn, contextStatus;
+let intentionForm, intentionTextarea, intentionSaveBtn, intentionDisplay, intentionCurrent, intentionDate, intentionEditBtn, intentionStatus;
+
+const loadFirebaseModules = async () => {
+  try {
+    const [appModule, authModule, firestoreModule] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
+    ]);
+
+    ({ initializeApp } = appModule);
+    ({
+      getAuth,
+      onAuthStateChanged,
+      signOut: fbSignOut,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      updateProfile,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult,
+      setPersistence,
+      browserLocalPersistence,
+      inMemoryPersistence
+    } = authModule);
+    ({
+      getFirestore,
+      collection,
+      doc,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      onSnapshot,
+      getDocs,
+      query,
+      orderBy,
+      serverTimestamp,
+      setDoc
+    } = firestoreModule);
+
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+
+    if (typeof setPersistence === 'function' && auth) {
+      try {
+        if (browserLocalPersistence) {
+          await setPersistence(auth, browserLocalPersistence);
+        }
+      } catch (persistenceError) {
+        if (inMemoryPersistence) {
+          try {
+            await setPersistence(auth, inMemoryPersistence);
+          } catch (fallbackError) {
+            console.warn('Failed to apply in-memory auth persistence fallback.', fallbackError);
+          }
+        } else {
+          console.warn('Failed to apply auth persistence.', persistenceError);
+        }
+      }
+    }
+    db = getFirestore(app);
+    firebaseReady = true;
+  } catch (error) {
+    console.warn('Firebase modules failed to load. Running in offline mode.', error);
+  }
+};
+
+// DOM Content Loaded - Initialize element references
+document.addEventListener('DOMContentLoaded', async () => {
+  // Main app elements
+  appContent = document.getElementById('app-content');
+
+  // Render dashboard tiles before querying for tile-specific elements
+  renderTiles(appContent);
+
+  nameInput = document.getElementById('food-name');
+  dairyCheckbox = document.getElementById('contains-dairy');
+  outsideMealsCheckbox = document.getElementById('outside-meals');
+  addBtn = document.getElementById('add-button');
+  tbody = document.getElementById('log-body');
+  emptyState = document.getElementById('empty-state');
+  installBanner = document.getElementById('install-banner');
+
+  contextFollowup = document.getElementById('context-followup');
+  contextFeelingButtons = Array.from(document.querySelectorAll('.context-feeling'));
+  contextSettingInput = document.getElementById('context-setting');
+  contextSaveBtn = document.getElementById('save-context');
+  contextSkipBtn = document.getElementById('skip-context');
+  contextStatus = document.getElementById('context-status');
+
+  contextFeature?.assignElements({
+    followup: contextFollowup,
+    feelingButtons: contextFeelingButtons,
+    settingInput: contextSettingInput,
+    saveBtn: contextSaveBtn,
+    skipBtn: contextSkipBtn,
+    status: contextStatus,
+    tbody
+  });
+
+  // Navigation and UI
+  sidebar = document.getElementById('sidebar');
+  scrim = document.getElementById('scrim');
+  welcomeMessage = document.getElementById('welcome-message');
+  landingPage = document.getElementById('landing-page');
+  donateBtn = document.getElementById('donate-button');
+  langToggle = document.getElementById('lang-toggle');
+  switchEl = document.getElementById('switch');
+  googleSigninBtn = document.getElementById('google-signin');
+  pwaInstallBtn = document.getElementById('pwa-install');
+  
+  // Menu controls
+  menuOpenBtn = document.getElementById('menu-open');
+  menuCloseBtn = document.getElementById('menu-close');
+  logoutBtn = document.getElementById('logout-btn');
+  logoutBtnMain = document.getElementById('logout-btn-main');
+  userInfo = document.getElementById('user-info');
+  userName = document.getElementById('user-name');
+  exportBtn = document.getElementById('export-button');
+  
+  // Stats elements
+  statTotal = document.getElementById('stat-total');
+  statDairy = document.getElementById('stat-dairy');
+  statOutside = document.getElementById('stat-outside');
+  statLast = document.getElementById('stat-last');
+  statLastSubtext = document.getElementById('stat-last-subtext');
+  
+  // Search and filters
+  logSearchInput = document.getElementById('log-search');
+  noResultsMessage = document.getElementById('no-results');
+  filterButtons = Array.from(document.querySelectorAll('.filter-btn'));
+  
+  // Dashboard controls
+  dashboardControls = document.getElementById('dashboard-controls');
+  reorderToggle = document.getElementById('reorder-toggle');
+  reorderHint = document.getElementById('reorder-hint');
+  
+  // Theme controls
+  themeToggle = document.getElementById('theme-toggle');
+  themeToggleIcon = document.getElementById('theme-toggle-icon');
+  themeToggleLabel = document.getElementById('theme-toggle-label');
+  themeColorMeta = document.getElementById('theme-color');
+  
+  // Modals
+  manifestoModal = document.getElementById('manifesto-modal');
+  closeManifestoBtn = document.getElementById('close-manifesto');
+  historyModal = document.getElementById('history-modal');
+  closeHistoryBtn = document.getElementById('close-history');
+  historyContent = document.getElementById('history-content');
+  legalModal = document.getElementById('legal-modal');
+  legalTitle = document.getElementById('legal-title');
+  legalContent = document.getElementById('legal-content');
+  closeLegalBtn = document.getElementById('close-legal');
+  impressumLink = document.getElementById('impressum-link');
+  privacyLink = document.getElementById('privacy-link');
+  instructionsModal = document.getElementById('instructions-modal');
+  closeInstructionsBtn = document.getElementById('close-instructions');
+  
+  // Cards
+  logoCard = document.getElementById('logo-card');
+  manifestoCard = document.getElementById('manifesto-card');
+  supportCard = document.getElementById('support-button');
+  
+  // Auth elements
+  authSection = document.getElementById('auth-section');
+  loginBtn = document.getElementById('login-btn');
+  signupBtn = document.getElementById('signup-btn');
+  authSubmit = document.getElementById('auth-submit');
+  authActions = document.getElementById('auth-actions');
+  signupFields = document.getElementById('signup-fields');
+  authTitle = document.getElementById('auth-title');
+  authToggle = document.getElementById('auth-toggle');
+  authEmail = document.getElementById('auth-email');
+  authPassword = document.getElementById('auth-password');
+  authUsername = document.getElementById('auth-username');
+  authRePassword = document.getElementById('auth-re-password');
+  intentionForm = document.getElementById('intention-form');
+  intentionTextarea = document.getElementById('intention-text');
+  intentionSaveBtn = document.getElementById('intention-save');
+  intentionDisplay = document.getElementById('intention-display');
+  intentionCurrent = intentionDisplay ? intentionDisplay.querySelector('.intention-current') : null;
+  intentionDate = intentionDisplay ? intentionDisplay.querySelector('.intention-date') : null;
+  intentionEditBtn = document.getElementById('intention-edit');
+  intentionStatus = document.getElementById('intention-status');
+
+  intentionFeature?.assignElements({
+    form: intentionForm,
+    textarea: intentionTextarea,
+    saveBtn: intentionSaveBtn,
+    display: intentionDisplay,
+    current: intentionCurrent,
+    date: intentionDate,
+    editBtn: intentionEditBtn,
+    status: intentionStatus
+  });
+
 
 let logCollectionRef = null;
 
@@ -241,9 +474,12 @@ let pendingContextLogId = null;
 let selectedFeeling = '';
 const contextCache = new Map();
 
-let todaysIntention = null;
-let isEditingIntention = false;
-let intentionUnsubscribe = null;
+
+  await loadFirebaseModules();
+  await processRedirectAuthResult();
+  initializeAuthListener();
+});
+
 
 // -----------------------------
 // i18n dictionaries (merged)
@@ -1636,7 +1872,45 @@ const shouldUseRedirectAuth = () => {
   return isStandalonePwa() || smallViewport || isTouchDevice || mobileUserAgent;
 };
 
-// Event listeners (merged; keeps select_account param)
+// Setup event listeners function
+const isStandalonePwa = () => {
+  const matchMediaStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  const navigatorStandalone = typeof window.navigator.standalone === 'boolean' && window.navigator.standalone;
+  return matchMediaStandalone || navigatorStandalone;
+};
+
+let sessionStorageAvailableCache = null;
+
+const isSessionStorageAvailable = () => {
+  if (sessionStorageAvailableCache !== null) {
+    return sessionStorageAvailableCache;
+  }
+
+  try {
+    const testKey = '__mutiny_auth_test__';
+    window.sessionStorage.setItem(testKey, '1');
+    window.sessionStorage.removeItem(testKey);
+    sessionStorageAvailableCache = true;
+  } catch (error) {
+    console.warn('Session storage is unavailable; redirect-based auth will be disabled.', error);
+    sessionStorageAvailableCache = false;
+  }
+
+  return sessionStorageAvailableCache;
+};
+
+const shouldUseRedirectAuth = () => {
+  if (!isSessionStorageAvailable()) {
+    return false;
+  }
+
+  const smallViewport = window.matchMedia('(max-width: 768px)').matches;
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const mobileUserAgent = /iphone|ipod|ipad|android/i.test(navigator.userAgent);
+  return isStandalonePwa() || smallViewport || isTouchDevice || mobileUserAgent;
+};
+
+
 const setupEventListeners = (tileSystem) => {
   // Theme toggle
   if (themeToggle) {
@@ -1698,9 +1972,6 @@ const setupEventListeners = (tileSystem) => {
       }
 
       const provider = new GoogleAuthProvider();
-      if (typeof provider.setCustomParameters === 'function') {
-        provider.setCustomParameters({ prompt: 'select_account' });
-      }
 
       const sessionStorageAvailable = isSessionStorageAvailable();
       const useRedirect = shouldUseRedirectAuth();
@@ -1727,7 +1998,12 @@ const setupEventListeners = (tileSystem) => {
           throw new Error('No compatible authentication method available.');
         }
       } catch (err) {
-        if (err?.code === 'auth/operation-not-supported-in-this-environment' && canUseRedirect) {
+        // Popup-based auth frequently fails on mobile standalone PWAs; fall back to redirect
+        if (
+          err?.code === 'auth/operation-not-supported-in-this-environment' &&
+          canUseRedirect
+        ) {
+
           try {
             await signInWithRedirect(auth, provider);
             return;
@@ -1736,10 +2012,15 @@ const setupEventListeners = (tileSystem) => {
             alert(`${getTranslation('authErrorPrefix')} ${redirectError.message}`);
             return;
           }
-        } else if (err?.code === 'auth/operation-not-supported-in-this-environment' && !sessionStorageAvailable) {
+        } else if (
+          err?.code === 'auth/operation-not-supported-in-this-environment' &&
+          !sessionStorageAvailable
+        ) {
           alert(getTranslation('authSessionStorageUnsupported'));
           return;
         }
+
+
         console.error('Google sign-in error:', err);
         alert(`${getTranslation('authErrorPrefix')} ${err.message}`);
       }
@@ -1909,8 +2190,10 @@ const handleAuthStateChange = (user) => {
   }
 
   if (loggedIn) {
-    // ensure layout stable when switching views
     tileSystemInstance?.refreshLayout?.();
+  }
+
+  if (loggedIn) {
 
     resetFilters();
     contextFeature?.clearAll();
