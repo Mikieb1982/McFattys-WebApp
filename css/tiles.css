@@ -247,6 +247,113 @@
   --table-row-divider: rgba(19, 51, 39, 0.08);
 }
 
+.tile--voice-log {
+  --tile-gradient: linear-gradient(135deg, #d7dcff 0%, #f3f5ff 100%);
+  --tile-text: #1f2240;
+  --tile-surface: rgba(255, 255, 255, 0.65);
+  --tile-border: rgba(60, 76, 190, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: clamp(18px, 3vw, 28px);
+  aspect-ratio: 1 / 1;
+  min-height: clamp(220px, 32vw, 320px);
+}
+
+.dashboard-grid.is-reordering .tile--voice-log {
+  aspect-ratio: auto;
+  min-height: 0;
+}
+
+.voice-log-tile {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  align-items: center;
+  justify-items: center;
+  gap: clamp(12px, 2.4vw, 18px);
+  width: 100%;
+  height: 100%;
+}
+
+.voice-log-button {
+  width: min(100%, clamp(160px, 40vw, 220px));
+  aspect-ratio: 1 / 1;
+  border-radius: 24px;
+  border: none;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(8px, 2vw, 12px);
+  padding: clamp(16px, 4vw, 26px);
+  background: linear-gradient(160deg, rgba(60, 76, 190, 0.2), rgba(60, 76, 190, 0.45));
+  color: inherit;
+  cursor: pointer;
+  box-shadow: 0 18px 26px rgba(31, 34, 64, 0.16);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.voice-log-icon {
+  display: grid;
+  place-items: center;
+  width: clamp(36px, 8vw, 52px);
+  height: clamp(36px, 8vw, 52px);
+}
+
+.voice-log-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.voice-log-label {
+  font-family: "Oswald", "Impact", system-ui, sans-serif;
+  font-size: clamp(1rem, 2.4vw, 1.35rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.voice-log-button:hover,
+.voice-log-button:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 32px rgba(31, 34, 64, 0.22);
+}
+
+.voice-log-button:focus-visible {
+  outline: 3px solid rgba(60, 76, 190, 0.4);
+  outline-offset: 4px;
+}
+
+.voice-log-button.is-listening {
+  background: linear-gradient(160deg, rgba(60, 76, 190, 0.35), rgba(60, 76, 190, 0.6));
+  box-shadow: 0 24px 38px rgba(31, 34, 64, 0.28);
+  animation: voice-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes voice-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.voice-log-status {
+  min-height: 1.25em;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(31, 34, 64, 0.8);
+  max-width: 22ch;
+}
+
+.voice-log-button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.6;
+  animation: none;
+  transform: none;
+  box-shadow: 0 12px 18px rgba(31, 34, 64, 0.12);
+}
+
 /* --- Logo tiles ---------------------------------------------------------- */
 
 .logo-card {

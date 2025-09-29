@@ -238,6 +238,12 @@ let pendingContextLogId = null;
 let selectedFeeling = '';
 const contextCache = new Map();
 
+let voiceLogButton = null;
+let voiceLogStatus = null;
+let voiceRecognition = null;
+let isVoiceListening = false;
+let voiceStatusKey = null;
+
 
 // Element refs (assigned on DOMContentLoaded)
 // These were duplicated and merged for clarity
@@ -332,6 +338,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   tbody = document.getElementById('log-body'); // Use log-body if it exists as in the conflicting snippet
   emptyState = document.getElementById('empty-state');
   installBanner = document.getElementById('install-banner');
+  voiceLogButton = document.getElementById('voice-log-trigger');
+  voiceLogStatus = document.getElementById('voice-log-status');
 
   // Context UI elements
   // contextFollowup, contextSettingInput, contextSaveBtn, contextSkipBtn, contextStatus are declared at top.
@@ -417,6 +425,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     status: intentionStatus
   });
 
+  initializeVoiceLogTile();
+
 
   await loadFirebaseModules();
   // processRedirectAuthResult is handled within loadFirebaseModules for initial load
@@ -452,6 +462,17 @@ const translations = {
     statLastEntry: 'Last entry',
     quickAddTitle: 'Quick add',
     quickAddHint: 'Log what you’re eating right now, no pressure, no judgement.',
+    voiceLogTitle: 'Voice log',
+    voiceLogHint: 'Tap the mic and speak to log your food.',
+    voiceLogTriggerLabel: 'Start voice logging',
+    voiceLogReady: 'Tap and speak to add an entry.',
+    voiceLogListening: 'Listening…',
+    voiceLogUnsupported: 'Voice input is not supported in this browser.',
+    voiceLogError: 'Sorry, voice input failed. Try again.',
+    voiceLogErrorPermission: 'Microphone access was blocked.',
+    voiceLogNoResult: 'Didn’t catch that. Try again.',
+    voiceLogSuccess: 'Added "{item}" to your log.',
+    voiceLogNoButton: 'Heard "{item}" but could not add it automatically.',
     contextPrompt: 'How did that feel?',
     contextFeelingEnergized: 'Energized',
     contextFeelingSatisfied: 'Satisfied',
@@ -586,6 +607,17 @@ const translations = {
     statLastEntry: 'Letzter Eintrag',
     quickAddTitle: 'Schnell hinzufügen',
     quickAddHint: 'Protokolliere, was du gerade isst – ohne Druck, ohne Urteil.',
+    voiceLogTitle: 'Sprachprotokoll',
+    voiceLogHint: 'Tippe auf das Mikro und sprich, um dein Essen zu protokollieren.',
+    voiceLogTriggerLabel: 'Sprachprotokoll starten',
+    voiceLogReady: 'Tippe und sprich, um einen Eintrag hinzuzufügen.',
+    voiceLogListening: 'Zuhören …',
+    voiceLogUnsupported: 'Sprachaufnahmen werden in diesem Browser nicht unterstützt.',
+    voiceLogError: 'Die Sprachaufnahme ist fehlgeschlagen. Bitte versuche es erneut.',
+    voiceLogErrorPermission: 'Der Mikrofonzugriff wurde blockiert.',
+    voiceLogNoResult: 'Wir haben nichts verstanden. Bitte versuche es erneut.',
+    voiceLogSuccess: '„{item}“ wurde protokolliert.',
+    voiceLogNoButton: '„{item}“ wurde erkannt, konnte aber nicht automatisch gespeichert werden.',
     contextPrompt: 'Wie hat sich das angefühlt?',
     contextFeelingEnergized: 'Energiegeladen',
     contextFeelingSatisfied: 'Zufrieden',
@@ -698,6 +730,176 @@ const translations = {
     privacyPolicy: 'Datenschutzerklärung',
   }
 };
+
+function translate(key) {
+  return translations?.[lang]?.[key] ?? key;
+}
+
+function formatTranslation(key, replacements = {}) {
+  const template = translate(key);
+  if (typeof template !== 'string') {
+    return '';
+  }
+  return template.replace(/\{(\w+)\}/g, (match, token) => (
+    Object.prototype.hasOwnProperty.call(replacements, token)
+      ? replacements[token]
+      : match
+  ));
+}
+
+function getSpeechRecognitionCtor() {
+  if (typeof window === 'undefined') return null;
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+function getRecognitionLocale() {
+  return lang === 'de' ? 'de-DE' : 'en-US';
+}
+
+function updateVoiceListening(listening) {
+  isVoiceListening = Boolean(listening);
+  if (!voiceLogButton) return;
+  voiceLogButton.classList.toggle('is-listening', isVoiceListening);
+  voiceLogButton.setAttribute('aria-pressed', isVoiceListening ? 'true' : 'false');
+}
+
+function setVoiceStatus(key, replacements) {
+  voiceStatusKey = key || null;
+  if (!voiceLogStatus) return;
+  if (!key) {
+    voiceLogStatus.textContent = '';
+    delete voiceLogStatus.dataset.statusKey;
+    return;
+  }
+  voiceLogStatus.textContent = formatTranslation(key, replacements);
+  voiceLogStatus.dataset.statusKey = key;
+}
+
+function extractTranscript(event) {
+  if (!event?.results) return '';
+  for (let index = event.results.length - 1; index >= 0; index -= 1) {
+    const result = event.results[index];
+    if (!result) continue;
+    if (result.isFinal && result[0]?.transcript) {
+      return result[0].transcript.trim();
+    }
+  }
+  const fallback = event.results[0]?.[0]?.transcript;
+  return typeof fallback === 'string' ? fallback.trim() : '';
+}
+
+function submitVoiceTranscript(transcript) {
+  const cleaned = typeof transcript === 'string'
+    ? transcript.replace(/[.!?\s]+$/, '').trim()
+    : '';
+  if (!cleaned) {
+    setVoiceStatus('voiceLogNoResult');
+    return;
+  }
+
+  const input = document.getElementById('food-name');
+  if (input) {
+    input.value = cleaned;
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  const addButton = document.getElementById('add-button');
+  if (addButton) {
+    addButton.click();
+    setVoiceStatus('voiceLogSuccess', { item: cleaned });
+  } else {
+    setVoiceStatus('voiceLogNoButton', { item: cleaned });
+  }
+}
+
+function handleVoiceButtonClick() {
+  if (!voiceRecognition) {
+    const Recognition = getSpeechRecognitionCtor();
+    if (!Recognition) {
+      setVoiceStatus('voiceLogUnsupported');
+      return;
+    }
+    voiceRecognition = new Recognition();
+    voiceRecognition.continuous = false;
+    voiceRecognition.interimResults = false;
+    voiceRecognition.maxAlternatives = 1;
+  }
+
+  if (isVoiceListening) {
+    try {
+      voiceRecognition.stop();
+    } catch (error) {
+      // Ignore stop errors.
+    }
+    return;
+  }
+
+  try {
+    voiceRecognition.lang = getRecognitionLocale();
+    voiceRecognition.start();
+  } catch (error) {
+    if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
+      setVoiceStatus('voiceLogErrorPermission');
+    } else if (error?.name !== 'InvalidStateError') {
+      setVoiceStatus('voiceLogError');
+    }
+  }
+}
+
+function initializeVoiceLogTile() {
+  if (!voiceLogButton) return;
+
+  const Recognition = getSpeechRecognitionCtor();
+  if (!Recognition) {
+    voiceLogButton.disabled = true;
+    voiceLogButton.setAttribute('aria-disabled', 'true');
+    updateVoiceListening(false);
+    setVoiceStatus('voiceLogUnsupported');
+    return;
+  }
+
+  if (!voiceRecognition || !(voiceRecognition instanceof Recognition)) {
+    voiceRecognition = new Recognition();
+    voiceRecognition.continuous = false;
+    voiceRecognition.interimResults = false;
+    voiceRecognition.maxAlternatives = 1;
+  }
+
+  voiceRecognition.lang = getRecognitionLocale();
+  voiceRecognition.onstart = () => {
+    updateVoiceListening(true);
+    setVoiceStatus('voiceLogListening');
+  };
+  voiceRecognition.onend = () => {
+    updateVoiceListening(false);
+    if (!voiceStatusKey || voiceStatusKey === 'voiceLogListening') {
+      setVoiceStatus('voiceLogReady');
+    }
+  };
+  voiceRecognition.onerror = (event) => {
+    const errorName = event?.error;
+    if (errorName === 'not-allowed' || errorName === 'service-not-allowed') {
+      setVoiceStatus('voiceLogErrorPermission');
+    } else if (errorName !== 'aborted') {
+      setVoiceStatus('voiceLogError');
+    }
+  };
+  voiceRecognition.onresult = (event) => {
+    const transcript = extractTranscript(event);
+    if (!transcript) {
+      setVoiceStatus('voiceLogNoResult');
+      return;
+    }
+    submitVoiceTranscript(transcript);
+  };
+
+  voiceLogButton.removeEventListener('click', handleVoiceButtonClick);
+  voiceLogButton.addEventListener('click', handleVoiceButtonClick);
+  voiceLogButton.disabled = false;
+  voiceLogButton.removeAttribute('aria-disabled');
+  updateVoiceListening(false);
+  setVoiceStatus('voiceLogReady');
+}
 
 // Legal docs content
 const legalDocs = {
