@@ -72,6 +72,10 @@ let tileSystemInstance = null;
 let currentUserProfile = null;
 let currentWelcomeKey = 'welcome';
 
+// Local state used by context helpers (prevents ReferenceErrors if invoked)
+let pendingContextLogId = null;
+let selectedFeeling = '';
+const contextCache = new Map();
 
 // Element refs (assigned on DOMContentLoaded)
 let appContent, nameInput, dairyCheckbox, outsideMealsCheckbox, addBtn, tbody, emptyState, installBanner;
@@ -298,9 +302,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners(tileSystem);
 
   await loadFirebaseModules();
-  await handleGoogleRedirectResult();
-  initializeAuthListener();
-  await handleGoogleRedirectResult();
+
+  // Handle Google redirect result once, then initialize auth listener with possible prefetched user
+  const redirectResult = await handleGoogleRedirectResult();
+  initializeAuthListener(redirectResult?.user || null);
 });
 
 // --- Translations ---
@@ -1229,7 +1234,6 @@ const saveIntention = async () => {
   } finally {
     if (intentionSaveBtn) intentionSaveBtn.disabled = false;
     if (succeeded) {
-      // The onSnapshot subscription will update todaysIntention; ensure UI reflects state immediately.
       if (!todaysIntention) {
         todaysIntention = { text, date: todayId };
       } else {
@@ -1346,7 +1350,8 @@ const updateStats = () => {
     statLast.textContent = latestDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
     statLastSubtext.textContent = latestDate.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' });
   } else {
-    statLast.textContent = '—';
+    // Use a plain hyphen instead of an em dash to match user preference
+    statLast.textContent = '-';
     statLastSubtext.textContent = '';
   }
 };
@@ -1679,7 +1684,7 @@ const shouldUseRedirectForGoogleSignIn = () => {
 
 const handleGoogleRedirectResult = async () => {
   if (!firebaseReady || !auth || typeof getRedirectResult !== 'function') {
-    return;
+    return null;
   }
 
   try {
@@ -1688,10 +1693,11 @@ const handleGoogleRedirectResult = async () => {
     if (result?.user && !authListenerReady) {
       await handleAuthStateChange(result.user);
     }
+   
   } catch (error) {
     const errorCode = error?.code;
     if (errorCode === 'auth/no-auth-event' || errorCode === 'auth/cancelled-popup-request') {
-      return;
+      return null;
     }
 
     if (errorCode === 'auth/web-storage-unsupported' || errorCode === 'auth/operation-not-allowed') {
@@ -1701,7 +1707,7 @@ const handleGoogleRedirectResult = async () => {
       alert(`${getTranslation('authErrorPrefix')} ${message}`);
     }
     console.error('Google redirect sign-in error:', error);
-
+    return null;
   }
 };
 
@@ -1852,7 +1858,7 @@ const setupEventListeners = (tileSystem) => {
       }
 
       const provider = new GoogleAuthProvider();
-      const preferRedirect = shouldUseRedirectForGoogleSignIn();
+      
       const popupSupported = typeof signInWithPopup === 'function';
       const redirectSupported = typeof signInWithRedirect === 'function';
 
@@ -1882,12 +1888,14 @@ const setupEventListeners = (tileSystem) => {
         return true;
       };
 
+
       try {
         googleSigninBtn.disabled = true;
 
         if (!preferRedirect) {
           const popupHandled = await attemptPopup();
           if (popupHandled) return;
+
         }
 
         const redirectHandled = await attemptRedirect();
@@ -1898,17 +1906,40 @@ const setupEventListeners = (tileSystem) => {
 
         if (await attemptRedirect()) return;
 
+
         throw new Error('Google sign-in is not available in this browser.');
       } catch (err) {
-        if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+        let handledError = err;
+
+        if (handledError?.code === 'auth/popup-closed-by-user' || handledError?.code === 'auth/cancelled-popup-request') {
           return;
         }
 
-        const message = err?.message || 'Unknown error';
-        alert(`${getTranslation('authErrorPrefix')} ${message}`);
-        console.error('Google sign-in error:', err);
+        if (
+          canRedirect &&
+          !redirectPlanned &&
+          (handledError?.code === 'auth/popup-blocked' || handledError?.code === 'auth/operation-not-supported-in-this-environment')
+        ) {
+          try {
+            redirectPlanned = true;
+            await signInWithRedirect(auth, provider);
+            return;
+          } catch (redirectError) {
+            handledError = redirectError;
+          }
+        }
+
+        if (handledError?.code === 'auth/web-storage-unsupported' || handledError?.code === 'auth/operation-not-allowed') {
+          alert(getTranslation('googleSigninBlocked'));
+        } else {
+          const message = handledError?.message || 'Unknown error';
+          alert(`${getTranslation('authErrorPrefix')} ${message}`);
+        }
+        console.error('Google sign-in error:', handledError);
       } finally {
-        googleSigninBtn.disabled = false;
+        if (!redirectPlanned) {
+          googleSigninBtn.disabled = false;
+        }
       }
     });
   }
@@ -1993,6 +2024,8 @@ const setupEventListeners = (tileSystem) => {
         if (scrim) scrim.classList.remove('show');
       }
 
+
+
     });
   }
 
@@ -2059,7 +2092,6 @@ const setupEventListeners = (tileSystem) => {
       legalModal.classList.add('show');
     });
   }
-
   if (privacyLink) {
     privacyLink.addEventListener('click', (e) => {
       e.preventDefault();
@@ -2106,65 +2138,106 @@ const setupEventListeners = (tileSystem) => {
 const handleAuthStateChange = async (user) => {
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
 
-  const loggedIn = !!user;
 
-  if (landingPage) landingPage.style.display = loggedIn ? 'none' : 'grid';
-  if (appContent) appContent.style.display = loggedIn ? 'grid' : 'none';
-  if (authActions) authActions.style.display = loggedIn ? 'none' : 'flex';
-  if (userInfo) userInfo.style.display = loggedIn ? 'flex' : 'none';
-  if (authSection) authSection.style.display = 'none';
-  if (dashboardControls) {
-    dashboardControls.hidden = !loggedIn;
-  }
+  try {
+    const loggedIn = !!user;
 
-  if (loggedIn) {
-    resetFilters();
-    contextFeature?.clearAll();
-    currentUserProfile = null;
-    const isNewUser = user.metadata.creationTime === user.metadata.lastSignInTime;
-    currentWelcomeKey = isNewUser ? 'welcome' : 'welcomeBack';
-    applyUserIdentity(user, null, currentWelcomeKey);
-
-    if (accountEmailInput) {
-      accountEmailInput.value = typeof user.email === 'string' ? user.email : '';
+    if (landingPage) landingPage.style.display = loggedIn ? 'none' : 'grid';
+    if (appContent) appContent.style.display = loggedIn ? 'grid' : 'none';
+    if (authActions) authActions.style.display = loggedIn ? 'none' : 'flex';
+    if (userInfo) userInfo.style.display = loggedIn ? 'flex' : 'none';
+    if (authSection) authSection.style.display = 'none';
+    if (dashboardControls) {
+      dashboardControls.hidden = !loggedIn;
     }
 
-    try {
-      const profile = await loadUserProfile(user);
-      applyUserIdentity(user, profile);
-    } catch (error) {
-      console.error('Unable to hydrate user profile:', error);
+    if (loggedIn) {
+      resetFilters();
+      contextFeature?.clearAll();
+      currentUserProfile = null;
+
+
+      const metadata = user?.metadata || {};
+      const creationTime = metadata.creationTime;
+      const lastSignInTime = metadata.lastSignInTime;
+      const isNewUser = Boolean(creationTime && lastSignInTime && creationTime === lastSignInTime);
+      currentWelcomeKey = isNewUser ? 'welcome' : 'welcomeBack';
+      applyUserIdentity(user, null, currentWelcomeKey);
+
+
+      if (accountEmailInput) {
+        accountEmailInput.value = typeof user.email === 'string' ? user.email : '';
+      }
+
+
+      try {
+        const profile = await loadUserProfile(user);
+        applyUserIdentity(user, profile);
+      } catch (error) {
+        console.error('Unable to hydrate user profile:', error);
+      }
+
+      if (
+        db &&
+        typeof collection === 'function' &&
+        typeof query === 'function' &&
+        typeof orderBy === 'function' &&
+        typeof onSnapshot === 'function'
+      ) {
+        logCollectionRef = collection(db, 'users', user.uid, 'logs');
+        const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
+        unsubscribe = onSnapshot(q, renderEntries);
+      } else {
+        console.warn('Firestore is not ready. Skipping log subscription.');
+      }
+
+      intentionFeature?.subscribe?.(user.uid);
+    } else {
+      applyUserIdentity(null);
+      currentUserProfile = null;
+      currentWelcomeKey = 'welcome';
+      if (accountNameInput) accountNameInput.value = '';
+      if (accountNicknameInput) accountNicknameInput.value = '';
+      if (accountEmailInput) accountEmailInput.value = '';
+      latestSnapshot = null;
+      if (tbody) tbody.innerHTML = '';
+      if (emptyState) emptyState.style.display = 'block';
+      logCollectionRef = null;
+      allEntries = [];
+
+      contextFeature?.clearAll();
+
+      resetFilters();
+      updateStats();
+      setAuthMode(true);
+      resetAuthFields();
+
+      intentionFeature?.reset?.();
     }
-
-    logCollectionRef = collection(db, 'users', user.uid, 'logs');
-    const q = query(logCollectionRef, orderBy('timestamp', 'desc'));
-    unsubscribe = onSnapshot(q, renderEntries);
-    intentionFeature?.subscribe(user.uid);
-
-  } else {
+  } catch (error) {
+    console.error('Failed to handle auth state change:', error);
     applyUserIdentity(null);
     currentUserProfile = null;
     currentWelcomeKey = 'welcome';
-    if (accountNameInput) accountNameInput.value = '';
-    if (accountNicknameInput) accountNicknameInput.value = '';
-    if (accountEmailInput) accountEmailInput.value = '';
-    latestSnapshot = null;
-    if (tbody) tbody.innerHTML = '';
-    if (emptyState) emptyState.style.display = 'block';
-    logCollectionRef = null;
-    allEntries = [];
-
-    contextFeature?.clearAll();
-
-    resetFilters();
-    updateStats();
+    if (landingPage) landingPage.style.display = 'grid';
+    if (appContent) appContent.style.display = 'none';
+    if (authActions) authActions.style.display = 'flex';
+    if (userInfo) userInfo.style.display = 'none';
+    if (dashboardControls) {
+      dashboardControls.hidden = true;
+    }
     setAuthMode(true);
     resetAuthFields();
-
-    intentionFeature?.reset();
-
   }
 };
+
+
+const initializeAuthListener = (prefetchedUser = null) => {
+  if (prefetchedUser) {
+    handleAuthStateChange(prefetchedUser).catch((error) => {
+      console.error('Unable to apply prefetched auth state:', error);
+    });
+  }
 
 const initializeAuthListener = () => {
   if (authListenerUnsubscribe) {
@@ -2178,6 +2251,7 @@ const initializeAuthListener = () => {
   } else {
     authListenerReady = false;
     handleAuthStateChange(null);
+
   }
 };
 
