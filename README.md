@@ -67,23 +67,35 @@ Install the Firebase CLI if you have not already done so.
 
 Authenticate with Firebase:
 
-Bash
-
+```bash
 firebase login
+```
+
 Update the .firebaserc file with the ID of the Firebase project you created earlier.
 
 Preview the site locally to make sure everything looks correct:
 
-Bash
-
+```bash
 firebase emulators:start --only hosting
-The site will be served at the URL shown in the terminal output.
+```
 
 When you are ready to deploy, run:
 
-Bash
-
+```bash
 firebase deploy --only hosting
+```
+
+### Automated deployments from GitHub
+
+You can host the production build on Firebase directly from this GitHub repository by wiring up a GitHub Actions workflow:
+
+1. [Create a service account](https://firebase.google.com/docs/cli#cli-ci-systems) in the Firebase console with the *Firebase Admin* role and download its JSON key file.
+2. In your GitHub repository settings, add a new secret named `FIREBASE_SERVICE_ACCOUNT` and paste the entire JSON key as its value.
+3. Ensure the project ID in `.firebaserc` matches the Firebase project you want to deploy to (`mcfattys-food-tracker` for the production site).
+4. Push this repository to GitHub. On every push to `main`, the workflow defined in `.github/workflows/firebase-hosting.yml` will deploy the latest code to Firebase Hosting. Pull requests automatically receive preview channels.
+5. To run a deployment manually (for example, from a fork), trigger the `Deploy to Firebase Hosting` workflow from the *Actions* tab in GitHub using **Run workflow**.
+
+The workflow uses the official `FirebaseExtended/action-hosting-deploy` action, so no additional tooling is required beyond configuring the service account secret.
 Data Model
 Food entries and user data are stored in a Cloud Firestore collection with the following structure:
 
