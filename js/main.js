@@ -1559,10 +1559,11 @@ const isStandalonePwa = () => {
 };
 
 const shouldUseRedirectAuth = () => {
-  const smallViewport = window.matchMedia('(max-width: 768px)').matches;
-  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  const mobileUserAgent = /iphone|ipod|ipad|android/i.test(navigator.userAgent);
-  return isStandalonePwa() || smallViewport || isTouchDevice || mobileUserAgent;
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isIOS = /iphone|ipad|ipod/.test(userAgent);
+  const isSafari = /^((?!chrome|android).)*safari/.test(userAgent);
+  const inAppBrowser = /(fban|fbav|instagram|line|micromessenger)/.test(userAgent);
+  return isStandalonePwa() || isIOS || isSafari || inAppBrowser;
 };
 
 const setupEventListeners = (tileSystem) => {
@@ -1624,6 +1625,9 @@ const setupEventListeners = (tileSystem) => {
         return;
       }
       const provider = new GoogleAuthProvider();
+      if (typeof provider.setCustomParameters === 'function') {
+        provider.setCustomParameters({ prompt: 'select_account' });
+      }
       const useRedirect = shouldUseRedirectAuth();
       try {
         if (useRedirect && typeof signInWithRedirect === 'function') {

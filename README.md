@@ -1,6 +1,10 @@
 The Food Mutiny
 A lightweight, single-page web app for mindful food tracking, powered by Firebase. This app allows users to create an account, save their food log to the cloud, and access it from any device.
 
+## Live Site
+
+The production app is deployed to Firebase Hosting via GitHub Actions and is available at [https://mcfattys-food-tracker.web.app](https://mcfattys-food-tracker.web.app).
+
 Core Philosophy
 Slow and steady wins the race. The Food Mutiny is not about calorie counting, restrictions, or guilt. It's about the simple, mindful act of recording what you eat without judgment. This app will always be free, without subscriptions or upsells.
 
